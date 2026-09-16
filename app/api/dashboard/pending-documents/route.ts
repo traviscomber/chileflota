@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -11,11 +13,8 @@ type Focus = {
   id: string
 }
 
-// Before the exact-supersession migration, these document types were incorrectly
-// versioned at company/type/period level even though a company can legitimately
-// upload several independent files (one per worker, vehicle or contribution
-// component). Keep legacy non-current pending rows visible for these types while
-// preserving current-only semantics for corporate documents such as F29/F30.
+const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
+
 const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
   'LIQUIDACION_SUELDO',
   'HOJA_VIDA',
@@ -36,7 +35,16 @@ function getFocus(request: Request): Focus | null {
 
 export async function GET(request: Request) {
   try {
+    const auth = await verifyAuth(request as any)
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || 'No autenticado', success: false }, { status: 401 })
+    }
+    if (!ALLOWED_ROLES.has(auth.user.role)) {
+      return NextResponse.json({ error: 'No autorizado', success: false }, { status: 403 })
+    }
+
     const supabase = await createClient()
+    const admin = createAdminClient()
     const focus = getFocus(request)
 
     const [conductorResult, subResult, conductorTypesResult, subTypesResult, executivesResult] = await Promise.all([
@@ -127,35 +135,31 @@ export async function GET(request: Request) {
       return Boolean(typeCode && LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES.has(typeCode))
     })
 
-    const providerRuts = [
-      ...new Set(
-        conductorDocs
-          .map((doc: any) => doc.conductores?.rut_proveedor)
-          .filter(Boolean),
-      ),
-    ]
-
+    const providerRuts = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.rut_proveedor).filter(Boolean))]
     const subIds = [...new Set(subDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
+    const subRuts = [...new Set(subDocs.map((doc: any) => doc.subcontractor_rut).filter(Boolean))]
 
-    const transportistaQuery = supabase
-      .from('transportistas')
-      .select('id, rut, razon_social, assigned_executive_id')
-
-    const [providerCompaniesResult, subCompaniesResult] = await Promise.all([
-      providerRuts.length > 0 ? transportistaQuery.in('rut', providerRuts) : Promise.resolve({ data: [], error: null }),
+    const [providerCompaniesResult, subCompaniesByIdResult, subCompaniesByRutResult] = await Promise.all([
+      providerRuts.length > 0
+        ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('rut', providerRuts)
+        : Promise.resolve({ data: [], error: null }),
       subIds.length > 0
-        ? supabase
-            .from('transportistas')
-            .select('id, rut, razon_social, assigned_executive_id')
-            .in('id', subIds)
+        ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('id', subIds)
+        : Promise.resolve({ data: [], error: null }),
+      subRuts.length > 0
+        ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('rut', subRuts)
         : Promise.resolve({ data: [], error: null }),
     ])
 
     if (providerCompaniesResult.error) throw providerCompaniesResult.error
-    if (subCompaniesResult.error) throw subCompaniesResult.error
+    if (subCompaniesByIdResult.error) throw subCompaniesByIdResult.error
+    if (subCompaniesByRutResult.error) throw subCompaniesByRutResult.error
 
-    const companyByRut = new Map((providerCompaniesResult.data || []).map((item: any) => [item.rut, item]))
-    const companyById = new Map((subCompaniesResult.data || []).map((item: any) => [item.id, item]))
+    const companyByRut = new Map([
+      ...(providerCompaniesResult.data || []).map((item: any) => [item.rut, item] as const),
+      ...(subCompaniesByRutResult.data || []).map((item: any) => [item.rut, item] as const),
+    ])
+    const companyById = new Map((subCompaniesByIdResult.data || []).map((item: any) => [item.id, item]))
 
     const normalizedConductorDocs = conductorDocs.map((doc: any) => {
       const company = companyByRut.get(doc.conductores?.rut_proveedor)
@@ -179,7 +183,7 @@ export async function GET(request: Request) {
         conductores: doc.conductores,
         docType: conductorTypeMap.get(doc.document_type_id) || null,
         transportistas: company || null,
-        empresa_nombre: company?.razon_social || null,
+        empresa_nombre: company?.razon_social || company?.nombre_fantasia || null,
         company_id: company?.id || null,
         ejecutiva: company?.assigned_executive_id
           ? executiveNameMap.get(company.assigned_executive_id) || 'Sin asignar'
@@ -189,7 +193,7 @@ export async function GET(request: Request) {
     })
 
     const normalizedSubDocs = subDocs.map((doc: any) => {
-      const company = companyById.get(doc.subcontractor_id)
+      const company = companyById.get(doc.subcontractor_id) || companyByRut.get(doc.subcontractor_rut)
       return {
         id: doc.id,
         file_name: doc.file_name,
@@ -211,9 +215,9 @@ export async function GET(request: Request) {
         version_number: doc.version_number,
         is_current: doc.is_current === true,
         transportistas: company || null,
-        empresa_nombre: company?.razon_social || null,
+        empresa_nombre: company?.razon_social || company?.nombre_fantasia || null,
         docType: subTypeMap.get(doc.document_type_id) || null,
-        company_id: doc.subcontractor_id,
+        company_id: company?.id || doc.subcontractor_id,
         ejecutiva: company?.assigned_executive_id
           ? executiveNameMap.get(company.assigned_executive_id) || 'Sin asignar'
           : 'Sin asignar',
@@ -235,6 +239,7 @@ export async function GET(request: Request) {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs,
       scope: 'current_plus_legacy_multi_instance_pending',
+      companyResolution: 'canonical_transportistas_after_auth',
       success: true,
     })
   } catch (error) {
