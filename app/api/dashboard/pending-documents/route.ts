@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 
@@ -43,12 +42,45 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autorizado', success: false }, { status: 403 })
     }
 
-    const supabase = await createClient()
     const admin = createAdminClient()
     const focus = getFocus(request)
 
+    let assignedCompanyIds: string[] | null = null
+    let assignedCompanyRuts: string[] | null = null
+
+    if (auth.user.role === 'ejecutiva') {
+      const { data: executive, error: executiveError } = await admin
+        .from('executive_staff')
+        .select('id')
+        .ilike('email', auth.user.email)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+
+      if (executiveError) throw executiveError
+      if (!executive) {
+        return NextResponse.json({
+          conductorDocs: [],
+          subDocs: [],
+          scope: 'executive_assigned_companies',
+          companyResolution: 'canonical_transportistas_after_auth',
+          success: true,
+        })
+      }
+
+      const { data: assignedCompanies, error: assignedCompaniesError } = await admin
+        .from('transportistas')
+        .select('id, rut')
+        .eq('assigned_executive_id', executive.id)
+        .eq('is_active', true)
+
+      if (assignedCompaniesError) throw assignedCompaniesError
+      assignedCompanyIds = (assignedCompanies || []).map((company: any) => company.id).filter(Boolean)
+      assignedCompanyRuts = (assignedCompanies || []).map((company: any) => company.rut).filter(Boolean)
+    }
+
     const [conductorResult, subResult, conductorTypesResult, subTypesResult, executivesResult] = await Promise.all([
-      supabase
+      admin
         .from('uploaded_documents')
         .select(`
           id,
@@ -76,7 +108,7 @@ export async function GET(request: Request) {
         .or('validation_status.eq.pending,validation_status.is.null')
         .order('created_at', { ascending: false })
         .limit(10000),
-      supabase
+      admin
         .from('subcontractor_documents')
         .select(`
           id,
@@ -100,9 +132,9 @@ export async function GET(request: Request) {
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
         .limit(10000),
-      supabase.from('document_types').select('id, code, name'),
-      supabase.from('subcontractor_document_types').select('id, code, nombre'),
-      supabase.from('executive_staff').select('id, full_name'),
+      admin.from('document_types').select('id, code, name'),
+      admin.from('subcontractor_document_types').select('id, code, nombre'),
+      admin.from('executive_staff').select('id, full_name'),
     ])
 
     if (conductorResult.error) throw conductorResult.error
@@ -111,8 +143,21 @@ export async function GET(request: Request) {
     if (subTypesResult.error) throw subTypesResult.error
     if (executivesResult.error) throw executivesResult.error
 
-    const conductorDocs = conductorResult.data || []
-    const rawSubDocs = subResult.data || []
+    const assignedIdSet = assignedCompanyIds ? new Set(assignedCompanyIds) : null
+    const assignedRutSet = assignedCompanyRuts ? new Set(assignedCompanyRuts) : null
+
+    const conductorDocs = (conductorResult.data || []).filter((doc: any) => {
+      if (!assignedRutSet) return true
+      return assignedRutSet.has(doc.conductores?.rut_proveedor)
+    })
+
+    const rawSubDocs = (subResult.data || []).filter((doc: any) => {
+      if (!assignedIdSet && !assignedRutSet) return true
+      return Boolean(
+        (doc.subcontractor_id && assignedIdSet?.has(doc.subcontractor_id)) ||
+        (doc.subcontractor_rut && assignedRutSet?.has(doc.subcontractor_rut)),
+      )
+    })
 
     const conductorTypeMap = new Map(
       (conductorTypesResult.data || []).map((item) => [item.id, { code: item.code, nombre: item.name }]),
@@ -238,7 +283,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs,
-      scope: 'current_plus_legacy_multi_instance_pending',
+      scope: auth.user.role === 'ejecutiva' ? 'executive_assigned_companies' : 'current_plus_legacy_multi_instance_pending',
       companyResolution: 'canonical_transportistas_after_auth',
       success: true,
     })
