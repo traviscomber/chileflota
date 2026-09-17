@@ -78,6 +78,8 @@ export async function GET(request: Request) {
 
     let executiveStaffId: string | null = null
     let executiveCompanyIds: Set<string> | null = null
+    let executiveCompanyRuts: string[] = []
+    let executiveConductorIds: string[] = []
 
     if (auth.user.role === 'ejecutiva') {
       executiveStaffId = await resolveExecutiveStaffId(admin, auth.user.email, auth.user.id)
@@ -87,67 +89,96 @@ export async function GET(request: Request) {
 
       const { data: assignedCompanies, error: assignedCompaniesError } = await admin
         .from('transportistas')
-        .select('id')
+        .select('id, rut')
         .eq('assigned_executive_id', executiveStaffId)
         .eq('is_active', true)
 
       if (assignedCompaniesError) throw assignedCompaniesError
+
       executiveCompanyIds = new Set((assignedCompanies || []).map((company: any) => company.id))
+      executiveCompanyRuts = (assignedCompanies || []).map((company: any) => company.rut).filter(Boolean)
+
+      if (executiveCompanyRuts.length > 0) {
+        const { data: executiveConductors, error: executiveConductorsError } = await admin
+          .from('conductores')
+          .select('id')
+          .in('rut_proveedor', executiveCompanyRuts)
+
+        if (executiveConductorsError) throw executiveConductorsError
+        executiveConductorIds = (executiveConductors || []).map((conductor: any) => conductor.id)
+      }
     }
 
+    const conductorBaseQuery = supabase
+      .from('uploaded_documents')
+      .select(`
+        id,
+        original_filename,
+        document_type_id,
+        validation_status,
+        file_url,
+        created_at,
+        updated_at,
+        document_period_month,
+        document_period_year,
+        document_period_start,
+        conductor_id,
+        version_number,
+        is_current,
+        conductores (
+          id,
+          nombres,
+          apellido_paterno,
+          rut,
+          rut_proveedor
+        )
+      `)
+      .eq('is_current', true)
+      .or('validation_status.eq.pending,validation_status.is.null')
+      .order('created_at', { ascending: false })
+      .limit(10000)
+
+    const subBaseQuery = supabase
+      .from('subcontractor_documents')
+      .select(`
+        id,
+        file_name,
+        document_type_id,
+        status,
+        file_url,
+        created_at,
+        updated_at,
+        uploaded_at,
+        subcontractor_id,
+        subcontractor_rut,
+        reviewed_by_ejecutiva,
+        uploaded_by_ejecutiva,
+        document_period_month,
+        document_period_year,
+        document_period_start,
+        version_number,
+        is_current
+      `)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(10000)
+
+    const conductorPromise = executiveCompanyIds
+      ? executiveConductorIds.length > 0
+        ? conductorBaseQuery.in('conductor_id', executiveConductorIds)
+        : Promise.resolve({ data: [], error: null })
+      : conductorBaseQuery
+
+    const assignedCompanyIdList = executiveCompanyIds ? Array.from(executiveCompanyIds) : []
+    const subPromise = executiveCompanyIds
+      ? assignedCompanyIdList.length > 0
+        ? subBaseQuery.in('subcontractor_id', assignedCompanyIdList)
+        : Promise.resolve({ data: [], error: null })
+      : subBaseQuery
+
     const [conductorResult, subResult, conductorTypesResult, subTypesResult, executivesResult] = await Promise.all([
-      supabase
-        .from('uploaded_documents')
-        .select(`
-          id,
-          original_filename,
-          document_type_id,
-          validation_status,
-          file_url,
-          created_at,
-          updated_at,
-          document_period_month,
-          document_period_year,
-          document_period_start,
-          conductor_id,
-          version_number,
-          is_current,
-          conductores (
-            id,
-            nombres,
-            apellido_paterno,
-            rut,
-            rut_proveedor
-          )
-        `)
-        .eq('is_current', true)
-        .or('validation_status.eq.pending,validation_status.is.null')
-        .order('created_at', { ascending: false })
-        .limit(10000),
-      supabase
-        .from('subcontractor_documents')
-        .select(`
-          id,
-          file_name,
-          document_type_id,
-          status,
-          file_url,
-          created_at,
-          updated_at,
-          uploaded_at,
-          subcontractor_id,
-          subcontractor_rut,
-          reviewed_by_ejecutiva,
-          uploaded_by_ejecutiva,
-          document_period_month,
-          document_period_year,
-          document_period_start,
-          version_number,
-          is_current
-        `)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(10000),
+      conductorPromise,
+      subPromise,
       supabase.from('document_types').select('id, code, name'),
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
       supabase.from('executive_staff').select('id, full_name'),
@@ -297,6 +328,16 @@ export async function GET(request: Request) {
         ? 'assigned_executive_current_plus_legacy_multi_instance_pending'
         : 'current_plus_legacy_multi_instance_pending',
       executiveStaffId,
+      diagnostics: auth.user.role === 'ejecutiva'
+        ? {
+            assignedCompanies: executiveCompanyIds?.size || 0,
+            assignedConductors: executiveConductorIds.length,
+            rawConductorPending: conductorDocs.length,
+            rawSubcontractorPending: rawSubDocs.length,
+            visibleConductorPending: filteredConductorDocs.length,
+            visibleSubcontractorPending: filteredSubDocs.length,
+          }
+        : undefined,
       companyResolution: 'canonical_transportistas_after_auth',
       success: true,
     })
