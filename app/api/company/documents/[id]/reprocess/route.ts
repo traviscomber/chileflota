@@ -12,6 +12,45 @@ import { parseF30Document } from '@/lib/f30-parser'
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
+function classifyAnalysisAvailabilityError(error: unknown): {
+  unavailable: boolean
+  reason?: string
+  retryable?: boolean
+} {
+  const candidate = error as any
+  const message = error instanceof Error ? error.message : String(error ?? '')
+  const code = String(candidate?.code ?? candidate?.error?.code ?? '')
+  const status = Number(candidate?.status ?? candidate?.statusCode ?? 0)
+
+  if (
+    status === 429 ||
+    code === 'credit_balance_exhausted' ||
+    code === 'insufficient_quota' ||
+    /no credits remaining|insufficient quota|credit balance exhausted/i.test(message)
+  ) {
+    return { unavailable: true, reason: 'ai_quota_unavailable', retryable: false }
+  }
+
+  if (
+    status === 429 ||
+    code === 'rate_limit_exceeded' ||
+    /rate limit|too many requests/i.test(message)
+  ) {
+    return { unavailable: true, reason: 'ai_rate_limited', retryable: true }
+  }
+
+  if (
+    status === 503 ||
+    status === 502 ||
+    status === 504 ||
+    /service unavailable|temporarily unavailable|gateway timeout/i.test(message)
+  ) {
+    return { unavailable: true, reason: 'ai_service_unavailable', retryable: true }
+  }
+
+  return { unavailable: false }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -97,9 +136,6 @@ export async function POST(
     let usedOcrFallback = false
 
     if (isPdf) {
-      // PDF.js/unpdf may transfer or detach the typed array passed to it. Keep an
-      // immutable Node Buffer and give each extraction stage its own Uint8Array
-      // copy so OCR never receives a detached/zero-length view of a valid PDF.
       const pdfBytes = Buffer.from(buffer)
       if (pdfBytes.byteLength === 0) {
         throw new Error('Document PDF is empty')
@@ -232,6 +268,26 @@ export async function POST(
           : 'Analisis completado y guardado',
     })
   } catch (error) {
+    const availability = classifyAnalysisAvailabilityError(error)
+    if (availability.unavailable) {
+      console.warn('[v0] Reprocess degraded: analysis unavailable', {
+        documentId: params.id,
+        reason: availability.reason,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          analysisUnavailable: true,
+          reason: availability.reason,
+          retryable: availability.retryable,
+          documentId: params.id,
+          documentStatusChanged: false,
+          error: 'El análisis automático no está disponible temporalmente. El estado documental no fue modificado.',
+        },
+        { status: 503 },
+      )
+    }
+
     console.error('[v0] Reprocess error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Server error' },

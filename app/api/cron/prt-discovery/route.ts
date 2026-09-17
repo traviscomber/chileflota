@@ -6,34 +6,10 @@ export const revalidate = 0
 export const maxDuration = 60
 
 const MONTHS = [
-  'Enero',
-  'Febrero',
-  'Marzo',
-  'Abril',
-  'Mayo',
-  'Junio',
-  'Julio',
-  'Agosto',
-  'Septiembre',
-  'Octubre',
-  'Noviembre',
-  'Diciembre',
+  'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre',
 ] as const
 
-const MONTH_SLUGS = [
-  'ene',
-  'feb',
-  'mar',
-  'abr',
-  'may',
-  'jun',
-  'jul',
-  'ago',
-  'sep',
-  'oct',
-  'nov',
-  'dic',
-] as const
+const MONTH_SLUGS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'] as const
 
 type RecordType = 'RA1' | 'RA2' | 'RB'
 
@@ -41,6 +17,13 @@ type DiscoveredFile = {
   period: string
   recordType: RecordType
   sourceUrl: string
+}
+
+type DiscoveryFailure = {
+  year: number
+  monthIndex: number
+  month: string
+  error: string
 }
 
 function normalizePeriod(year: number, monthIndex: number): string {
@@ -111,12 +94,37 @@ export async function GET(request: NextRequest) {
 
   const supabase = createAdminClient()
   const candidates = monthCandidates(new Date())
-  const discovered = (await Promise.all(
+  const settled = await Promise.allSettled(
     candidates.map(({ year, monthIndex }) => discoverMonth(year, monthIndex)),
-  )).flat()
+  )
+
+  const discovered: DiscoveredFile[] = []
+  const failures: DiscoveryFailure[] = []
+
+  settled.forEach((result, index) => {
+    const candidate = candidates[index]
+    if (result.status === 'fulfilled') {
+      discovered.push(...result.value)
+      return
+    }
+
+    failures.push({
+      year: candidate.year,
+      monthIndex: candidate.monthIndex,
+      month: MONTHS[candidate.monthIndex],
+      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+    })
+  })
 
   if (discovered.length === 0) {
-    return NextResponse.json({ discovered: 0, inserted: 0, files: [] })
+    return NextResponse.json({
+      discovered: 0,
+      inserted: 0,
+      files: [],
+      failedSources: failures.length,
+      failures,
+      partial: failures.length > 0,
+    })
   }
 
   const rows = discovered.map((file) => ({
@@ -135,12 +143,15 @@ export async function GET(request: NextRequest) {
     .select('id, period, record_type, source_url, status')
 
   if (error) {
-    return NextResponse.json({ error: error.message, discovered: discovered.length }, { status: 500 })
+    return NextResponse.json({ error: error.message, discovered: discovered.length, failures }, { status: 500 })
   }
 
   return NextResponse.json({
     discovered: discovered.length,
     inserted: data?.length ?? 0,
     files: discovered,
+    failedSources: failures.length,
+    failures,
+    partial: failures.length > 0,
   })
 }

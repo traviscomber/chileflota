@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
 
   const events = (data ?? []) as ComplianceEvent[]
   if (events.length === 0) {
-    return NextResponse.json({ processed: 0, reason: 'no_pending_events', durationMs: Date.now() - startedAt })
+    return NextResponse.json({ processed: 0, failed: 0, reason: 'no_pending_events', durationMs: Date.now() - startedAt })
   }
 
   const relevant = events.filter((event) =>
@@ -116,59 +116,82 @@ export async function GET(request: NextRequest) {
   )
   const ignored = events.filter((event) => !relevant.some((candidate) => candidate.id === event.id))
 
-  try {
-    if (ignored.length > 0) {
-      await completeEvents(ignored.map((event) => event.id), 'ignored')
-    }
+  if (ignored.length > 0) {
+    await completeEvents(ignored.map((event) => event.id), 'ignored')
+  }
 
-    if (relevant.length === 0) {
-      return NextResponse.json({
-        claimed: events.length,
-        processed: 0,
-        ignored: ignored.length,
-        durationMs: Date.now() - startedAt,
-      })
-    }
-
-    const hasDocumentEvents = relevant.some((event) => event.event_type.startsWith('document.'))
-    let documentFacts: unknown = null
-    if (hasDocumentEvents) {
-      const { data: factsData, error: factsError } = await supabase.rpc('sync_subcontractor_document_facts')
-      if (factsError) throw new Error(`sync_subcontractor_document_facts failed: ${factsError.message}`)
-      documentFacts = factsData
-    }
-
-    const companyPeriods = await resolveCompanyPeriods(relevant)
-    const decisions: unknown[] = []
-
-    for (const item of companyPeriods) {
-      const { data: decision, error: decisionError } = await supabase.rpc(
-        'recalculate_company_period_decision',
-        {
-          p_company_entity_ref: item.companyEntityRef,
-          p_period_start: item.periodStart,
-        },
-      )
-      if (decisionError) {
-        throw new Error(`Granular decision failed for ${item.companyEntityRef}:${item.periodStart}: ${decisionError.message}`)
-      }
-      decisions.push(decision)
-    }
-
-    await completeEvents(relevant.map((event) => event.id), 'processed')
-
+  if (relevant.length === 0) {
     return NextResponse.json({
       claimed: events.length,
-      processed: relevant.length,
+      processed: 0,
+      failed: 0,
       ignored: ignored.length,
-      recalculatedPeriods: companyPeriods.length,
-      documentFacts,
-      decisions,
       durationMs: Date.now() - startedAt,
     })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown compliance event processing error'
-    await completeEvents(relevant.map((event) => event.id), 'failed', message).catch(() => undefined)
-    return NextResponse.json({ error: message, claimed: events.length }, { status: 500 })
   }
+
+  const hasDocumentEvents = relevant.some((event) => event.event_type.startsWith('document.'))
+  let documentFacts: unknown = null
+  if (hasDocumentEvents) {
+    const { data: factsData, error: factsError } = await supabase.rpc('sync_subcontractor_document_facts')
+    if (factsError) {
+      const message = `sync_subcontractor_document_facts failed: ${factsError.message}`
+      await completeEvents(relevant.map((event) => event.id), 'failed', message)
+      return NextResponse.json({ error: message, claimed: events.length, failed: relevant.length }, { status: 500 })
+    }
+    documentFacts = factsData
+  }
+
+  const processedIds: string[] = []
+  const failedItems: Array<{ eventId: string; error: string }> = []
+  const decisions: unknown[] = []
+  let recalculatedPeriods = 0
+
+  // Isolate each event. A single bad company/period cannot poison the whole batch.
+  // Failed items are retried by the DB with backoff and stop after five attempts.
+  for (const event of relevant) {
+    try {
+      const companyPeriods = await resolveCompanyPeriods([event])
+
+      for (const item of companyPeriods) {
+        const { data: decision, error: decisionError } = await supabase.rpc(
+          'recalculate_company_period_decision',
+          {
+            p_company_entity_ref: item.companyEntityRef,
+            p_period_start: item.periodStart,
+          },
+        )
+        if (decisionError) {
+          throw new Error(`Granular decision failed for ${item.companyEntityRef}:${item.periodStart}: ${decisionError.message}`)
+        }
+        recalculatedPeriods += 1
+        decisions.push(decision)
+      }
+
+      processedIds.push(event.id)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown compliance event processing error'
+      failedItems.push({ eventId: event.id, error: message })
+    }
+  }
+
+  if (processedIds.length > 0) {
+    await completeEvents(processedIds, 'processed')
+  }
+
+  for (const failed of failedItems) {
+    await completeEvents([failed.eventId], 'failed', failed.error)
+  }
+
+  return NextResponse.json({
+    claimed: events.length,
+    processed: processedIds.length,
+    failed: failedItems.length,
+    ignored: ignored.length,
+    recalculatedPeriods,
+    documentFacts,
+    decisions,
+    failures: failedItems,
+    durationMs: Date.now() - startedAt,
+  })
 }

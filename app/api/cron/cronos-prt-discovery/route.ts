@@ -17,18 +17,27 @@ export async function GET(request: NextRequest) {
     const payload = await response.clone().json().catch(() => ({})) as Record<string, any>
     const discovered = Number(payload.discovered ?? 0)
     const inserted = Number(payload.inserted ?? 0)
+    const failedSources = Number(payload.failedSources ?? 0)
+    const partial = Boolean(payload.partial) || (response.ok && failedSources > 0)
+    const status = !response.ok ? 'failed' : partial ? 'partial' : 'completed'
 
     await finishSystemJobRun(jobRun, {
-      status: response.ok ? 'completed' : 'failed',
-      processedCount: discovered,
-      succeededCount: response.ok ? inserted : 0,
-      failedCount: response.ok ? 0 : Math.max(1, discovered),
+      status,
+      processedCount: discovered + failedSources,
+      succeededCount: response.ok ? discovered : 0,
+      failedCount: response.ok ? failedSources : Math.max(1, failedSources || discovered),
       result: {
         discovered,
         inserted,
+        failedSources,
         fileCount: Array.isArray(payload.files) ? payload.files.length : 0,
+        failures: payload.failures ?? [],
       },
-      errorMessage: response.ok ? null : String(payload.error ?? `HTTP ${response.status}`),
+      errorMessage: !response.ok
+        ? String(payload.error ?? `HTTP ${response.status}`)
+        : failedSources > 0
+          ? `${failedSources} PRT source(s) failed while other sources continued`
+          : null,
     })
 
     return response
