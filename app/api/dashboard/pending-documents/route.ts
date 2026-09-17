@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 import { selectCanonicalPendingF301 } from '@/lib/f301-canonical'
+import { selectCanonicalPendingMutualRates } from '@/lib/mutual-rates-canonical'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -245,10 +246,46 @@ export async function GET(request: Request) {
           return query
         })
 
+    const mutualRatesHistoryPromise = executiveCompanyIds && assignedCompanyIdList.length === 0
+      ? Promise.resolve([] as any[])
+      : fetchAllPages<any>((from, to) => {
+          let query: any = admin
+            .from('subcontractor_documents')
+            .select(`
+              id,
+              file_name,
+              document_type_id,
+              status,
+              file_url,
+              created_at,
+              updated_at,
+              uploaded_at,
+              subcontractor_id,
+              subcontractor_rut,
+              reviewed_by_ejecutiva,
+              uploaded_by_ejecutiva,
+              document_period_month,
+              document_period_year,
+              document_period_start,
+              version_number,
+              is_current,
+              ai_document_type,
+              ai_extracted_text,
+              document_type:subcontractor_document_types!inner(code)
+            `)
+            .eq('document_type.code', 'CERT_TASAS_MUTUAL')
+            .order('created_at', { ascending: false })
+            .range(from, to)
+
+          if (executiveCompanyIds) query = query.in('subcontractor_id', assignedCompanyIdList)
+          return query
+        })
+
     const [
       conductorDocs,
       rawSubDocs,
       f301History,
+      mutualRatesHistory,
       conductorTypesResult,
       subTypesResult,
       executivesResult,
@@ -256,6 +293,7 @@ export async function GET(request: Request) {
       conductorPromise,
       subPromise,
       f301HistoryPromise,
+      mutualRatesHistoryPromise,
       supabase.from('document_types').select('id, code, name'),
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
       supabase.from('executive_staff').select('id, full_name'),
@@ -283,18 +321,26 @@ export async function GET(request: Request) {
     const f301TypeIds = new Set(
       (subTypesResult.data || []).filter((item) => item.code === 'F30-1_CLIENTE').map((item) => item.id),
     )
+    const mutualRatesTypeIds = new Set(
+      (subTypesResult.data || []).filter((item) => item.code === 'CERT_TASAS_MUTUAL').map((item) => item.id),
+    )
 
     const { pending: canonicalPendingF301, diagnostics: f301Diagnostics } = selectCanonicalPendingF301(f301History)
     const canonicalPendingF301ById = new Map(canonicalPendingF301.map((doc: any) => [doc.id, doc]))
+    const { pending: canonicalPendingMutualRates, diagnostics: mutualRatesDiagnostics } = selectCanonicalPendingMutualRates(mutualRatesHistory)
+    const canonicalPendingMutualRatesById = new Map(canonicalPendingMutualRates.map((doc: any) => [doc.id, doc]))
 
-    const nonF301Pending = rawSubDocs.filter((doc: any) => !f301TypeIds.has(doc.document_type_id))
+    const ordinaryPending = rawSubDocs.filter(
+      (doc: any) => !f301TypeIds.has(doc.document_type_id) && !mutualRatesTypeIds.has(doc.document_type_id),
+    )
     const mergedRawSubDocs = [
-      ...nonF301Pending,
+      ...ordinaryPending,
       ...canonicalPendingF301ById.values(),
+      ...canonicalPendingMutualRatesById.values(),
     ]
 
     const subDocs = mergedRawSubDocs.filter((doc: any) => {
-      if (f301TypeIds.has(doc.document_type_id)) return true
+      if (f301TypeIds.has(doc.document_type_id) || mutualRatesTypeIds.has(doc.document_type_id)) return true
       if (doc.is_current === true) return true
       const typeCode = subTypeMap.get(doc.document_type_id)?.code
       return Boolean(typeCode && LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES.has(typeCode))
@@ -435,6 +481,7 @@ export async function GET(request: Request) {
             requirementSlots: pendingRequirementSlots,
             extraDocumentsBeyondOnePerRequirement: Math.max(0, filteredSubDocs.length - pendingRequirementSlots),
             f301: f301Diagnostics,
+            mutualRates: mutualRatesDiagnostics,
             pagination: { pageSize: PAGE_SIZE, complete: true },
           }
         : undefined,
