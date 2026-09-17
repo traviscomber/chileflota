@@ -89,17 +89,22 @@ function approvedEvidenceCoversPending(pending: any, approved: any, periodicidad
   )
   if (pendingMonth === null || approvedMonth === null || approvedMonth > pendingMonth) return false
 
+  const cadence = (periodicidad || '').trim().toLowerCase()
+  const delta = pendingMonth - approvedMonth
+
+  // Monthly evidence belongs to one compliance period only. Legacy rows may
+  // still carry a one-year expires_at from the old annual configuration, so
+  // expiry must not bridge a monthly document into later periods.
+  if (cadence === 'mensual') return delta === 0
+
   if (approved.expires_at) {
     const expiry = Date.parse(approved.expires_at)
     const pendingDate = new Date(Math.floor(pendingMonth / 12), pendingMonth % 12, 1).getTime()
     if (Number.isFinite(expiry) && expiry >= pendingDate) return true
   }
 
-  const cadence = (periodicidad || '').trim().toLowerCase()
-  const delta = pendingMonth - approvedMonth
   if (cadence === 'anual') return delta <= 11
   if (cadence === 'trimestral') return delta <= 2
-  if (cadence === 'mensual') return delta === 0
   return false
 }
 
