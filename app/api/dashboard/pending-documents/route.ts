@@ -14,6 +14,7 @@ type Focus = {
 }
 
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
+const PAGE_SIZE = 1000
 
 const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
   'LIQUIDACION_SUELDO',
@@ -75,6 +76,21 @@ async function resolveExecutiveStaffId(admin: ReturnType<typeof createAdminClien
   return matches?.length === 1 ? matches[0].id as string : null
 }
 
+async function fetchAllPages<T>(buildPage: (from: number, to: number) => any): Promise<T[]> {
+  const rows: T[] = []
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildPage(from, from + PAGE_SIZE - 1)
+    if (error) throw error
+
+    const page = (data || []) as T[]
+    rows.push(...page)
+    if (page.length < PAGE_SIZE) break
+  }
+
+  return rows
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await verifyAuth(request as any)
@@ -123,81 +139,78 @@ export async function GET(request: Request) {
       }
     }
 
-    let conductorBaseQuery = supabase
-      .from('uploaded_documents')
-      .select(`
-        id,
-        original_filename,
-        document_type_id,
-        validation_status,
-        file_url,
-        created_at,
-        updated_at,
-        document_period_month,
-        document_period_year,
-        document_period_start,
-        conductor_id,
-        version_number,
-        is_current,
-        conductores (
-          id,
-          nombres,
-          apellido_paterno,
-          rut,
-          rut_proveedor
-        )
-      `)
-      .eq('is_current', true)
-      .or('validation_status.eq.pending,validation_status.is.null')
-      .order('created_at', { ascending: false })
-      .limit(10000)
-
-    let subBaseQuery = supabase
-      .from('subcontractor_documents')
-      .select(`
-        id,
-        file_name,
-        document_type_id,
-        status,
-        file_url,
-        created_at,
-        updated_at,
-        uploaded_at,
-        subcontractor_id,
-        subcontractor_rut,
-        reviewed_by_ejecutiva,
-        uploaded_by_ejecutiva,
-        document_period_month,
-        document_period_year,
-        document_period_start,
-        version_number,
-        is_current
-      `)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(10000)
-
-    // Executives need all current pending records from their assigned companies so the
-    // visible month/year/name/RUT filters are real filters rather than filters over a
-    // pre-truncated current-month dataset.
-    if (auth.user.role === 'ejecutiva') {
-      subBaseQuery = subBaseQuery.eq('is_current', true)
-    }
-
-    const conductorPromise = executiveCompanyIds
-      ? executiveConductorIds.length > 0
-        ? conductorBaseQuery.in('conductor_id', executiveConductorIds)
-        : Promise.resolve({ data: [], error: null })
-      : conductorBaseQuery
-
     const assignedCompanyIdList = executiveCompanyIds ? Array.from(executiveCompanyIds) : []
-    const subPromise = executiveCompanyIds
-      ? assignedCompanyIdList.length > 0
-        ? subBaseQuery.in('subcontractor_id', assignedCompanyIdList)
-        : Promise.resolve({ data: [], error: null })
-      : subBaseQuery
 
-    const [conductorResult, subResult, conductorTypesResult, subTypesResult, executivesResult] = await Promise.all([
+    const conductorPromise = executiveCompanyIds && executiveConductorIds.length === 0
+      ? Promise.resolve([] as any[])
+      : fetchAllPages<any>((from, to) => {
+          let query: any = supabase
+            .from('uploaded_documents')
+            .select(`
+              id,
+              original_filename,
+              document_type_id,
+              validation_status,
+              file_url,
+              created_at,
+              updated_at,
+              document_period_month,
+              document_period_year,
+              document_period_start,
+              conductor_id,
+              version_number,
+              is_current,
+              conductores (
+                id,
+                nombres,
+                apellido_paterno,
+                rut,
+                rut_proveedor
+              )
+            `)
+            .eq('is_current', true)
+            .or('validation_status.eq.pending,validation_status.is.null')
+            .order('created_at', { ascending: false })
+            .range(from, to)
+
+          if (executiveCompanyIds) query = query.in('conductor_id', executiveConductorIds)
+          return query
+        })
+
+    const subPromise = executiveCompanyIds && assignedCompanyIdList.length === 0
+      ? Promise.resolve([] as any[])
+      : fetchAllPages<any>((from, to) => {
+          let query: any = supabase
+            .from('subcontractor_documents')
+            .select(`
+              id,
+              file_name,
+              document_type_id,
+              status,
+              file_url,
+              created_at,
+              updated_at,
+              uploaded_at,
+              subcontractor_id,
+              subcontractor_rut,
+              reviewed_by_ejecutiva,
+              uploaded_by_ejecutiva,
+              document_period_month,
+              document_period_year,
+              document_period_start,
+              version_number,
+              is_current
+            `)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .range(from, to)
+
+          if (auth.user.role === 'ejecutiva') query = query.eq('is_current', true)
+          if (executiveCompanyIds) query = query.in('subcontractor_id', assignedCompanyIdList)
+          return query
+        })
+
+    const [conductorDocs, rawSubDocs, conductorTypesResult, subTypesResult, executivesResult] = await Promise.all([
       conductorPromise,
       subPromise,
       supabase.from('document_types').select('id, code, name'),
@@ -205,14 +218,9 @@ export async function GET(request: Request) {
       supabase.from('executive_staff').select('id, full_name'),
     ])
 
-    if (conductorResult.error) throw conductorResult.error
-    if (subResult.error) throw subResult.error
     if (conductorTypesResult.error) throw conductorTypesResult.error
     if (subTypesResult.error) throw subTypesResult.error
     if (executivesResult.error) throw executivesResult.error
-
-    const conductorDocs = conductorResult.data || []
-    const rawSubDocs = subResult.data || []
 
     const conductorTypeMap = new Map(
       (conductorTypesResult.data || []).map((item) => [item.id, { code: item.code, nombre: item.name }]),
@@ -369,6 +377,7 @@ export async function GET(request: Request) {
             visibleSubcontractorPending: filteredSubDocs.length,
             requirementSlots: pendingRequirementSlots,
             extraDocumentsBeyondOnePerRequirement: Math.max(0, filteredSubDocs.length - pendingRequirementSlots),
+            pagination: { pageSize: PAGE_SIZE, complete: true },
           }
         : undefined,
       companyResolution: 'canonical_transportistas_after_auth',
