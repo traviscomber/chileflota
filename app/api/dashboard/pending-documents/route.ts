@@ -33,6 +33,19 @@ function getFocus(request: Request): Focus | null {
   return { mode, id }
 }
 
+function getCurrentChilePeriod() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Santiago',
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(new Date())
+
+  const year = Number(parts.find((part) => part.type === 'year')?.value)
+  const month = Number(parts.find((part) => part.type === 'month')?.value)
+
+  return { year, month }
+}
+
 async function resolveExecutiveStaffId(admin: ReturnType<typeof createAdminClient>, email: string, authUserId: string) {
   const { data: exact } = await admin
     .from('executive_staff')
@@ -75,6 +88,7 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const admin = createAdminClient()
     const focus = getFocus(request)
+    const currentPeriod = getCurrentChilePeriod()
 
     let executiveStaffId: string | null = null
     let executiveCompanyIds: Set<string> | null = null
@@ -109,7 +123,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const conductorBaseQuery = supabase
+    let conductorBaseQuery = supabase
       .from('uploaded_documents')
       .select(`
         id,
@@ -138,7 +152,7 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false })
       .limit(10000)
 
-    const subBaseQuery = supabase
+    let subBaseQuery = supabase
       .from('subcontractor_documents')
       .select(`
         id,
@@ -162,6 +176,17 @@ export async function GET(request: Request) {
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(10000)
+
+    if (auth.user.role === 'ejecutiva') {
+      conductorBaseQuery = conductorBaseQuery
+        .eq('document_period_month', currentPeriod.month)
+        .eq('document_period_year', currentPeriod.year)
+
+      subBaseQuery = subBaseQuery
+        .eq('is_current', true)
+        .eq('document_period_month', currentPeriod.month)
+        .eq('document_period_year', currentPeriod.year)
+    }
 
     const conductorPromise = executiveCompanyIds
       ? executiveConductorIds.length > 0
@@ -321,21 +346,33 @@ export async function GET(request: Request) {
       ? scopedSubDocs.filter((doc: any) => focus.mode === 'company' && doc.company_id === focus.id)
       : scopedSubDocs
 
+    const pendingRequirementSlots = new Set(
+      filteredSubDocs.map((doc: any) => [
+        doc.company_id,
+        doc.document_type_id,
+        doc.document_period_year,
+        doc.document_period_month,
+      ].join(':')),
+    ).size
+
     return NextResponse.json({
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs,
       scope: auth.user.role === 'ejecutiva'
-        ? 'assigned_executive_current_plus_legacy_multi_instance_pending'
+        ? 'assigned_executive_current_operational_period_pending'
         : 'current_plus_legacy_multi_instance_pending',
       executiveStaffId,
       diagnostics: auth.user.role === 'ejecutiva'
         ? {
+            operationalPeriod: currentPeriod,
             assignedCompanies: executiveCompanyIds?.size || 0,
             assignedConductors: executiveConductorIds.length,
             rawConductorPending: conductorDocs.length,
             rawSubcontractorPending: rawSubDocs.length,
             visibleConductorPending: filteredConductorDocs.length,
             visibleSubcontractorPending: filteredSubDocs.length,
+            requirementSlots: pendingRequirementSlots,
+            extraDocumentsBeyondOnePerRequirement: Math.max(0, filteredSubDocs.length - pendingRequirementSlots),
           }
         : undefined,
       companyResolution: 'canonical_transportistas_after_auth',
