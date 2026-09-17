@@ -440,19 +440,24 @@ export async function GET(request: Request) {
     let suppressedByExplicitSupersession = 0
 
     const subDocs = mergedRawSubDocs.filter((doc: any) => {
+      const typeInfo = subTypeMap.get(doc.document_type_id)
+
+      // F30-1 client and mutual-rate families have their own instance canonicalizers.
+      // Generic supersession/filename coverage is unsafe for them because the legacy
+      // versioning trigger linked distinct clients/subtypes as if they were revisions.
+      if (f301TypeIds.has(doc.document_type_id) || mutualRatesTypeIds.has(doc.document_type_id)) return true
+
       if (explicitlySupersededByApproved.has(doc.id)) {
         suppressedByExplicitSupersession += 1
         return false
       }
 
-      const typeInfo = subTypeMap.get(doc.document_type_id)
       const approvedCandidates = approvedByCompanyType.get(`${doc.subcontractor_id}:${doc.document_type_id}`) || []
       if (approvedCandidates.some((approved: any) => approvedEvidenceCoversPending(doc, approved, typeInfo?.periodicidad))) {
         suppressedByApprovedEvidence += 1
         return false
       }
 
-      if (f301TypeIds.has(doc.document_type_id) || mutualRatesTypeIds.has(doc.document_type_id)) return true
       if (doc.is_current === true) return true
       const typeCode = typeInfo?.code
       return Boolean(typeCode && LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES.has(typeCode))
