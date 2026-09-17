@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
+import { selectCanonicalPendingF301 } from '@/lib/f301-canonical'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -23,7 +24,6 @@ const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
   'COMPROBANTE_PAGO',
   'PLANILLAS_IMPOSICIONES',
   'FOTO_PATENTES',
-  'F30-1_CLIENTE',
 ])
 
 function getFocus(request: Request): Focus | null {
@@ -210,9 +210,52 @@ export async function GET(request: Request) {
           return query
         })
 
-    const [conductorDocs, rawSubDocs, conductorTypesResult, subTypesResult, executivesResult] = await Promise.all([
+    const f301HistoryPromise = executiveCompanyIds && assignedCompanyIdList.length === 0
+      ? Promise.resolve([] as any[])
+      : fetchAllPages<any>((from, to) => {
+          let query: any = admin
+            .from('subcontractor_documents')
+            .select(`
+              id,
+              file_name,
+              document_type_id,
+              status,
+              file_url,
+              created_at,
+              updated_at,
+              uploaded_at,
+              subcontractor_id,
+              subcontractor_rut,
+              reviewed_by_ejecutiva,
+              uploaded_by_ejecutiva,
+              document_period_month,
+              document_period_year,
+              document_period_start,
+              version_number,
+              is_current,
+              ai_document_type,
+              ai_extracted_text,
+              document_type:subcontractor_document_types!inner(code)
+            `)
+            .eq('document_type.code', 'F30-1_CLIENTE')
+            .order('created_at', { ascending: false })
+            .range(from, to)
+
+          if (executiveCompanyIds) query = query.in('subcontractor_id', assignedCompanyIdList)
+          return query
+        })
+
+    const [
+      conductorDocs,
+      rawSubDocs,
+      f301History,
+      conductorTypesResult,
+      subTypesResult,
+      executivesResult,
+    ] = await Promise.all([
       conductorPromise,
       subPromise,
+      f301HistoryPromise,
       supabase.from('document_types').select('id, code, name'),
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
       supabase.from('executive_staff').select('id, full_name'),
@@ -237,7 +280,21 @@ export async function GET(request: Request) {
       (executivesResult.data || []).map((item) => [item.id, item.full_name]),
     )
 
-    const subDocs = rawSubDocs.filter((doc: any) => {
+    const f301TypeIds = new Set(
+      (subTypesResult.data || []).filter((item) => item.code === 'F30-1_CLIENTE').map((item) => item.id),
+    )
+
+    const { pending: canonicalPendingF301, diagnostics: f301Diagnostics } = selectCanonicalPendingF301(f301History)
+    const canonicalPendingF301ById = new Map(canonicalPendingF301.map((doc: any) => [doc.id, doc]))
+
+    const nonF301Pending = rawSubDocs.filter((doc: any) => !f301TypeIds.has(doc.document_type_id))
+    const mergedRawSubDocs = [
+      ...nonF301Pending,
+      ...canonicalPendingF301ById.values(),
+    ]
+
+    const subDocs = mergedRawSubDocs.filter((doc: any) => {
+      if (f301TypeIds.has(doc.document_type_id)) return true
       if (doc.is_current === true) return true
       const typeCode = subTypeMap.get(doc.document_type_id)?.code
       return Boolean(typeCode && LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES.has(typeCode))
@@ -363,8 +420,8 @@ export async function GET(request: Request) {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs,
       scope: auth.user.role === 'ejecutiva'
-        ? 'assigned_executive_current_plus_multi_instance_pending'
-        : 'current_plus_legacy_multi_instance_pending',
+        ? 'assigned_executive_canonical_pending'
+        : 'canonical_pending',
       executiveStaffId,
       diagnostics: auth.user.role === 'ejecutiva'
         ? {
@@ -377,6 +434,7 @@ export async function GET(request: Request) {
             visibleSubcontractorPending: filteredSubDocs.length,
             requirementSlots: pendingRequirementSlots,
             extraDocumentsBeyondOnePerRequirement: Math.max(0, filteredSubDocs.length - pendingRequirementSlots),
+            f301: f301Diagnostics,
             pagination: { pageSize: PAGE_SIZE, complete: true },
           }
         : undefined,
