@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Search, LogOut, User, ChevronDown, Settings, Menu, FileText, Building2, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUserProfile } from '@/hooks/use-user-profile'
 
@@ -61,8 +61,23 @@ function formatFacts(facts?: Record<string, unknown>) {
     .map(([key, value]) => ({ key, value: String(value) }))
 }
 
+function getDocumentSearchContext(pathname: string) {
+  if (pathname.startsWith('/dashboard/company/documentos/pendientes')) return 'pending'
+  if (pathname.startsWith('/dashboard/company/documentos/rechazados')) return 'rejected'
+  if (pathname.startsWith('/dashboard/company/documentos/aprobados')) return 'approved'
+  return 'approved'
+}
+
+function getDocumentSearchPath(pathname: string) {
+  const context = getDocumentSearchContext(pathname)
+  if (context === 'pending') return '/dashboard/company/documentos/pendientes'
+  if (context === 'rejected') return '/dashboard/company/documentos/rechazados'
+  return '/dashboard/company/documentos/aprobados'
+}
+
 export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const { profile } = useUserProfile()
   const searchRef = useRef<HTMLDivElement>(null)
   const [userEmail, setUserEmail] = useState<string>('')
@@ -74,6 +89,8 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
   const [intelligenceLoading, setIntelligenceLoading] = useState(false)
   const [intelligenceResult, setIntelligenceResult] = useState<IntelligenceResponse | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
+  const searchContext = getDocumentSearchContext(pathname)
+  const documentSearchPath = getDocumentSearchPath(pathname)
 
   useEffect(() => {
     const email = document.cookie
@@ -114,7 +131,8 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
     const timeout = window.setTimeout(async () => {
       setSearchLoading(true)
       try {
-        const response = await fetch(`/api/company/search-suggestions?q=${encodeURIComponent(query)}`, {
+        const params = new URLSearchParams({ q: query, context: searchContext })
+        const response = await fetch(`/api/company/search-suggestions?${params.toString()}`, {
           signal: controller.signal,
           cache: 'no-store',
         })
@@ -137,7 +155,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
       window.clearTimeout(timeout)
       controller.abort()
     }
-  }, [searchValue])
+  }, [searchValue, searchContext])
 
   const handleLogout = async () => {
     try {
@@ -153,7 +171,13 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
     setSearchOpen(false)
     setActiveSuggestion(-1)
     setIntelligenceResult(null)
-    router.push(suggestion.href)
+
+    if (suggestion.type === 'driver') {
+      router.push(suggestion.href)
+      return
+    }
+
+    router.push(`${documentSearchPath}?search=${encodeURIComponent(suggestion.value)}`)
   }
 
   const runIntelligenceQuery = async (query: string) => {
@@ -203,7 +227,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
 
     setSearchOpen(false)
     setIntelligenceResult(null)
-    router.push(`/dashboard/company/documentos/aprobados?search=${encodeURIComponent(query)}`)
+    router.push(`${documentSearchPath}?search=${encodeURIComponent(query)}`)
   }
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
