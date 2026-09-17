@@ -82,15 +82,20 @@ function isCoveredByApproved(
     if (normalizeRut(approved.subcontractor_rut) !== pendingRut) return false
     if (approved.document_type_id !== pending.document_type_id) return false
 
+    const approvedMonth = monthIndex(approved.document_period_start)
+    if (approvedMonth === null || approvedMonth > pendingMonth) return false
+    const delta = pendingMonth - approvedMonth
+
+    // Monthly compliance evidence is period-bound. Historical rows may carry a
+    // legacy one-year expires_at generated when these document types were
+    // incorrectly configured as annual; never let that stale expiry bridge months.
+    if (normalizedCadence === 'mensual') return delta === 0
+
     if (approved.expires_at) {
       const expiry = Date.parse(approved.expires_at)
       const periodStart = Date.parse(pendingPeriod)
       if (Number.isFinite(expiry) && Number.isFinite(periodStart) && expiry >= periodStart) return true
     }
-
-    const approvedMonth = monthIndex(approved.document_period_start)
-    if (approvedMonth === null || approvedMonth > pendingMonth) return false
-    const delta = pendingMonth - approvedMonth
 
     if (normalizedCadence === 'anual') return delta <= 11
     if (normalizedCadence === 'trimestral') return delta <= 2
