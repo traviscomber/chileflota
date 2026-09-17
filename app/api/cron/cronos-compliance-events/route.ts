@@ -17,20 +17,32 @@ export async function GET(request: NextRequest) {
     const claimed = Number(payload.claimed ?? payload.processed ?? 0)
     const processed = Number(payload.processed ?? 0)
     const ignored = Number(payload.ignored ?? 0)
-    const failed = response.ok ? 0 : Math.max(1, claimed)
+    const failed = Number(payload.failed ?? (response.ok ? 0 : Math.max(1, claimed)))
+    const succeeded = processed + ignored
+    const status = !response.ok
+      ? 'failed'
+      : failed > 0 && succeeded > 0
+        ? 'partial'
+        : failed > 0
+          ? 'failed'
+          : 'completed'
 
     await finishSystemJobRun(jobRun, {
-      status: response.ok ? 'completed' : 'failed',
+      status,
       processedCount: claimed,
-      succeededCount: response.ok ? processed + ignored : 0,
+      succeededCount: succeeded,
       failedCount: failed,
       result: {
         processed,
+        failed,
         ignored,
         recalculatedPeriods: payload.recalculatedPeriods ?? 0,
         reason: payload.reason ?? null,
+        failures: payload.failures ?? [],
       },
-      errorMessage: response.ok ? null : String(payload.error ?? `HTTP ${response.status}`),
+      errorMessage: failed > 0
+        ? String(payload.error ?? `${failed} compliance event(s) failed`)
+        : null,
     })
 
     return response
