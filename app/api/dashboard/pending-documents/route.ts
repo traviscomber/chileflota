@@ -177,15 +177,11 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false })
       .limit(10000)
 
+    // Executives need all current pending records from their assigned companies so the
+    // visible month/year/name/RUT filters are real filters rather than filters over a
+    // pre-truncated current-month dataset.
     if (auth.user.role === 'ejecutiva') {
-      conductorBaseQuery = conductorBaseQuery
-        .eq('document_period_month', currentPeriod.month)
-        .eq('document_period_year', currentPeriod.year)
-
-      subBaseQuery = subBaseQuery
-        .eq('is_current', true)
-        .eq('document_period_month', currentPeriod.month)
-        .eq('document_period_year', currentPeriod.year)
+      subBaseQuery = subBaseQuery.eq('is_current', true)
     }
 
     const conductorPromise = executiveCompanyIds
@@ -359,7 +355,7 @@ export async function GET(request: Request) {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs,
       scope: auth.user.role === 'ejecutiva'
-        ? 'assigned_executive_current_operational_period_pending'
+        ? 'assigned_executive_all_current_pending'
         : 'current_plus_legacy_multi_instance_pending',
       executiveStaffId,
       diagnostics: auth.user.role === 'ejecutiva'
