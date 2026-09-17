@@ -51,6 +51,58 @@ function getCurrentChilePeriod() {
   return { year, month }
 }
 
+function normalizeFileName(value: string | null | undefined) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+}
+
+function monthIndex(year: number | null | undefined, month: number | null | undefined, periodStart?: string | null) {
+  if (year && month) return year * 12 + month - 1
+  if (periodStart) {
+    const match = /^(\d{4})-(\d{2})/.exec(periodStart)
+    if (match) return Number(match[1]) * 12 + Number(match[2]) - 1
+  }
+  return null
+}
+
+function approvedEvidenceCoversPending(pending: any, approved: any, periodicidad: string | null | undefined) {
+  if (pending.subcontractor_id !== approved.subcontractor_id) return false
+  if (pending.document_type_id !== approved.document_type_id) return false
+
+  const pendingName = normalizeFileName(pending.file_name)
+  const approvedName = normalizeFileName(approved.file_name)
+  if (!pendingName || pendingName !== approvedName) return false
+
+  const pendingMonth = monthIndex(
+    pending.document_period_year,
+    pending.document_period_month,
+    pending.document_period_start,
+  )
+  const approvedMonth = monthIndex(
+    approved.document_period_year,
+    approved.document_period_month,
+    approved.document_period_start,
+  )
+  if (pendingMonth === null || approvedMonth === null || approvedMonth > pendingMonth) return false
+
+  if (approved.expires_at) {
+    const expiry = Date.parse(approved.expires_at)
+    const pendingDate = new Date(Math.floor(pendingMonth / 12), pendingMonth % 12, 1).getTime()
+    if (Number.isFinite(expiry) && expiry >= pendingDate) return true
+  }
+
+  const cadence = (periodicidad || '').trim().toLowerCase()
+  const delta = pendingMonth - approvedMonth
+  if (cadence === 'anual') return delta <= 11
+  if (cadence === 'trimestral') return delta <= 2
+  if (cadence === 'mensual') return delta === 0
+  return false
+}
+
 async function resolveExecutiveStaffId(admin: ReturnType<typeof createAdminClient>, email: string, authUserId: string) {
   const { data: exact } = await admin
     .from('executive_staff')
@@ -213,6 +265,32 @@ export async function GET(request: Request) {
           return query
         })
 
+    const approvedCoveragePromise = executiveCompanyIds && assignedCompanyIdList.length === 0
+      ? Promise.resolve([] as any[])
+      : fetchAllPages<any>((from, to) => {
+          let query: any = admin
+            .from('subcontractor_documents')
+            .select(`
+              id,
+              file_name,
+              document_type_id,
+              subcontractor_id,
+              document_period_month,
+              document_period_year,
+              document_period_start,
+              expires_at,
+              supersedes_document_id,
+              reviewed_at,
+              created_at
+            `)
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false })
+            .range(from, to)
+
+          if (executiveCompanyIds) query = query.in('subcontractor_id', assignedCompanyIdList)
+          return query
+        })
+
     const f301HistoryPromise = executiveCompanyIds && assignedCompanyIdList.length === 0
       ? Promise.resolve([] as any[])
       : fetchAllPages<any>((from, to) => {
@@ -286,6 +364,7 @@ export async function GET(request: Request) {
     const [
       conductorDocs,
       rawSubDocs,
+      approvedCoverageDocs,
       f301History,
       mutualRatesHistory,
       conductorTypesResult,
@@ -294,10 +373,11 @@ export async function GET(request: Request) {
     ] = await Promise.all([
       conductorPromise,
       subPromise,
+      approvedCoveragePromise,
       f301HistoryPromise,
       mutualRatesHistoryPromise,
       supabase.from('document_types').select('id, code, name'),
-      supabase.from('subcontractor_document_types').select('id, code, nombre'),
+      supabase.from('subcontractor_document_types').select('id, code, nombre, periodicidad'),
       supabase.from('executive_staff').select('id, full_name'),
     ])
 
@@ -313,7 +393,7 @@ export async function GET(request: Request) {
     const subTypeMap = new Map(
       (subTypesResult.data || [])
         .filter((item) => !deprecatedCodes.has(item.code))
-        .map((item) => [item.id, { code: item.code, nombre: item.nombre }]),
+        .map((item) => [item.id, { code: item.code, nombre: item.nombre, periodicidad: item.periodicidad }]),
     )
 
     const executiveNameMap = new Map(
@@ -341,10 +421,40 @@ export async function GET(request: Request) {
       ...canonicalPendingMutualRatesById.values(),
     ]
 
+    const explicitlySupersededByApproved = new Set(
+      approvedCoverageDocs
+        .map((doc: any) => doc.supersedes_document_id)
+        .filter(Boolean),
+    )
+
+    const approvedByCompanyType = new Map<string, any[]>()
+    for (const approved of approvedCoverageDocs) {
+      if (!approved.subcontractor_id || !approved.document_type_id) continue
+      const key = `${approved.subcontractor_id}:${approved.document_type_id}`
+      const rows = approvedByCompanyType.get(key) || []
+      rows.push(approved)
+      approvedByCompanyType.set(key, rows)
+    }
+
+    let suppressedByApprovedEvidence = 0
+    let suppressedByExplicitSupersession = 0
+
     const subDocs = mergedRawSubDocs.filter((doc: any) => {
+      if (explicitlySupersededByApproved.has(doc.id)) {
+        suppressedByExplicitSupersession += 1
+        return false
+      }
+
+      const typeInfo = subTypeMap.get(doc.document_type_id)
+      const approvedCandidates = approvedByCompanyType.get(`${doc.subcontractor_id}:${doc.document_type_id}`) || []
+      if (approvedCandidates.some((approved: any) => approvedEvidenceCoversPending(doc, approved, typeInfo?.periodicidad))) {
+        suppressedByApprovedEvidence += 1
+        return false
+      }
+
       if (f301TypeIds.has(doc.document_type_id) || mutualRatesTypeIds.has(doc.document_type_id)) return true
       if (doc.is_current === true) return true
-      const typeCode = subTypeMap.get(doc.document_type_id)?.code
+      const typeCode = typeInfo?.code
       return Boolean(typeCode && LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES.has(typeCode))
     })
 
@@ -482,6 +592,8 @@ export async function GET(request: Request) {
             visibleSubcontractorPending: filteredSubDocs.length,
             requirementSlots: pendingRequirementSlots,
             extraDocumentsBeyondOnePerRequirement: Math.max(0, filteredSubDocs.length - pendingRequirementSlots),
+            suppressedByApprovedEvidence,
+            suppressedByExplicitSupersession,
             f301: f301Diagnostics,
             mutualRates: mutualRatesDiagnostics,
             pagination: { pageSize: PAGE_SIZE, complete: true },
