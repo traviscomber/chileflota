@@ -33,6 +33,35 @@ function getFocus(request: Request): Focus | null {
   return { mode, id }
 }
 
+async function resolveExecutiveStaffId(admin: ReturnType<typeof createAdminClient>, email: string, authUserId: string) {
+  const { data: exact } = await admin
+    .from('executive_staff')
+    .select('id')
+    .ilike('email', email)
+    .eq('is_active', true)
+    .limit(1)
+    .maybeSingle()
+
+  if (exact?.id) return exact.id as string
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('full_name')
+    .eq('id', authUserId)
+    .maybeSingle()
+
+  if (!profile?.full_name) return null
+
+  const { data: matches } = await admin
+    .from('executive_staff')
+    .select('id')
+    .ilike('full_name', profile.full_name)
+    .eq('is_active', true)
+    .limit(2)
+
+  return matches?.length === 1 ? matches[0].id as string : null
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await verifyAuth(request as any)
@@ -46,6 +75,25 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const admin = createAdminClient()
     const focus = getFocus(request)
+
+    let executiveStaffId: string | null = null
+    let executiveCompanyIds: Set<string> | null = null
+
+    if (auth.user.role === 'ejecutiva') {
+      executiveStaffId = await resolveExecutiveStaffId(admin, auth.user.email, auth.user.id)
+      if (!executiveStaffId) {
+        return NextResponse.json({ error: 'No se pudo resolver la ejecutiva activa', success: false }, { status: 403 })
+      }
+
+      const { data: assignedCompanies, error: assignedCompaniesError } = await admin
+        .from('transportistas')
+        .select('id')
+        .eq('assigned_executive_id', executiveStaffId)
+        .eq('is_active', true)
+
+      if (assignedCompaniesError) throw assignedCompaniesError
+      executiveCompanyIds = new Set((assignedCompanies || []).map((company: any) => company.id))
+    }
 
     const [conductorResult, subResult, conductorTypesResult, subTypesResult, executivesResult] = await Promise.all([
       supabase
@@ -225,20 +273,30 @@ export async function GET(request: Request) {
       }
     })
 
+    const scopedConductorDocs = executiveCompanyIds
+      ? normalizedConductorDocs.filter((doc: any) => doc.company_id && executiveCompanyIds!.has(doc.company_id))
+      : normalizedConductorDocs
+    const scopedSubDocs = executiveCompanyIds
+      ? normalizedSubDocs.filter((doc: any) => doc.company_id && executiveCompanyIds!.has(doc.company_id))
+      : normalizedSubDocs
+
     const filteredConductorDocs = focus
-      ? normalizedConductorDocs.filter((doc: any) =>
+      ? scopedConductorDocs.filter((doc: any) =>
           focus.mode === 'conductor' ? doc.conductores?.id === focus.id : doc.company_id === focus.id,
         )
-      : normalizedConductorDocs
+      : scopedConductorDocs
 
     const filteredSubDocs = focus
-      ? normalizedSubDocs.filter((doc: any) => focus.mode === 'company' && doc.company_id === focus.id)
-      : normalizedSubDocs
+      ? scopedSubDocs.filter((doc: any) => focus.mode === 'company' && doc.company_id === focus.id)
+      : scopedSubDocs
 
     return NextResponse.json({
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs,
-      scope: 'current_plus_legacy_multi_instance_pending',
+      scope: auth.user.role === 'ejecutiva'
+        ? 'assigned_executive_current_plus_legacy_multi_instance_pending'
+        : 'current_plus_legacy_multi_instance_pending',
+      executiveStaffId,
       companyResolution: 'canonical_transportistas_after_auth',
       success: true,
     })
