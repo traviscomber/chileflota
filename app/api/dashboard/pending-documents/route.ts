@@ -23,6 +23,7 @@ const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
   'COMPROBANTE_PAGO',
   'PLANILLAS_IMPOSICIONES',
   'FOTO_PATENTES',
+  'F30-1_CLIENTE',
 ])
 
 function getFocus(request: Request): Focus | null {
@@ -205,7 +206,6 @@ export async function GET(request: Request) {
             .order('created_at', { ascending: false })
             .range(from, to)
 
-          if (auth.user.role === 'ejecutiva') query = query.eq('is_current', true)
           if (executiveCompanyIds) query = query.in('subcontractor_id', assignedCompanyIdList)
           return query
         })
@@ -363,7 +363,7 @@ export async function GET(request: Request) {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs,
       scope: auth.user.role === 'ejecutiva'
-        ? 'assigned_executive_all_current_pending'
+        ? 'assigned_executive_current_plus_multi_instance_pending'
         : 'current_plus_legacy_multi_instance_pending',
       executiveStaffId,
       diagnostics: auth.user.role === 'ejecutiva'
