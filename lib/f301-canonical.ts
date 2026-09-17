@@ -1,6 +1,7 @@
 type F301Document = {
   id: string
   subcontractor_id?: string | null
+  file_name?: string | null
   status?: string | null
   is_current?: boolean | null
   document_period_year?: number | string | null
@@ -15,6 +16,16 @@ type F301Document = {
 function normalizeRut(value: string | null | undefined): string | null {
   const normalized = (value || '').replace(/[^0-9kK]/g, '').toLowerCase()
   return normalized.length >= 8 ? normalized : null
+}
+
+function normalizeText(value: string | null | undefined): string {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es-CL')
+    .replace(/\.pdf$/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
 }
 
 export function extractF301PrincipalRut(text: string | null | undefined): string | null {
@@ -48,11 +59,28 @@ function periodPart(value: number | string | null | undefined): string {
   return value == null || value === '' ? 'unknown' : String(value)
 }
 
+function filenameFallbackKey(doc: F301Document): string | null {
+  const normalized = normalizeText(doc.file_name)
+  if (!normalized) return null
+
+  const meaningful = normalized
+    .replace(/\bf30\b/g, ' ')
+    .replace(/\bcertificado\b/g, ' ')
+    .replace(/\bcliente\b/g, ' ')
+    .replace(/\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b/g, ' ')
+    .replace(/\b20\d{2}\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return meaningful.length >= 3 ? meaningful : normalized
+}
+
 export function selectCanonicalPendingF301<T extends F301Document>(docs: T[]): {
   pending: T[]
   diagnostics: {
     input: number
     canonicalPending: number
+    filenameFallback: number
     ambiguousCurrentFallback: number
     unresolvedHistorical: number
     excludedMisclassifiedAntecedentes: number
@@ -61,6 +89,7 @@ export function selectCanonicalPendingF301<T extends F301Document>(docs: T[]): {
   const keyedGroups = new Map<string, T[]>()
   const ambiguous: T[] = []
   let excludedMisclassifiedAntecedentes = 0
+  let filenameFallback = 0
 
   for (const doc of docs) {
     if (isMisclassifiedAntecedentes(doc)) {
@@ -69,16 +98,20 @@ export function selectCanonicalPendingF301<T extends F301Document>(docs: T[]): {
     }
 
     const principalRut = extractF301PrincipalRut(doc.ai_extracted_text)
-    if (!principalRut) {
+    const filenameKey = principalRut ? null : filenameFallbackKey(doc)
+
+    if (!principalRut && !filenameKey) {
       ambiguous.push(doc)
       continue
     }
+
+    if (!principalRut && filenameKey) filenameFallback += 1
 
     const key = [
       doc.subcontractor_id || 'unknown',
       periodPart(doc.document_period_year),
       periodPart(doc.document_period_month),
-      principalRut,
+      principalRut ? `rut:${principalRut}` : `file:${filenameKey}`,
     ].join(':')
 
     const group = keyedGroups.get(key) || []
@@ -108,6 +141,7 @@ export function selectCanonicalPendingF301<T extends F301Document>(docs: T[]): {
     diagnostics: {
       input: docs.length,
       canonicalPending: pending.length,
+      filenameFallback,
       ambiguousCurrentFallback: ambiguousCurrent.length,
       unresolvedHistorical: ambiguous.filter((doc) => doc.is_current !== true && doc.status === 'pending').length,
       excludedMisclassifiedAntecedentes,
