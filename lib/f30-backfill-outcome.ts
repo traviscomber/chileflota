@@ -1,4 +1,9 @@
-export type F30BackfillTerminalStatus = 'valid' | 'warning' | 'rut_mismatch' | 'analysis_failed'
+export type F30BackfillTerminalStatus =
+  | 'valid'
+  | 'warning'
+  | 'rut_mismatch'
+  | 'analysis_failed'
+  | 'analysis_deferred'
 
 export type F30BackfillOutcome = {
   status: F30BackfillTerminalStatus
@@ -11,6 +16,7 @@ const TERMINAL_STATUSES = new Set<F30BackfillTerminalStatus>([
   'warning',
   'rut_mismatch',
   'analysis_failed',
+  'analysis_deferred',
 ])
 
 export function resolveF30BackfillOutcome(input: {
@@ -19,6 +25,23 @@ export function resolveF30BackfillOutcome(input: {
   payload: any
 }): F30BackfillOutcome {
   const { httpOk, httpStatus, payload } = input
+
+  // Infrastructure/AI availability is not a document validation failure.
+  // Persist an explicit deferred state so the cron does not poison-loop while
+  // leaving the canonical document approval status untouched.
+  if (payload?.analysisUnavailable === true) {
+    return {
+      status: 'analysis_deferred',
+      persistTerminalState: true,
+      details: {
+        detected: false,
+        warnings: ['analysis_unavailable'],
+        reason: payload?.reason || 'ai_unavailable',
+        error: payload?.error || 'AI analysis is temporarily unavailable',
+        retryable: payload?.retryable !== false,
+      },
+    }
+  }
 
   if (!httpOk || payload?.success !== true) {
     const error = payload?.error || `HTTP ${httpStatus}`
