@@ -7,6 +7,7 @@ import {
   FileClock,
   FolderSearch2,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react"
 
 export const revalidate = 300
@@ -143,7 +144,7 @@ export default async function LandingPage() {
                 <div className="mt-7 space-y-px bg-[var(--cf-border)]">
                   {[
                     ["01", "Subcontratista", "Carga sus documentos directamente en la plataforma."],
-                    ["02", "ChileFlota", "Ordena la evidencia y la incorpora a la bandeja de revisión correspondiente."],
+                    ["02", "ChileFlota + IA", "Ordena la evidencia, extrae datos verificables y la incorpora a la bandeja correspondiente."],
                     ["03", "Ejecutiva", "Revisa el documento y decide aprobar o rechazar con trazabilidad."],
                     ["04", "Operación", "El estado queda actualizado y la evidencia disponible para seguir operando."],
                   ].map(([number, actor, text]) => (
@@ -251,9 +252,55 @@ export default async function LandingPage() {
       </section>
 
       <section className="border-y border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
+            <div>
+              <SectionIndex>03 / IA aplicada al proceso</SectionIndex>
+              <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em]">
+                La IA prepara la revisión. La ejecutiva toma la decisión.
+              </h2>
+              <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
+                ChileFlota usa IA para reducir trabajo manual sobre cada archivo sin quitar el control humano del proceso documental.
+              </p>
+            </div>
+
+            <div className="space-y-px bg-[var(--cf-border)]">
+              {[
+                ["01", "Lectura automática", "Extrae tipo de documento, fechas de emisión y vencimiento, número de documento, texto y nivel de confianza."],
+                ["02", "PDF e imágenes", "Lee texto nativo cuando existe y usa lectura visual como respaldo para documentos escaneados o imágenes."],
+                ["03", "Validaciones especializadas", "Aplica reglas específicas sobre documentos como F30-1, periodo, RUT y señales de inconsistencia."],
+                ["04", "Alertas operacionales", "Detecta vencimientos y próximos vencimientos para convertir análisis documental en acciones concretas."],
+                ["05", "Corrección humana", "La ejecutiva puede confirmar o corregir el análisis; esas correcciones quedan registradas como feedback."],
+              ].map(([number, title, text]) => (
+                <div key={number} className="grid gap-4 bg-[var(--cf-surface)] p-5 sm:grid-cols-[52px_180px_1fr] sm:items-center">
+                  <span className="font-mono text-xs text-[var(--cf-accent)]">{number}</span>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[var(--cf-focus-ring)]" aria-hidden="true" />
+                    <p className="text-sm font-semibold text-[var(--cf-text)]">{title}</p>
+                  </div>
+                  <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-5 border-t border-[var(--cf-border)] pt-6 sm:grid-cols-[1fr_1fr]">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">IA como apoyo</p>
+              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Clasifica, extrae, alerta y propone contexto.</p>
+            </div>
+            <div className="border-l-2 border-[var(--cf-accent)] pl-5">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Control humano</p>
+              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">La aprobación o rechazo sigue siendo decisión de la ejecutiva.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
           <div>
-            <SectionIndex>03 / Lectura operacional</SectionIndex>
+            <SectionIndex>04 / Lectura operacional</SectionIndex>
             <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em]">
               La operación necesita respuestas verificables.
             </h2>
@@ -281,7 +328,7 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 border-y border-[var(--cf-border)] py-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-center lg:gap-16">
             <div>
-              <SectionIndex>04 / Evidencia operacional</SectionIndex>
+              <SectionIndex>05 / Evidencia operacional</SectionIndex>
               <h2 className="mt-4 max-w-md text-3xl font-semibold tracking-[-0.035em]">
                 Implementación activa y operación registrada.
               </h2>
