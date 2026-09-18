@@ -4,9 +4,7 @@ import {
   AlertTriangle,
   ArrowRight,
   BadgeCheck,
-  BarChart3,
   Building2,
-  Check,
   Clock3,
   FileCheck2,
   FileText,
@@ -14,7 +12,6 @@ import {
   ListChecks,
   ShieldCheck,
   Sparkles,
-  Truck,
   Users,
 } from "lucide-react"
 
@@ -87,7 +84,7 @@ export default async function LandingPage() {
       </header>
 
       <section id="solucion" className="relative border-b border-[var(--cf-border)] pt-16">
-        <div className="mx-auto grid max-w-7xl lg:grid-cols-[0.82fr_1.18fr]">
+        <div className="mx-auto grid max-w-7xl lg:grid-cols-[0.7fr_1.3fr]">
           <div className="flex min-h-[690px] items-center px-4 py-16 sm:px-6 lg:px-8 lg:pr-14">
             <div className="max-w-[590px]">
               <div className="flex items-center gap-4">
@@ -354,78 +351,45 @@ export default async function LandingPage() {
       </section>
 
       <section className="border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[0.62fr_1.38fr] lg:items-center lg:gap-16">
-            <div>
-              <div className="flex items-center gap-4">
-                <SectionLabel>05 / Evidencia operacional</SectionLabel>
-                <AccentRule />
-              </div>
-              <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
-                Implementación activa y operación registrada.
-              </h2>
-              <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
-                ChileFlota opera actualmente sobre una implementación productiva para el control y revisión documental de Transportes Labbe.
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:items-start lg:gap-16">
+          <div>
+            <div className="flex items-center gap-4">
+              <SectionLabel>05 / Evidencia operacional</SectionLabel>
+              <AccentRule />
+            </div>
+            <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
+              Implementación activa. Evidencia real.
+            </h2>
+            <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
+              ChileFlota ya opera en producción para el control y revisión documental de Transportes Labbe.
+            </p>
+          </div>
+
+          <div className="grid border border-[var(--cf-border)] bg-[var(--cf-border)] sm:grid-cols-2">
+            <div className="bg-[var(--cf-surface)] p-7 sm:p-8">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Implementación activa</p>
+              <p className="mt-5 text-3xl font-semibold tracking-[-0.035em]">Transportes Labbe</p>
+              <p className="mt-3 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
+                Flujo productivo de carga, revisión, validación y trazabilidad documental.
               </p>
             </div>
-
-            <div className="relative min-h-[330px] overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
-              <img
-                src={AI_VISUAL}
-                alt=""
-                aria-hidden="true"
-                width="1672"
-                height="941"
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover object-right opacity-55"
-              />
-              <div className="absolute inset-0 bg-[rgba(17,18,20,0.58)]" />
-              <div className="relative z-10 flex min-h-[330px] flex-col justify-between p-6 sm:p-8">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--cf-accent)]" />
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-secondary)]">Implementación activa</p>
-                  </div>
-                  <p className="mt-6 text-3xl font-semibold">Transportes Labbe</p>
-                  <p className="mt-2 max-w-md text-sm text-[var(--cf-text-secondary)]">Control documental de flota en operación.</p>
-                </div>
-
-                <div className="grid gap-px bg-[var(--cf-border)] sm:grid-cols-3">
-                  <div className="bg-[rgba(23,23,25,0.94)] p-4">
-                    <Truck className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
-                    <p className="mt-3 text-sm font-semibold">Operación real</p>
-                    <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Uso continuo en entorno productivo</p>
-                  </div>
-                  <div className="bg-[rgba(23,23,25,0.94)] p-4">
-                    <BarChart3 className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
-                    <p className="mt-3 text-sm font-semibold">Procesos controlados</p>
-                    <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Evidencia y trazabilidad</p>
-                  </div>
-                  <div className="bg-[rgba(23,23,25,0.94)] p-4">
-                    <ShieldCheck className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
-                    <p className="mt-3 text-sm font-semibold">Sin datos personales</p>
-                    <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Sólo evidencia agregada pública</p>
-                  </div>
-                </div>
+            <div className="bg-[var(--cf-surface)] p-7 sm:p-8">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Actividad registrada</p>
+              <p className="mt-5 text-4xl font-semibold tracking-[-0.045em]">
+                {processedDocumentCount !== null ? formatNumber.format(processedDocumentCount) : "Activa"}
+              </p>
+              <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">documentos procesados por ChileFlota</p>
+              <div className="mt-8 flex items-center gap-3 border-t border-[var(--cf-border)] pt-5 text-xs text-[var(--cf-text-muted)]">
+                <ShieldCheck className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
+                Sólo evidencia agregada pública
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <img
-          src={AI_VISUAL}
-          alt=""
-          aria-hidden="true"
-          width="1672"
-          height="941"
-          loading="lazy"
-          className="absolute inset-y-0 right-0 h-full w-[52%] object-cover object-right opacity-20"
-        />
-        <div className="absolute inset-0 bg-[rgba(23,23,25,0.82)]" />
-
-        <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+      <section className="border-b border-[var(--cf-border)] px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto flex max-w-7xl flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="flex items-center gap-4">
               <SectionLabel>Acceso clientes</SectionLabel>
