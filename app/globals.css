@@ -47,6 +47,14 @@
   --cf-warning: #D9B65C;
   --cf-danger: #E17B8C;
   --cf-radius: 6px;
+
+  /* DESIGN.md canonical aliases. Keep legacy names above for existing product surfaces. */
+  --cf-canvas: var(--cf-bg);
+  --cf-surface-raised: var(--cf-surface-2);
+  --cf-border: var(--cf-line);
+  --cf-accent: var(--cf-burgundy);
+  --cf-accent-hover: var(--cf-burgundy-hover);
+  --cf-accent-soft: #3B2029;
 }
 
 @layer base {
