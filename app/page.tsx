@@ -63,97 +63,23 @@ function SectionIndex({ children }: { children: React.ReactNode }) {
 function HeroOperationalBackdrop() {
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-      <svg
-        viewBox="0 0 1600 760"
-        preserveAspectRatio="xMidYMid slice"
-        className="h-full w-full"
-        role="presentation"
-      >
-        <rect width="1600" height="760" fill="var(--cf-canvas)" />
-        <rect x="730" y="0" width="870" height="760" fill="var(--cf-sidebar)" />
-        <path d="M0 600 H1600" stroke="var(--cf-border)" strokeWidth="1" />
-        <path d="M1020 0 V760" stroke="var(--cf-border)" strokeWidth="1" opacity="0.5" />
-
-        <g opacity="0.7">
-          <path d="M0 110 H1600 M0 190 H1600 M0 270 H1600 M0 350 H1600 M0 430 H1600 M0 510 H1600" stroke="var(--cf-border)" strokeWidth="1" opacity="0.18" />
-          <path d="M800 0 V760 M880 0 V760 M960 0 V760 M1040 0 V760 M1120 0 V760 M1200 0 V760 M1280 0 V760 M1360 0 V760 M1440 0 V760" stroke="var(--cf-border)" strokeWidth="1" opacity="0.18" />
-        </g>
-
-        <g transform="translate(780 118)">
-          <g>
-            <rect x="0" y="16" width="170" height="82" fill="var(--cf-surface)" stroke="var(--cf-border)" />
-            <rect x="20" y="34" width="70" height="8" fill="var(--cf-text-muted)" opacity="0.45" />
-            <rect x="20" y="56" width="110" height="2" fill="var(--cf-border)" />
-            <circle cx="148" cy="57" r="5" fill="var(--cf-accent)" />
-          </g>
-          <g transform="translate(18 118)">
-            <rect x="0" y="0" width="170" height="82" fill="var(--cf-surface)" stroke="var(--cf-border)" />
-            <rect x="20" y="18" width="54" height="8" fill="var(--cf-text-muted)" opacity="0.45" />
-            <rect x="20" y="40" width="110" height="2" fill="var(--cf-border)" />
-            <circle cx="148" cy="41" r="5" fill="var(--cf-accent)" />
-          </g>
-          <g transform="translate(0 220)">
-            <rect x="0" y="0" width="170" height="82" fill="var(--cf-surface)" stroke="var(--cf-border)" />
-            <rect x="20" y="18" width="66" height="8" fill="var(--cf-text-muted)" opacity="0.45" />
-            <rect x="20" y="40" width="112" height="2" fill="var(--cf-border)" />
-            <circle cx="148" cy="41" r="5" fill="var(--cf-accent)" />
-          </g>
-          <g transform="translate(18 322)">
-            <rect x="0" y="0" width="170" height="82" fill="var(--cf-surface)" stroke="var(--cf-border)" />
-            <rect x="20" y="18" width="58" height="8" fill="var(--cf-text-muted)" opacity="0.45" />
-            <rect x="20" y="40" width="104" height="2" fill="var(--cf-border)" />
-            <circle cx="148" cy="41" r="5" fill="var(--cf-accent)" />
-          </g>
-        </g>
-
-        <g transform="translate(1010 144)">
-          <rect x="0" y="0" width="300" height="392" fill="var(--cf-canvas)" stroke="var(--cf-border)" strokeWidth="1.2" />
-          <rect x="0" y="0" width="300" height="54" fill="var(--cf-surface)" />
-          <rect x="20" y="21" width="88" height="8" fill="var(--cf-text-secondary)" opacity="0.45" />
-          <circle cx="270" cy="27" r="4" fill="var(--cf-text-muted)" />
-          <circle cx="284" cy="27" r="4" fill="var(--cf-text-muted)" />
-          {[0, 1, 2, 3].map((row) => (
-            <g key={row} transform={`translate(0 ${54 + row * 82})`}>
-              <rect x="0" y="0" width="300" height="82" fill="var(--cf-canvas)" stroke="var(--cf-border)" />
-              <rect x="22" y="24" width="108" height="8" fill="var(--cf-text-secondary)" opacity="0.6" />
-              <rect x="22" y="45" width="72" height="2" fill="var(--cf-border)" />
-              <circle cx="262" cy="39" r="17" fill="var(--cf-accent-soft)" />
-              <path d="M254 39 l6 6 11 -14" fill="none" stroke="var(--cf-focus-ring)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            </g>
-          ))}
-        </g>
-
-        <g fill="none" strokeWidth="1.5">
-          <path d="M948 175 C980 175 980 185 1010 185" stroke="var(--cf-accent)" />
-          <path d="M966 277 C990 277 990 267 1010 267" stroke="var(--cf-border)" />
-          <path d="M948 379 C980 379 980 349 1010 349" stroke="var(--cf-accent)" />
-          <path d="M966 481 C990 481 990 431 1010 431" stroke="var(--cf-border)" />
-          <path d="M1310 340 C1370 340 1370 380 1428 380" stroke="var(--cf-accent)" />
-        </g>
-
-        <g transform="translate(1380 324)">
-          <path d="M0 150 H176 V79 H132 L106 46 H44 L20 82 H0 Z" fill="var(--cf-surface-raised)" stroke="var(--cf-border)" />
-          <rect x="32" y="94" width="96" height="38" fill="var(--cf-sidebar)" />
-          <path d="M132 79 H176 V150 H132 Z" fill="var(--cf-surface)" />
-          <circle cx="43" cy="151" r="19" fill="var(--cf-canvas)" stroke="var(--cf-text-muted)" />
-          <circle cx="143" cy="151" r="19" fill="var(--cf-canvas)" stroke="var(--cf-text-muted)" />
-          <rect x="62" y="58" width="45" height="27" fill="var(--cf-canvas)" stroke="var(--cf-border)" />
-          <path d="M0 150 H176" stroke="var(--cf-accent)" strokeWidth="2" />
-        </g>
-
-        <g opacity="0.75">
-          <path d="M1340 555 H1600" stroke="var(--cf-border)" />
-          <path d="M1320 582 H1600" stroke="var(--cf-border)" />
-          <path d="M1468 250 V550" stroke="var(--cf-border)" />
-          <path d="M1518 220 V550" stroke="var(--cf-border)" />
-          <path d="M1568 190 V550" stroke="var(--cf-border)" />
-        </g>
-
-        <circle cx="1452" cy="286" r="30" fill="var(--cf-accent)" />
-        <path d="M1439 286 l10 10 18 -24" fill="none" stroke="var(--cf-text)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-
-        <rect x="710" y="0" width="120" height="760" fill="var(--cf-canvas)" opacity="0.82" />
-      </svg>
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1768207750854-fb0cbd9c19f0?auto=format&fit=crop&fm=jpg&q=82&w=2400')",
+        }}
+      />
+      <div className="absolute inset-0 bg-[rgba(9,10,12,0.48)]" />
+      <div className="absolute inset-y-0 left-0 w-[64%] bg-[linear-gradient(90deg,rgba(17,18,20,0.99)_0%,rgba(17,18,20,0.95)_58%,rgba(17,18,20,0.18)_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(180deg,rgba(17,18,20,0)_0%,rgba(17,18,20,0.82)_58%,rgba(17,18,20,0.98)_100%)]" />
+      <div className="absolute inset-0 bg-grid opacity-20" />
+      <div className="absolute right-8 top-28 hidden border-l border-[var(--cf-border)] pl-5 lg:block">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--cf-text-muted)]">Flota en movimiento</p>
+        <p className="mt-2 max-w-[150px] text-xs leading-5 text-[var(--cf-text-secondary)]">
+          Documentación bajo control.
+        </p>
+      </div>
     </div>
   )
 }
@@ -186,31 +112,36 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      <section className="relative min-h-[720px] overflow-hidden border-b border-[var(--cf-border)] pt-16">
+      <section className="relative min-h-[760px] overflow-hidden border-b border-[var(--cf-border)] pt-16">
         <HeroOperationalBackdrop />
 
-        <div className="relative z-10 mx-auto flex min-h-[720px] max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
-          <div className="grid flex-1 items-center py-16 lg:grid-cols-[0.72fr_1.28fr] lg:py-20">
-            <div className="max-w-xl bg-[var(--cf-canvas)]/95 pr-0 lg:pr-10">
-              <SectionIndex>Control documental de flota</SectionIndex>
-              <h1 className="mt-5 text-4xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-5xl lg:text-[64px]">
+        <div className="relative z-10 mx-auto flex min-h-[760px] max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-1 items-center py-14 lg:py-20">
+            <div className="max-w-[690px]">
+              <div className="flex items-center gap-4">
+                <SectionIndex>Control documental de flota</SectionIndex>
+                <span className="hidden h-px w-12 bg-[var(--cf-border)] sm:block" />
+              </div>
+
+              <h1 className="mt-6 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-[var(--cf-text)] sm:text-6xl lg:text-[72px]">
                 Cumplimiento documental para una operación continua.
               </h1>
-              <p className="mt-6 max-w-lg text-base leading-7 text-[var(--cf-text-secondary)]">
-                Evidencia, vigencias y revisión documental en una sola lectura operacional.
+
+              <p className="mt-7 max-w-[610px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
+                ChileFlota centraliza evidencia, vigencias y revisión documental para que la flota opere con respaldo y sin reconstruir información entre correos, planillas y mensajes.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/login"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-5 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)]"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-6 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)]"
                 >
                   Ingresar a la plataforma
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
                 <a
                   href="#modelo-operacional"
-                  className="inline-flex h-11 items-center justify-center rounded-[var(--cf-radius)] border border-[var(--cf-border)] bg-[var(--cf-canvas)] px-5 text-sm font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
+                  className="inline-flex h-12 items-center justify-center rounded-[var(--cf-radius)] border border-[var(--cf-border)] bg-[rgba(17,18,20,0.72)] px-6 text-sm font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
                 >
                   Ver modelo operacional
                 </a>
@@ -218,29 +149,29 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="grid border-t border-[var(--cf-border)] bg-[var(--cf-sidebar)] sm:grid-cols-[1.4fr_1fr_1fr]">
+          <div className="grid border-t border-[var(--cf-border)] bg-[rgba(17,18,20,0.94)] sm:grid-cols-3">
             <div className="px-5 py-5 sm:px-6">
-              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Actividad registrada</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Actividad registrada</p>
               {processedDocumentCount !== null && processedDocumentCount > 0 ? (
-                <p className="mt-1 text-4xl font-semibold tracking-[-0.045em] text-[var(--cf-text)]">
+                <p className="mt-2 text-4xl font-semibold tracking-[-0.045em] text-[var(--cf-text)]">
                   {formatNumber.format(processedDocumentCount)}
                 </p>
               ) : (
-                <p className="mt-1 text-lg font-semibold text-[var(--cf-text)]">Operación activa</p>
+                <p className="mt-2 text-xl font-semibold text-[var(--cf-text)]">Operación activa</p>
               )}
               <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">documentos procesados por ChileFlota</p>
             </div>
 
             <div className="border-t border-[var(--cf-border)] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
-              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Implementación productiva</p>
-              <p className="mt-2 text-base font-semibold text-[var(--cf-text)]">Transportes Labbe</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Implementación activa</p>
+              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Transportes Labbe</p>
               <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">control documental operacional</p>
             </div>
 
             <div className="border-t border-[var(--cf-border)] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
-              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Lectura de operación</p>
-              <p className="mt-2 text-base font-semibold text-[var(--cf-text)]">Faltantes · vigencias · respaldo</p>
-              <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">sin exponer datos personales</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Lectura operacional</p>
+              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Faltantes · vigencias · respaldo</p>
+              <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">actividad agregada, sin datos personales</p>
             </div>
           </div>
         </div>
