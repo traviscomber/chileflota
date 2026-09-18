@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download, Sparkles, User, Building2 } from "lucide-react"
+import { Clock, ArrowLeft, FileText, Check, X, Loader2, Download, Sparkles, ChevronUp, ChevronDown } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
@@ -96,6 +96,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [docType, setDocType] = useState<'conductor' | 'subcontractor'>('conductor')
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [inboxSource, setInboxSource] = useState<'all' | 'conductor' | 'subcontractor'>('all')
+  const [sessionReviewed, setSessionReviewed] = useState(0)
+  const [statusMessage, setStatusMessage] = useState('')
 
   useEffect(() => {
     setRemovedIds(new Set())
@@ -124,6 +126,22 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     const rawDate = doc.uploaded_at || doc.created_at
     if (!rawDate) return 'Sin fecha'
     return formatToChileTime(rawDate, "d 'de' MMMM 'de' yyyy")
+  }
+
+  const getWaitDays = (doc: PendingDocument) => {
+    const rawDate = doc.uploaded_at || doc.created_at
+    if (!rawDate) return null
+    const time = new Date(rawDate).getTime()
+    if (!Number.isFinite(time)) return null
+    return Math.max(0, Math.floor((Date.now() - time) / 86400000))
+  }
+
+  const getWaitLabel = (doc: PendingDocument) => {
+    const days = getWaitDays(doc)
+    if (days === null) return 'Sin fecha'
+    if (days === 0) return 'Hoy'
+    if (days === 1) return '1 día'
+    return `${days} días`
   }
 
   const getDocumentTypeChipClass = (doc: PendingDocument) => {
@@ -284,6 +302,32 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     ? (Array.isArray(selectedDoc.conductores) ? selectedDoc.conductores[0] : selectedDoc.conductores)
     : null
   const selectedSource = selectedDoc ? getDocumentSource(selectedDoc) : 'subcontractor'
+  const selectedIndex = selectedDoc ? inboxDocs.findIndex((doc) => doc.id === selectedDoc.id) : -1
+
+  const selectRelative = (offset: number) => {
+    if (!inboxDocs.length) return
+    const current = selectedIndex >= 0 ? selectedIndex : 0
+    const next = Math.min(inboxDocs.length - 1, Math.max(0, current + offset))
+    setSelectedDocId(inboxDocs[next]?.id || null)
+  }
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input, textarea, [role="combobox"], [contenteditable="true"]')) return
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        selectRelative(1)
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        selectRelative(-1)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [inboxDocs, selectedIndex])
 
   const handleAnalyzeDocument = async (docId: string, type: 'conductor' | 'subcontractor') => {
     setAnalyzing(docId)
@@ -367,6 +411,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       console.log('[v0] Pending docs: Status change successful', result)
 
       setRemovedIds(prev => new Set([...prev, docId]))
+      setSessionReviewed((count) => count + 1)
+      setStatusMessage(`Documento ${newStatus === 'aprobado' ? 'aprobado' : 'rechazado'}. Continuando con el siguiente.`)
 
       console.log('[v0] Pending docs: Broadcasting status change event after 200ms delay')
       setTimeout(() => {
@@ -381,11 +427,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         })
       }, 200)
 
-      const msg = document.createElement('div')
-      msg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
-      msg.textContent = `Documento ${newStatus === 'aprobado' ? 'aprobado' : 'rechazado'}`
-      document.body.appendChild(msg)
-      setTimeout(() => msg.remove(), 3000)
+      setTimeout(() => setStatusMessage(''), 3000)
 
     } catch (error) {
       console.error('[v0] Pending docs: Error:', error)
@@ -430,6 +472,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
   return (
     <div className="space-y-4">
+      <div aria-live="polite" className="sr-only">{statusMessage}</div>
       <div className="flex flex-col gap-4 border-b border-[var(--cf-border)] pb-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex items-start gap-3">
           <Link href="/dashboard/company">
@@ -443,9 +486,15 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
             <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">
               Documentos pendientes
             </h1>
-            <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">
-              {totalPendientes.toLocaleString('es-CL')} documentos en tu cartera. Revisa, decide y continúa con el siguiente.
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <span className="text-[var(--cf-text-secondary)]">
+                {totalPendientes.toLocaleString('es-CL')} por revisar
+              </span>
+              <span className="text-[var(--cf-text-muted)]">·</span>
+              <span className="text-[var(--cf-success)]">
+                {sessionReviewed.toLocaleString('es-CL')} resueltos en esta sesión
+              </span>
+            </div>
           </div>
         </div>
 
@@ -475,19 +524,25 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         executives={executives}
         companies={companies}
         documentTypes={documentTypes}
+        compact
+        hideExecutive
       />
 
-      <div className="grid min-h-[70vh] overflow-hidden rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)] lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]">
+      <div className="grid min-h-[70vh] overflow-hidden rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]">
         <aside className="border-b border-[var(--cf-border)] lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between border-b border-[var(--cf-border)] px-4 py-3">
             <div>
               <p className="text-sm font-medium text-[var(--cf-text)]">Pendientes</p>
-              <p className="text-xs text-[var(--cf-text-muted)]">{inboxDocs.length.toLocaleString('es-CL')} visibles</p>
+              <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--cf-text-muted)]">
+                <span>{inboxDocs.length.toLocaleString('es-CL')} visibles</span>
+                <span aria-hidden="true">·</span>
+                <span>más antiguos primero</span>
+              </div>
             </div>
             <Clock className="h-4 w-4 text-[#D9B65C]" />
           </div>
 
-          <div className="max-h-[70vh] overflow-y-auto">
+          <div className="max-h-[38vh] overflow-y-auto lg:max-h-[70vh]">
             {inboxDocs.length === 0 ? (
               <div className="px-5 py-12 text-center">
                 <Check className="mx-auto h-5 w-5 text-[#67C18D]" />
@@ -512,25 +567,33 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                     key={doc.id}
                     type="button"
                     onClick={() => setSelectedDocId(doc.id)}
+                    aria-pressed={isSelected}
                     className={`w-full border-b border-[var(--cf-border)] px-4 py-3 text-left transition-colors ${
-                      isSelected ? 'bg-[var(--cf-surface-raised)]' : 'hover:bg-[var(--cf-canvas)]'
+                      isSelected ? 'bg-[var(--cf-surface-2)] shadow-[inset_2px_0_0_var(--cf-burgundy)]' : 'hover:bg-[var(--cf-bg)]'
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`mt-1 h-2 w-2 flex-none rounded-full ${source === 'conductor' ? 'bg-blue-400' : 'bg-amber-400'}`} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <p className="truncate text-sm font-medium text-[var(--cf-text)]">
                             {company?.razon_social || doc.empresa_nombre || (conductor ? `${conductor.nombres} ${conductor.apellido_paterno}` : 'Sin empresa')}
                           </p>
-                          <span className="flex-none text-[10px] text-[var(--cf-text-muted)]">{getDocumentPeriod(doc)}</span>
+                          <span className={`flex-none text-[10px] font-medium ${
+                            (getWaitDays(doc) || 0) >= 7 ? 'text-[var(--cf-warning)]' : 'text-[var(--cf-text-muted)]'
+                          }`}>{getWaitLabel(doc)}</span>
                         </div>
-                        <p className="mt-1 truncate text-xs text-[var(--cf-text-secondary)]">
-                          {getDocumentTypeLabel(doc)}
-                        </p>
-                        <p className="mt-1 truncate text-[11px] text-[var(--cf-text-muted)]">
-                          {doc.original_filename || doc.file_name || 'Documento sin nombre'}
-                        </p>
+                        <div className="mt-1 flex min-w-0 items-center gap-2">
+                          <span className="flex-none text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">
+                            {source === 'conductor' ? 'Conductor' : 'Empresa'}
+                          </span>
+                          <span className="truncate text-xs text-[var(--cf-text-secondary)]">
+                            {getDocumentTypeLabel(doc)}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[var(--cf-text-muted)]">
+                          <span className="truncate">{doc.original_filename || doc.file_name || 'Documento sin nombre'}</span>
+                          <span className="flex-none">· {getDocumentPeriod(doc)}</span>
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -551,7 +614,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
             </div>
           ) : (
             <div className="flex h-full min-h-[620px] flex-col">
-              <div className="border-b border-[var(--cf-border)] px-5 py-4">
+              <div className="sticky top-0 z-10 border-b border-[var(--cf-border)] bg-[var(--cf-surface)] px-5 py-4">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -577,7 +640,36 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="mr-1 flex items-center rounded-[5px] border border-[var(--cf-border)]">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => selectRelative(-1)}
+                        disabled={selectedIndex <= 0}
+                        className="h-8 rounded-r-none px-2 text-[var(--cf-text-muted)]"
+                        aria-label="Documento anterior"
+                        title="Documento anterior · Flecha arriba"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <span className="min-w-[58px] border-x border-[var(--cf-border)] px-2 text-center text-[10px] text-[var(--cf-text-muted)]">
+                        {selectedIndex + 1} / {inboxDocs.length}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => selectRelative(1)}
+                        disabled={selectedIndex < 0 || selectedIndex >= inboxDocs.length - 1}
+                        className="h-8 rounded-l-none px-2 text-[var(--cf-text-muted)]"
+                        aria-label="Documento siguiente"
+                        title="Documento siguiente · Flecha abajo"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -612,7 +704,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               </div>
 
               <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_240px]">
-                <div className="min-h-[460px] border-b border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 lg:border-b-0 lg:border-r">
+                <div className="min-h-[460px] border-b border-[var(--cf-border)] bg-[var(--cf-bg)] p-4 lg:border-b-0 lg:border-r">
                   {selectedDoc.file_url ? (
                     selectedDoc.file_url.toLowerCase().includes('.pdf') ? (
                       <PDFViewer
@@ -659,6 +751,14 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                         <dt className="text-[var(--cf-text-muted)]">Subido</dt>
                         <dd className="mt-0.5 text-[var(--cf-text)]">{getDocumentDate(selectedDoc)}</dd>
                       </div>
+                      <div>
+                        <dt className="text-[var(--cf-text-muted)]">En espera</dt>
+                        <dd className={`mt-0.5 font-medium ${
+                          (getWaitDays(selectedDoc) || 0) >= 7 ? 'text-[var(--cf-warning)]' : 'text-[var(--cf-text)]'
+                        }`}>
+                          {getWaitLabel(selectedDoc)}
+                        </dd>
+                      </div>
                     </dl>
                   </div>
 
@@ -676,9 +776,10 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                     </a>
                   )}
 
-                  <p className="border-t border-[var(--cf-border)] pt-4 text-[11px] leading-5 text-[var(--cf-text-muted)]">
-                    Al aprobar o rechazar, el documento sale de esta bandeja y se selecciona automáticamente el siguiente.
-                  </p>
+                  <div className="border-t border-[var(--cf-border)] pt-4 text-[11px] leading-5 text-[var(--cf-text-muted)]">
+                    <p>Al resolver un documento, la bandeja avanza automáticamente.</p>
+                    <p className="mt-1">Usa ↑ y ↓ para recorrer la cola sin soltar el teclado.</p>
+                  </div>
                 </div>
               </div>
             </div>
