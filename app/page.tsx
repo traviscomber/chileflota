@@ -16,6 +16,13 @@ import {
 
 export const revalidate = 300
 
+const LABBE_HERO_IMAGE =
+  "https://labbe.cl/wp-content/uploads/2022/01/ADF7E6D3-84BB-4C9A-A3D2-FD27DCDB12AA-1400x788.jpg"
+const LABBE_OPERATION_IMAGE =
+  "https://labbe.cl/wp-content/uploads/2021/12/IMG_0071.jpg"
+const LABBE_FLEET_IMAGE =
+  "https://labbe.cl/wp-content/uploads/2021/12/IMG_0068.jpg"
+
 async function getPublicProcessedDocumentCount(): Promise<number | null> {
   try {
     const supabase = createAdminClient()
@@ -53,51 +60,56 @@ function HeroWorkflowVisual() {
   ]
 
   return (
-    <div className="relative flex min-h-[540px] flex-col justify-center overflow-hidden bg-[var(--cf-sidebar)] p-6 sm:p-8 lg:min-h-[690px] lg:p-10">
-      <div className="pointer-events-none absolute inset-0 opacity-35" aria-hidden="true">
-        <div className="absolute inset-0 bg-grid" />
-        <div className="absolute left-[18%] top-0 h-full w-px bg-[var(--cf-border)]" />
-        <div className="absolute left-[50%] top-0 h-full w-px bg-[var(--cf-border)]" />
-        <div className="absolute left-[82%] top-0 h-full w-px bg-[var(--cf-border)]" />
+    <div className="relative min-h-[540px] overflow-hidden bg-[var(--cf-sidebar)] lg:min-h-[690px]">
+      <div className="relative h-[270px] overflow-hidden border-b border-[var(--cf-border)] sm:h-[310px] lg:h-[330px]">
+        <img
+          src={LABBE_HERO_IMAGE}
+          alt="Operación real de Transportes Labbe."
+          className="h-full w-full object-cover grayscale-[35%] contrast-[1.05]"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-[rgba(23,23,25,0.34)]" aria-hidden="true" />
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-6 bg-[rgba(23,23,25,0.88)] px-5 py-4 sm:px-7">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Implementación real</p>
+            <p className="mt-1 text-sm font-semibold">Transportes Labbe · Paine, Chile</p>
+          </div>
+          <p className="hidden max-w-xs text-right text-xs leading-5 text-[var(--cf-text-secondary)] sm:block">
+            La capa visual muestra la operación; ChileFlota agrega control documental y trazabilidad.
+          </p>
+        </div>
       </div>
 
-      <div className="relative z-10">
+      <div className="p-5 sm:p-7 lg:p-8">
         <div className="flex items-center justify-between">
           <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--cf-text-muted)]">Flujo documental operativo</p>
           <p className="font-mono text-[10px] text-[var(--cf-accent)]">FLUJO · 04 ETAPAS</p>
         </div>
 
-        <div className="relative mt-10">
-          <div className="absolute left-[8%] right-[8%] top-9 hidden h-px bg-[var(--cf-border)] md:block" aria-hidden="true" />
-          <div className="absolute left-[8%] top-9 hidden h-px w-[28%] bg-[var(--cf-accent)] md:block" aria-hidden="true" />
-
-          <div className="grid gap-4 md:grid-cols-4">
-            {steps.map((step, index) => {
-              const Icon = step.icon
-              return (
-                <div key={step.label} className="relative border border-[var(--cf-border)] bg-[rgba(35,35,38,0.94)] p-5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] text-[var(--cf-accent)]">0{index + 1}</span>
-                    <span className="flex h-10 w-10 items-center justify-center border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
-                      <Icon className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
-                    </span>
-                  </div>
-                  <p className="mt-12 text-base font-semibold">{step.label}</p>
-                  <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">{step.meta}</p>
+        <div className="mt-5 grid gap-px bg-[var(--cf-border)] sm:grid-cols-2 xl:grid-cols-4">
+          {steps.map((step, index) => {
+            const Icon = step.icon
+            return (
+              <div key={step.label} className="bg-[var(--cf-surface)] p-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] text-[var(--cf-accent)]">0{index + 1}</span>
+                  <Icon className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
                 </div>
-              )
-            })}
-          </div>
+                <p className="mt-5 text-sm font-semibold">{step.label}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">{step.meta}</p>
+              </div>
+            )
+          })}
         </div>
 
-        <div className="mt-8 grid gap-px bg-[var(--cf-border)] sm:grid-cols-[1.1fr_0.9fr]">
-          <div className="bg-[var(--cf-surface)] p-5">
+        <div className="mt-5 grid gap-px bg-[var(--cf-border)] sm:grid-cols-[1.1fr_0.9fr]">
+          <div className="bg-[var(--cf-canvas)] p-4">
             <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Antes</p>
-            <p className="mt-2 text-sm font-medium text-[var(--cf-text-secondary)]">Correos · planillas · mensajes · seguimiento manual</p>
+            <p className="mt-2 text-xs font-medium text-[var(--cf-text-secondary)]">Correos · planillas · mensajes · seguimiento manual</p>
           </div>
-          <div className="border-l-2 border-l-[var(--cf-accent)] bg-[var(--cf-surface)] p-5">
+          <div className="border-l-2 border-l-[var(--cf-accent)] bg-[var(--cf-canvas)] p-4">
             <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Con ChileFlota</p>
-            <p className="mt-2 text-sm font-semibold">Una bandeja · una decisión · una evidencia trazable</p>
+            <p className="mt-2 text-xs font-semibold">Una bandeja · una decisión · evidencia trazable</p>
           </div>
         </div>
       </div>
@@ -546,23 +558,48 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <div className="grid border border-[var(--cf-border)] bg-[var(--cf-border)] sm:grid-cols-2">
-            <div className="bg-[var(--cf-surface)] p-7 sm:p-8">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Implementación activa</p>
-              <p className="mt-5 text-3xl font-semibold tracking-[-0.035em]">Transportes Labbe</p>
-              <p className="mt-3 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
-                Flujo productivo de carga, revisión, validación y trazabilidad documental.
-              </p>
+          <div className="grid overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-border)] lg:grid-cols-[1.25fr_0.75fr]">
+            <div className="relative min-h-[320px] overflow-hidden bg-[var(--cf-canvas)] sm:min-h-[400px]">
+              <img
+                src={LABBE_OPERATION_IMAGE}
+                alt="Operación de transporte de Transportes Labbe."
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover grayscale-[28%] contrast-[1.04]"
+              />
+              <div className="absolute inset-0 bg-[rgba(23,23,25,0.18)]" aria-hidden="true" />
+              <div className="absolute inset-x-0 bottom-0 bg-[rgba(23,23,25,0.9)] p-5 sm:p-6">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Operación real</p>
+                <p className="mt-2 text-lg font-semibold">Transportes Labbe</p>
+                <p className="mt-2 max-w-lg text-sm leading-6 text-[var(--cf-text-secondary)]">
+                  La plataforma se construye sobre una operación de transporte existente, no sobre un caso ficticio.
+                </p>
+              </div>
             </div>
-            <div className="bg-[var(--cf-surface)] p-7 sm:p-8">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Actividad registrada</p>
-              <p className="mt-5 text-4xl font-semibold tracking-[-0.045em]">
-                {processedDocumentCount !== null ? formatNumber.format(processedDocumentCount) : "Activa"}
-              </p>
-              <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">documentos procesados por ChileFlota</p>
-              <div className="mt-8 flex items-center gap-3 border-t border-[var(--cf-border)] pt-5 text-xs text-[var(--cf-text-muted)]">
-                <ShieldCheck className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
-                Sólo evidencia agregada pública
+
+            <div className="grid gap-px bg-[var(--cf-border)]">
+              <div className="relative min-h-[210px] overflow-hidden bg-[var(--cf-canvas)]">
+                <img
+                  src={LABBE_FLEET_IMAGE}
+                  alt="Flota y operación logística de Transportes Labbe."
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover grayscale-[35%] contrast-[1.05]"
+                />
+                <div className="absolute inset-0 bg-[rgba(23,23,25,0.28)]" aria-hidden="true" />
+                <div className="absolute inset-x-0 bottom-0 bg-[rgba(23,23,25,0.88)] px-5 py-4">
+                  <p className="text-xs font-medium">Flota · logística · continuidad</p>
+                </div>
+              </div>
+
+              <div className="bg-[var(--cf-surface)] p-6">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Actividad registrada</p>
+                <p className="mt-4 text-4xl font-semibold tracking-[-0.045em]">
+                  {processedDocumentCount !== null ? formatNumber.format(processedDocumentCount) : "Activa"}
+                </p>
+                <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">documentos procesados por ChileFlota</p>
+                <div className="mt-6 flex items-center gap-3 border-t border-[var(--cf-border)] pt-4 text-xs text-[var(--cf-text-muted)]">
+                  <ShieldCheck className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
+                  Sólo evidencia agregada pública
+                </div>
               </div>
             </div>
           </div>
