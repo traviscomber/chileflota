@@ -1,16 +1,27 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import {
+  AlertTriangle,
   ArrowRight,
+  BadgeCheck,
+  BarChart3,
+  Building2,
   Check,
+  Clock3,
   FileCheck2,
-  FileClock,
-  FolderSearch2,
+  FileText,
+  Layers3,
+  ListChecks,
   ShieldCheck,
   Sparkles,
+  Truck,
+  Users,
 } from "lucide-react"
 
 export const revalidate = 300
+
+const AI_VISUAL =
+  "https://gcrmfajlebshvohmbfuy.supabase.co/storage/v1/object/public/landing-assets/chileflota/ai-logistics-document-workflow.webp"
 
 async function getPublicProcessedDocumentCount(): Promise<number | null> {
   try {
@@ -20,40 +31,15 @@ async function getPublicProcessedDocumentCount(): Promise<number | null> {
       supabase.from("uploaded_documents").select("id", { count: "exact", head: true }),
     ])
 
-    if (subcontractorTotal.error || uploadedTotal.error) {
-      console.error("[landing] Could not load public processed-document count")
-      return null
-    }
+    if (subcontractorTotal.error || uploadedTotal.error) return null
 
     return Number(subcontractorTotal.count || 0) + Number(uploadedTotal.count || 0)
-  } catch (error) {
-    console.error("[landing] Public processed-document count failed:", error instanceof Error ? error.message : String(error))
+  } catch {
     return null
   }
 }
 
-const operationalQuestions = [
-  {
-    icon: FolderSearch2,
-    label: "Cobertura",
-    title: "Qué falta",
-    text: "Requisitos sin respaldo suficiente para el periodo operativo vigente.",
-  },
-  {
-    icon: FileClock,
-    label: "Vigencia",
-    title: "Qué vence",
-    text: "Documentación que requiere atención antes de afectar continuidad operacional.",
-  },
-  {
-    icon: FileCheck2,
-    label: "Evidencia",
-    title: "Qué está respaldado",
-    text: "Documentación validada y disponible para revisión, auditoría o mandante.",
-  },
-]
-
-function SectionIndex({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--cf-text-muted)]">
       {children}
@@ -61,14 +47,8 @@ function SectionIndex({ children }: { children: React.ReactNode }) {
   )
 }
 
-function HeroOperationalBackdrop() {
-  return (
-    <div className="absolute inset-0 overflow-hidden bg-[var(--cf-canvas)]" aria-hidden="true">
-      <div className="absolute inset-0 bg-grid opacity-35" />
-      <div className="absolute inset-y-0 right-0 w-[48%] bg-[var(--cf-sidebar)]" />
-      <div className="absolute inset-y-0 right-[48%] w-px bg-[var(--cf-border)]" />
-    </div>
-  )
+function AccentRule() {
+  return <span className="block h-px w-10 bg-[var(--cf-accent)]" aria-hidden="true" />
 }
 
 export default async function LandingPage() {
@@ -89,6 +69,13 @@ export default async function LandingPage() {
             </span>
           </Link>
 
+          <nav className="hidden items-center gap-7 text-xs text-[var(--cf-text-secondary)] lg:flex" aria-label="Navegación principal">
+            <a href="#solucion" className="transition-colors hover:text-[var(--cf-text)]">Solución</a>
+            <a href="#modelo-operacional" className="transition-colors hover:text-[var(--cf-text)]">Cómo funciona</a>
+            <a href="#ia" className="transition-colors hover:text-[var(--cf-text)]">IA</a>
+            <a href="#resultados" className="transition-colors hover:text-[var(--cf-text)]">Resultados</a>
+          </nav>
+
           <Link
             href="/login"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-4 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)]"
@@ -99,250 +86,168 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      <section className="relative overflow-hidden border-b border-[var(--cf-border)] pt-16">
-        <HeroOperationalBackdrop />
-
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid min-h-[650px] lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="flex items-center py-16 pr-0 lg:pr-14">
-              <div className="max-w-[620px]">
-                <div className="flex items-center gap-4">
-                  <SectionIndex>Control documental de flota</SectionIndex>
-                  <span className="hidden h-px w-12 bg-[var(--cf-border)] sm:block" />
-                </div>
-
-                <h1 className="mt-6 text-5xl font-semibold leading-[0.97] tracking-[-0.05em] text-[var(--cf-text)] sm:text-6xl lg:text-[68px]">
-                  El subcontratista carga. La ejecutiva valida. La operación sigue.
-                </h1>
-
-                <p className="mt-7 max-w-[570px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
-                  ChileFlota reemplaza el intercambio disperso de correos, planillas y mensajes por un flujo único de carga, revisión y evidencia trazable.
-                </p>
-
-                <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    href="/login"
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-6 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)]"
-                  >
-                    Ingresar a la plataforma
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                  <a
-                    href="#modelo-operacional"
-                    className="inline-flex h-12 items-center justify-center rounded-[var(--cf-radius)] border border-[var(--cf-border)] px-6 text-sm font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
-                  >
-                    Ver cómo funciona
-                  </a>
-                </div>
+      <section id="solucion" className="relative border-b border-[var(--cf-border)] pt-16">
+        <div className="mx-auto grid max-w-7xl lg:grid-cols-[0.82fr_1.18fr]">
+          <div className="flex min-h-[690px] items-center px-4 py-16 sm:px-6 lg:px-8 lg:pr-14">
+            <div className="max-w-[590px]">
+              <div className="flex items-center gap-4">
+                <SectionLabel>Control documental de flota</SectionLabel>
+                <AccentRule />
               </div>
-            </div>
 
-            <div className="border-t border-[var(--cf-border)] py-12 lg:border-l lg:border-t-0 lg:pl-14">
-              <div className="flex h-full flex-col justify-center">
-                <SectionIndex>Flujo real de trabajo</SectionIndex>
+              <h1 className="mt-6 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] sm:text-6xl lg:text-[68px]">
+                El subcontratista carga. La ejecutiva valida. La operación sigue.
+              </h1>
 
-                <div className="mt-7 space-y-px bg-[var(--cf-border)]">
-                  {[
-                    ["01", "Subcontratista", "Carga sus documentos directamente en la plataforma."],
-                    ["02", "ChileFlota + IA", "Ordena la evidencia, extrae datos verificables y la incorpora a la bandeja correspondiente."],
-                    ["03", "Ejecutiva", "Revisa el documento y decide aprobar o rechazar con trazabilidad."],
-                    ["04", "Operación", "El estado queda actualizado y la evidencia disponible para seguir operando."],
-                  ].map(([number, actor, text]) => (
-                    <div key={number} className="grid gap-4 bg-[var(--cf-surface)] p-5 sm:grid-cols-[52px_120px_1fr] sm:items-center">
-                      <span className="font-mono text-xs text-[var(--cf-accent)]">{number}</span>
-                      <p className="text-sm font-semibold text-[var(--cf-text)]">{actor}</p>
-                      <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
-                    </div>
-                  ))}
-                </div>
+              <p className="mt-7 max-w-[560px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
+                ChileFlota centraliza la documentación de la flota. Los subcontratistas cargan, la IA estructura la información, la ejecutiva valida y la operación gana trazabilidad, tiempo y continuidad.
+              </p>
 
-                <div className="mt-8 grid gap-5 border-t border-[var(--cf-border)] pt-6 sm:grid-cols-2">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Antes</p>
-                    <p className="mt-2 text-base font-semibold text-[var(--cf-text)]">Correos, planillas, mensajes y seguimiento manual.</p>
-                  </div>
-                  <div className="border-l-2 border-[var(--cf-accent)] pl-5">
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Con ChileFlota</p>
-                    <p className="mt-2 text-base font-semibold text-[var(--cf-text)]">Una bandeja, una decisión, una evidencia trazable.</p>
-                  </div>
-                </div>
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/login"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-6 text-sm font-medium transition-colors hover:bg-[var(--cf-accent-hover)]"
+                >
+                  Ingresar a la plataforma
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                <a
+                  href="#modelo-operacional"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--cf-radius)] border border-[var(--cf-border)] px-6 text-sm font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
+                >
+                  Ver cómo funciona
+                </a>
               </div>
             </div>
           </div>
 
-          <div className="grid border-t border-[var(--cf-border)] bg-[var(--cf-sidebar)] sm:grid-cols-3">
-            <div className="px-5 py-5 sm:px-6">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Documentos procesados</p>
-              {processedDocumentCount !== null && processedDocumentCount > 0 ? (
-                <p className="mt-2 text-4xl font-semibold tracking-[-0.045em] text-[var(--cf-text)]">
-                  {formatNumber.format(processedDocumentCount)}
-                </p>
-              ) : (
-                <p className="mt-2 text-xl font-semibold text-[var(--cf-text)]">Operación activa</p>
-              )}
+          <div className="relative min-h-[540px] overflow-hidden border-t border-[var(--cf-border)] bg-[var(--cf-sidebar)] lg:min-h-[690px] lg:border-l lg:border-t-0">
+            <img
+              src={AI_VISUAL}
+              alt="Flujo visual de ChileFlota desde la carga documental del subcontratista hasta la validación de la ejecutiva y la continuidad operacional."
+              className="absolute inset-0 h-full w-full object-cover object-center opacity-90"
+              width="1672"
+              height="941"
+            />
+            <div className="absolute inset-0 bg-[rgba(17,18,20,0.28)]" />
+            <div className="absolute inset-x-0 bottom-0 grid gap-px bg-[var(--cf-border)] sm:grid-cols-4">
+              {[
+                ["01", "Subcontratista", "Carga documentación"],
+                ["02", "ChileFlota + IA", "Ordena y extrae"],
+                ["03", "Ejecutiva", "Revisa y decide"],
+                ["04", "Operación", "Sigue con respaldo"],
+              ].map(([number, title, text]) => (
+                <div key={number} className="bg-[rgba(23,23,25,0.94)] p-4">
+                  <p className="font-mono text-[10px] text-[var(--cf-accent)]">{number}</p>
+                  <p className="mt-2 text-sm font-semibold">{title}</p>
+                  <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{text}</p>
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
 
-            <div className="border-t border-[var(--cf-border)] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Implementación activa</p>
-              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Transportes Labbe</p>
+        <div className="mx-auto grid max-w-7xl border-x border-[var(--cf-border)] bg-[var(--cf-sidebar)] sm:grid-cols-3">
+          <div className="flex gap-4 p-5 sm:p-6">
+            <FileText className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Documentos procesados</p>
+              <p className="mt-2 text-3xl font-semibold tracking-[-0.04em]">
+                {processedDocumentCount !== null ? formatNumber.format(processedDocumentCount) : "Operación activa"}
+              </p>
+              <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">Actividad agregada del sistema</p>
             </div>
+          </div>
 
-            <div className="border-t border-[var(--cf-border)] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Sin exponer datos</p>
-              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Sólo evidencia agregada pública</p>
+          <div className="flex gap-4 border-t border-[var(--cf-border)] p-5 sm:border-l sm:border-t-0 sm:p-6">
+            <Building2 className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Implementación activa</p>
+              <p className="mt-2 text-lg font-semibold">Transportes Labbe</p>
+              <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">Operación productiva</p>
+            </div>
+          </div>
+
+          <div className="flex gap-4 border-t border-[var(--cf-border)] p-5 sm:border-l sm:border-t-0 sm:p-6">
+            <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Sin exponer datos</p>
+              <p className="mt-2 text-lg font-semibold">Sólo evidencia agregada pública</p>
+              <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">Sin documentos ni datos personales</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
+      <section className="border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
           <div>
-            <SectionIndex>01 / Riesgo operacional</SectionIndex>
-            <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em]">
+            <div className="flex items-center gap-4">
+              <SectionLabel>01 / Riesgo operacional</SectionLabel>
+              <AccentRule />
+            </div>
+            <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
               La documentación forma parte de la continuidad operacional.
             </h2>
+            <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
+              Cuando la evidencia se dispersa, las vigencias se pierden de vista y la operación termina resolviendo tarde.
+            </p>
           </div>
 
           <div className="border-y border-[var(--cf-border)]">
             {[
-              ["Evidencia distribuida", "La información llega desde múltiples actores y canales."],
-              ["Vigencias variables", "Cada requisito tiene periodo, estado y condición de uso."],
-              ["Decisión operacional", "La organización necesita saber si existe respaldo suficiente para operar."],
-            ].map(([title, text], index) => (
-              <div
-                key={title}
-                className="grid gap-3 border-b border-[var(--cf-border)] py-6 last:border-b-0 sm:grid-cols-[52px_190px_1fr] sm:items-baseline sm:gap-6"
-              >
-                <span className="font-mono text-xs text-[var(--cf-accent)]">0{index + 1}</span>
-                <p className="text-sm font-semibold text-[var(--cf-text)]">{title}</p>
-                <p className="max-w-xl text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
-              </div>
-            ))}
+              [FileText, "01", "Evidencia distribuida", "La información llega desde múltiples actores, fuentes y formatos."],
+              [Clock3, "02", "Vigencias variables", "Cada requisito tiene periodo, estado, renovación y condición de uso."],
+              [AlertTriangle, "03", "Decisión operacional", "La organización necesita saber si existe respaldo suficiente para operar."],
+            ].map(([Icon, number, title, text]) => {
+              const RowIcon = Icon as typeof FileText
+              return (
+                <div key={String(number)} className="grid gap-4 border-b border-[var(--cf-border)] py-6 last:border-b-0 sm:grid-cols-[48px_44px_190px_1fr] sm:items-center">
+                  <span className="font-mono text-xs text-[var(--cf-accent)]">{String(number)}</span>
+                  <RowIcon className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+                  <p className="text-sm font-semibold">{String(title)}</p>
+                  <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{String(text)}</p>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
 
-      <section id="modelo-operacional" className="px-4 py-20 sm:px-6 lg:px-8">
+      <section id="modelo-operacional" className="border-b border-[var(--cf-border)] px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-7xl">
-          <SectionIndex>02 / Modelo de control</SectionIndex>
-          <div className="mt-4 grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
-            <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.035em]">
+          <div className="flex items-center gap-4">
+            <SectionLabel>02 / Modelo de control</SectionLabel>
+            <AccentRule />
+          </div>
+
+          <div className="mt-5 grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+            <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
               Una sola lectura para revisar, resolver y demostrar.
             </h2>
             <p className="max-w-2xl text-sm leading-6 text-[var(--cf-text-secondary)]">
-              La experiencia se organiza alrededor de una bandeja de trabajo: evidencia a la izquierda, contexto al centro y decisión siempre disponible.
+              La experiencia se organiza alrededor de una bandeja de trabajo unificada: evidencia, contexto y decisión siempre disponibles.
             </p>
           </div>
 
-          <div className="mt-10 grid overflow-hidden rounded-[var(--cf-radius)] border border-[var(--cf-border)] bg-[var(--cf-border)] lg:grid-cols-3">
+          <div className="mt-10 grid gap-4 lg:grid-cols-3">
             {[
-              ["01", "Consolidar", "La evidencia queda vinculada a la empresa, persona o unidad correspondiente."],
-              ["02", "Priorizar", "El sistema ordena requisitos, periodos y vigencias para hacer visible lo que requiere atención."],
-              ["03", "Resolver", "El equipo revisa, valida y mantiene trazabilidad sobre cada decisión documental."],
-            ].map(([number, title, text]) => (
-              <article key={number} className="min-h-64 bg-[var(--cf-surface)] p-6 sm:p-8">
-                <span className="font-mono text-xs text-[var(--cf-text-muted)]">{number}</span>
-                <h3 className="mt-14 text-lg font-semibold">{title}</h3>
-                <p className="mt-3 max-w-sm text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[0.62fr_1.38fr] lg:gap-16">
-            <div>
-              <SectionIndex>03 / IA aplicada al proceso</SectionIndex>
-              <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em]">
-                La IA prepara la revisión. La ejecutiva toma la decisión.
-              </h2>
-              <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
-                El subcontratista carga la evidencia. ChileFlota la lee, estructura y alerta. La ejecutiva valida con el documento y su contexto en la misma vista.
-              </p>
-
-              <div className="mt-8 space-y-5 border-t border-[var(--cf-border)] pt-6">
-                {[
-                  ["Lectura automática", "Tipo, emisión, vencimiento, número, texto, confianza y advertencias."],
-                  ["Validación especializada", "Reglas sobre F30-1, periodo, RUT y señales de inconsistencia."],
-                  ["Alertas operacionales", "Vencidos y próximos vencimientos pasan de dato a acción."],
-                  ["Feedback humano", "La corrección de la ejecutiva queda registrada para mejorar el análisis."],
-                ].map(([title, text], index) => (
-                  <div key={title} className="grid grid-cols-[28px_1fr] gap-3">
-                    <span className="font-mono text-xs text-[var(--cf-accent)]">0{index + 1}</span>
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--cf-text)]">{title}</p>
-                      <p className="mt-1 text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
-                <img
-                  src="https://gcrmfajlebshvohmbfuy.supabase.co/storage/v1/object/public/landing-assets/chileflota/ai-logistics-document-workflow.webp"
-                  alt="Flujo visual de ChileFlota: carga documental del subcontratista, análisis asistido por IA, validación de la ejecutiva y continuidad operacional de la flota."
-                  width="900"
-                  height="507"
-                  loading="lazy"
-                  className="block h-auto w-full"
-                />
-              </div>
-
-              <div className="grid gap-px bg-[var(--cf-border)] sm:grid-cols-3">
-                <div className="bg-[var(--cf-surface)] p-5">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Entrada</p>
-                  <p className="mt-2 text-sm font-semibold text-[var(--cf-text)]">Documentos del subcontratista</p>
-                </div>
-                <div className="bg-[var(--cf-surface)] p-5">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">IA + revisión</p>
-                  <p className="mt-2 text-sm font-semibold text-[var(--cf-text)]">Extracción, alertas y validación humana</p>
-                </div>
-                <div className="bg-[var(--cf-surface)] p-5">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Resultado</p>
-                  <p className="mt-2 text-sm font-semibold text-[var(--cf-text)]">Evidencia lista para operar</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-5 border-t border-[var(--cf-border)] pt-6 sm:grid-cols-[1fr_1fr]">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">IA como apoyo</p>
-              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Clasifica, extrae, alerta y propone contexto.</p>
-            </div>
-            <div className="border-l-2 border-[var(--cf-accent)] pl-5">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Control humano</p>
-              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">La aprobación o rechazo sigue siendo decisión de la ejecutiva.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
-          <div>
-            <SectionIndex>04 / Lectura operacional</SectionIndex>
-            <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em]">
-              La operación necesita respuestas verificables.
-            </h2>
-          </div>
-
-          <div className="grid gap-px overflow-hidden rounded-[var(--cf-radius)] bg-[var(--cf-border)] sm:grid-cols-3">
-            {operationalQuestions.map((item) => {
-              const Icon = item.icon
+              [Layers3, "01", "Consolidar", "La evidencia queda vinculada a la empresa, persona o unidad correspondiente.", "Datos · contexto · visión única"],
+              [ListChecks, "02", "Priorizar", "El sistema ordena requisitos, periodos y vigencias para hacer visible lo crítico.", "Alertas · análisis · foco"],
+              [BadgeCheck, "03", "Resolver", "El equipo revisa, valida y mantiene trazabilidad sobre cada decisión documental.", "Acción · seguimiento · resultados"],
+            ].map(([Icon, number, title, text, footer]) => {
+              const CardIcon = Icon as typeof Layers3
               return (
-                <article key={item.title} className="bg-[var(--cf-surface)] p-6">
-                  <div className="flex items-center justify-between">
-                    <Icon className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
-                    <span className="text-xs text-[var(--cf-text-muted)]">{item.label}</span>
+                <article key={String(number)} className="border border-[var(--cf-border)] bg-[var(--cf-surface)] p-6 sm:p-7">
+                  <div className="flex items-start justify-between">
+                    <span className="font-mono text-sm text-[var(--cf-accent)]">{String(number)}</span>
+                    <CardIcon className="h-7 w-7 text-[var(--cf-accent)]" aria-hidden="true" />
                   </div>
-                  <h3 className="mt-10 text-lg font-semibold">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-[var(--cf-text-secondary)]">{item.text}</p>
+                  <h3 className="mt-12 text-xl font-semibold">{String(title)}</h3>
+                  <p className="mt-4 min-h-20 text-sm leading-6 text-[var(--cf-text-secondary)]">{String(text)}</p>
+                  <p className="mt-8 border-t border-[var(--cf-border)] pt-4 text-[10px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
+                    {String(footer)}
+                  </p>
                 </article>
               )
             })}
@@ -350,44 +255,193 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="px-4 py-20 sm:px-6 lg:px-8">
+      <section id="ia" className="border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 border-y border-[var(--cf-border)] py-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-center lg:gap-16">
+          <div className="grid gap-12 lg:grid-cols-[0.62fr_1.38fr] lg:gap-16">
             <div>
-              <SectionIndex>05 / Evidencia operacional</SectionIndex>
-              <h2 className="mt-4 max-w-md text-3xl font-semibold tracking-[-0.035em]">
-                Implementación activa y operación registrada.
+              <div className="flex items-center gap-4">
+                <SectionLabel>03 / IA aplicada al proceso</SectionLabel>
+                <AccentRule />
+              </div>
+              <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
+                La IA prepara la revisión. La ejecutiva toma la decisión.
               </h2>
+              <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
+                ChileFlota reduce trabajo manual leyendo, clasificando y estructurando evidencia antes de la revisión humana.
+              </p>
+
+              <div className="mt-8 overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+                <img
+                  src={AI_VISUAL}
+                  alt="Análisis documental asistido por IA dentro del flujo ChileFlota."
+                  width="1672"
+                  height="941"
+                  loading="lazy"
+                  className="block aspect-[16/9] w-full object-cover"
+                />
+              </div>
             </div>
 
-            <div className="border-l-2 border-[var(--cf-accent)] pl-6">
-              <div className="flex items-center gap-3 text-sm font-medium text-[var(--cf-text)]">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--cf-accent-soft)] text-[var(--cf-focus-ring)]">
-                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                </span>
-                Implementación activa
-              </div>
-              <p className="mt-4 text-2xl font-semibold tracking-[-0.03em]">Transportes Labbe</p>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--cf-text-secondary)]">
-                ChileFlota opera actualmente sobre una implementación productiva para el control y revisión documental de Transportes Labbe.
-              </p>
+            <div className="border-y border-[var(--cf-border)]">
+              {[
+                [FileText, "01", "Lectura automática", "Extrae tipo de documento, fechas de emisión y vencimiento, número, texto, confianza y advertencias."],
+                [Sparkles, "02", "PDF e imágenes", "Lee texto nativo cuando existe y usa lectura visual como respaldo para documentos escaneados o imágenes."],
+                [ShieldCheck, "03", "Validaciones especializadas", "Aplica reglas específicas sobre F30-1, periodo, RUT y señales de inconsistencia."],
+                [AlertTriangle, "04", "Alertas operacionales", "Detecta vencimientos y próximos vencimientos para convertir análisis en acciones concretas."],
+                [Users, "05", "Corrección humana", "La ejecutiva confirma o corrige el análisis; esas correcciones quedan registradas como feedback."],
+              ].map(([Icon, number, title, text]) => {
+                const AiIcon = Icon as typeof FileText
+                return (
+                  <div key={String(number)} className="grid gap-4 border-b border-[var(--cf-border)] py-5 last:border-b-0 sm:grid-cols-[44px_40px_190px_1fr] sm:items-center">
+                    <span className="font-mono text-xs text-[var(--cf-accent)]">{String(number)}</span>
+                    <AiIcon className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+                    <p className="text-sm font-semibold">{String(title)}</p>
+                    <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{String(text)}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-px bg-[var(--cf-border)] sm:grid-cols-2">
+            <div className="bg-[var(--cf-surface)] p-5">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">IA como apoyo</p>
+              <p className="mt-2 text-base font-semibold">Clasifica, extrae, alerta y propone contexto.</p>
+            </div>
+            <div className="bg-[var(--cf-surface)] p-5 sm:border-l-2 sm:border-l-[var(--cf-accent)]">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Control humano</p>
+              <p className="mt-2 text-base font-semibold">La aprobación o rechazo sigue siendo decisión de la ejecutiva.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-t border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+      <section id="resultados" className="border-b border-[var(--cf-border)] px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.62fr_1.38fr] lg:gap-16">
           <div>
-            <SectionIndex>Acceso clientes</SectionIndex>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight tracking-[-0.035em]">
+            <div className="flex items-center gap-4">
+              <SectionLabel>04 / Lectura operacional</SectionLabel>
+              <AccentRule />
+            </div>
+            <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
+              La operación necesita respuestas verificables.
+            </h2>
+            <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
+              Una lectura clara del estado documental permite anticiparse, reducir riesgos y sostener continuidad operacional.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              [FileCheck2, "Qué falta", "Requisitos sin respaldo suficiente para el periodo operativo vigente.", "Visibilidad total de gaps"],
+              [Clock3, "Qué vence", "Documentación que requiere atención antes de afectar continuidad operacional.", "Menos riesgo, más continuidad"],
+              [BadgeCheck, "Qué está respaldado", "Documentación validada y disponible para revisión, auditoría o mandante.", "Cumplimiento verificable"],
+            ].map(([Icon, title, text, footer]) => {
+              const OpIcon = Icon as typeof FileCheck2
+              return (
+                <article key={String(title)} className="border border-[var(--cf-border)] bg-[var(--cf-surface)] p-6">
+                  <OpIcon className="h-6 w-6 text-[var(--cf-accent)]" aria-hidden="true" />
+                  <h3 className="mt-8 text-xl font-semibold">{String(title)}</h3>
+                  <p className="mt-4 text-sm leading-6 text-[var(--cf-text-secondary)]">{String(text)}</p>
+                  <p className="mt-8 border-t border-[var(--cf-border)] pt-4 text-[10px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
+                    {String(footer)}
+                  </p>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 lg:grid-cols-[0.62fr_1.38fr] lg:items-center lg:gap-16">
+            <div>
+              <div className="flex items-center gap-4">
+                <SectionLabel>05 / Evidencia operacional</SectionLabel>
+                <AccentRule />
+              </div>
+              <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
+                Implementación activa y operación registrada.
+              </h2>
+              <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
+                ChileFlota opera actualmente sobre una implementación productiva para el control y revisión documental de Transportes Labbe.
+              </p>
+            </div>
+
+            <div className="relative min-h-[330px] overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+              <img
+                src={AI_VISUAL}
+                alt=""
+                aria-hidden="true"
+                width="1672"
+                height="941"
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover object-right opacity-55"
+              />
+              <div className="absolute inset-0 bg-[rgba(17,18,20,0.58)]" />
+              <div className="relative z-10 flex min-h-[330px] flex-col justify-between p-6 sm:p-8">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--cf-accent)]" />
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-secondary)]">Implementación activa</p>
+                  </div>
+                  <p className="mt-6 text-3xl font-semibold">Transportes Labbe</p>
+                  <p className="mt-2 max-w-md text-sm text-[var(--cf-text-secondary)]">Control documental de flota en operación.</p>
+                </div>
+
+                <div className="grid gap-px bg-[var(--cf-border)] sm:grid-cols-3">
+                  <div className="bg-[rgba(23,23,25,0.94)] p-4">
+                    <Truck className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+                    <p className="mt-3 text-sm font-semibold">Operación real</p>
+                    <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Uso continuo en entorno productivo</p>
+                  </div>
+                  <div className="bg-[rgba(23,23,25,0.94)] p-4">
+                    <BarChart3 className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+                    <p className="mt-3 text-sm font-semibold">Procesos controlados</p>
+                    <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Evidencia y trazabilidad</p>
+                  </div>
+                  <div className="bg-[rgba(23,23,25,0.94)] p-4">
+                    <ShieldCheck className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+                    <p className="mt-3 text-sm font-semibold">Sin datos personales</p>
+                    <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Sólo evidencia agregada pública</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <img
+          src={AI_VISUAL}
+          alt=""
+          aria-hidden="true"
+          width="1672"
+          height="941"
+          loading="lazy"
+          className="absolute inset-y-0 right-0 h-full w-[52%] object-cover object-right opacity-20"
+        />
+        <div className="absolute inset-0 bg-[rgba(23,23,25,0.82)]" />
+
+        <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-4">
+              <SectionLabel>Acceso clientes</SectionLabel>
+              <AccentRule />
+            </div>
+            <h2 className="mt-5 max-w-2xl text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
               Control documental con criterio operacional.
             </h2>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--cf-text-secondary)]">
+              Una operación más simple, trazable y preparada para demostrar cumplimiento.
+            </p>
           </div>
 
           <Link
             href="/login"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-5 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)]"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-6 text-sm font-medium transition-colors hover:bg-[var(--cf-accent-hover)]"
           >
             Acceder a la plataforma
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -395,9 +449,13 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-[var(--cf-border)] px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 text-xs text-[var(--cf-text-muted)] sm:flex-row sm:items-center sm:justify-between">
-          <span>ChileFlota · Compliance documental para flotas</span>
+      <footer className="border-t border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-5 text-xs text-[var(--cf-text-muted)] sm:grid-cols-[1fr_auto_auto] sm:items-center sm:gap-8">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
+            <span>ChileFlota · Compliance operacional</span>
+          </div>
+          <span>Control documental para flotas</span>
           <span>Implementación activa: Transportes Labbe</span>
         </div>
       </footer>
