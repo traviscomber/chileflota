@@ -33,6 +33,7 @@ interface PendingDocument {
   uploaded_by_ejecutiva?: string
   subcontractor_rut?: string
   empresa_nombre?: string
+  document_source?: 'conductor' | 'subcontractor'
   docType?: { code: string; nombre: string }
   conductores?: {
     id: string
@@ -93,6 +94,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [rejectDocId, setRejectDocId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [docType, setDocType] = useState<'conductor' | 'subcontractor'>('conductor')
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+  const [inboxSource, setInboxSource] = useState<'all' | 'conductor' | 'subcontractor'>('all')
 
   useEffect(() => {
     setRemovedIds(new Set())
@@ -248,6 +251,40 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     )
   }, [allDocs, filters])
 
+
+  const getDocumentSource = (doc: PendingDocument): 'conductor' | 'subcontractor' => {
+    if (doc.document_source === 'conductor' || doc.document_source === 'subcontractor') return doc.document_source
+    return propConductorDocs.some((item) => item.id === doc.id) ? 'conductor' : 'subcontractor'
+  }
+
+  const inboxDocs = useMemo(() => {
+    const sourceFiltered = inboxSource === 'all'
+      ? filteredDocs
+      : filteredDocs.filter((doc) => getDocumentSource(doc) === inboxSource)
+
+    return [...sourceFiltered].sort((a, b) => {
+      const aTime = new Date(a.uploaded_at || a.created_at || 0).getTime()
+      const bTime = new Date(b.uploaded_at || b.created_at || 0).getTime()
+      return aTime - bTime
+    })
+  }, [filteredDocs, inboxSource, propConductorDocs])
+
+  const selectedDoc = inboxDocs.find((doc) => doc.id === selectedDocId) || inboxDocs[0] || null
+
+  useEffect(() => {
+    if (!selectedDocId || !inboxDocs.some((doc) => doc.id === selectedDocId)) {
+      setSelectedDocId(inboxDocs[0]?.id || null)
+    }
+  }, [inboxDocs, selectedDocId])
+
+  const selectedCompany = selectedDoc?.transportistas
+    ? (Array.isArray(selectedDoc.transportistas) ? selectedDoc.transportistas[0] : selectedDoc.transportistas)
+    : null
+  const selectedConductor = selectedDoc?.conductores
+    ? (Array.isArray(selectedDoc.conductores) ? selectedDoc.conductores[0] : selectedDoc.conductores)
+    : null
+  const selectedSource = selectedDoc ? getDocumentSource(selectedDoc) : 'subcontractor'
+
   const handleAnalyzeDocument = async (docId: string, type: 'conductor' | 'subcontractor') => {
     setAnalyzing(docId)
     try {
@@ -392,24 +429,44 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   }, [onSync])
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/company/documentos">
-            <Button variant="ghost" size="sm" className="gap-2">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4 border-b border-[var(--cf-border)] pb-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex items-start gap-3">
+          <Link href="/dashboard/company">
+            <Button variant="ghost" size="sm" className="mt-0.5 gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Volver
+              Inicio
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Clock className="h-6 w-6 text-amber-500" />
-              Documentos Pendientes
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Bandeja de trabajo</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">
+              Documentos pendientes
             </h1>
-            <p className="text-muted-foreground">
-              {totalPendientes} documentos esperando revision
+            <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">
+              {totalPendientes.toLocaleString('es-CL')} documentos en tu cartera. Revisa, decide y continúa con el siguiente.
             </p>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {([
+            ['all', 'Todos', totalPendientes],
+            ['subcontractor', 'Empresas', subDocs.length],
+            ['conductor', 'Conductores', conductorDocs.length],
+          ] as const).map(([value, label, count]) => (
+            <Button
+              key={value}
+              type="button"
+              variant={inboxSource === value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setInboxSource(value)}
+              className="gap-2"
+            >
+              {label}
+              <span className="text-xs opacity-70">{count.toLocaleString('es-CL')}</span>
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -420,187 +477,214 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         documentTypes={documentTypes}
       />
 
-      <Card className="border-blue-500/30 bg-blue-500/5">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-500" />
-              <CardTitle>Documentos de Conductores</CardTitle>
+      <div className="grid min-h-[70vh] overflow-hidden rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)] lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]">
+        <aside className="border-b border-[var(--cf-border)] lg:border-b-0 lg:border-r">
+          <div className="flex items-center justify-between border-b border-[var(--cf-border)] px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-[var(--cf-text)]">Pendientes</p>
+              <p className="text-xs text-[var(--cf-text-muted)]">{inboxDocs.length.toLocaleString('es-CL')} visibles</p>
             </div>
-            <Badge variant="secondary">
-              {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).length} pendientes
-            </Badge>
+            <Clock className="h-4 w-4 text-[#D9B65C]" />
           </div>
-          <CardDescription>Licencias, antecedentes y documentos personales</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No hay documentos de conductores pendientes
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).map((doc) => {
-                const c = Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores
-                return (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{doc.original_filename}</p>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="outline" className={metaChipClass}>
-                            <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
-                            <span className="truncate">
-                              {c ? `${c.nombres} ${c.apellido_paterno}` : ''}
-                            </span>
-                            <span className="text-slate-400">
-                              {c ? `(${c.rut})` : ''}
-                            </span>
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
-                          >
-                            {getDocumentTypeLabel(doc)}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300">
-                            Periodo: {getDocumentPeriod(doc)}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px] bg-slate-500/10 border-slate-500/30 text-slate-200">
-                            Fecha: {getDocumentDate(doc)}
-                          </Badge>
-                          {getExecutive(doc) !== 'No especificado' && (
-                            <Badge variant="outline" className={metaChipClass}>
-                              <Sparkles className="h-4 w-4 flex-shrink-0 text-purple-300" />
-                              <span className="truncate text-purple-100">Ejecutiva:</span>
-                              <span className="truncate text-purple-200">{getExecutive(doc)}</span>
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                      {doc.file_url && (
-                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)} className="text-slate-400 hover:text-white">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id, 'conductor')} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400 text-blue-300 bg-blue-500/10 hover:bg-blue-500/30 ring-1 ring-blue-400/30" title="Recomendado: Analizar con IA antes de aprobar">
-                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3 text-blue-400" />}
-                        Analizar con IA
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleApprove(doc.id, 'conductor')} disabled={loading === doc.id} className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20">
-                        {loading === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                        Aprobar
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleRejectClick(doc.id, 'conductor')} disabled={loading === doc.id} className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20">
-                        <X className="h-3 w-3" />
-                        Rechazar
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      <Card className="border-orange-500/30 bg-orange-500/5">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-orange-500" />
-              <CardTitle>Documentos de Subcontratistas</CardTitle>
-            </div>
-            <Badge variant="secondary">
-              {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).length} pendientes
-            </Badge>
-          </div>
-          <CardDescription>F30, F30-1, contratos y documentos legales</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No hay documentos de subcontratistas pendientes
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).map((doc) => {
-                const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
+          <div className="max-h-[70vh] overflow-y-auto">
+            {inboxDocs.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <Check className="mx-auto h-5 w-5 text-[#67C18D]" />
+                <p className="mt-3 text-sm font-medium text-[var(--cf-text)]">Bandeja al día</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">
+                  No hay documentos pendientes con estos filtros.
+                </p>
+              </div>
+            ) : (
+              inboxDocs.map((doc) => {
+                const source = getDocumentSource(doc)
+                const company = doc.transportistas
+                  ? (Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas)
+                  : null
+                const conductor = doc.conductores
+                  ? (Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores)
+                  : null
+                const isSelected = selectedDoc?.id === doc.id
+
                 return (
-                  <div
+                  <button
                     key={doc.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
+                    type="button"
+                    onClick={() => setSelectedDocId(doc.id)}
+                    className={`w-full border-b border-[var(--cf-border)] px-4 py-3 text-left transition-colors ${
+                      isSelected ? 'bg-[var(--cf-surface-raised)]' : 'hover:bg-[var(--cf-canvas)]'
+                    }`}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <FileText className="h-4 w-4 text-orange-400 flex-shrink-0" />
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-1 h-2 w-2 flex-none rounded-full ${source === 'conductor' ? 'bg-blue-400' : 'bg-amber-400'}`} />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm truncate">{doc.file_name}</p>
-                        <div className="flex gap-3 mt-1 flex-wrap">
-                          <Badge variant="outline" className={metaChipClass}>
-                            <Building2 className="h-4 w-4 flex-shrink-0 text-slate-300" />
-                            <span className="truncate">
-                              {t ? t.razon_social : ''}
-                            </span>
-                            <span className="text-slate-400">
-                              {t ? `(${t.rut})` : ''}
-                            </span>
-                          </Badge>
-                          {doc.docType && (
-                            <Badge
-                              variant="outline"
-                              className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
-                            >
-                              {getDocumentTypeLabel(doc)}
-                            </Badge>
-                          )}
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300">
-                            Periodo: {getDocumentPeriod(doc)}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs bg-slate-500/10 border-slate-500/30 text-slate-200">
-                            Fecha: {getDocumentDate(doc)}
-                          </Badge>
-                          {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
-                            <Badge variant="outline" className={metaChipClass}>
-                              <Sparkles className="h-4 w-4 flex-shrink-0 text-purple-300" />
-                              <span className="truncate text-purple-100">Ejecutiva:</span>
-                              <span className="truncate text-purple-200">{doc.ejecutiva}</span>
-                            </Badge>
-                          )}
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate text-sm font-medium text-[var(--cf-text)]">
+                            {company?.razon_social || doc.empresa_nombre || (conductor ? `${conductor.nombres} ${conductor.apellido_paterno}` : 'Sin empresa')}
+                          </p>
+                          <span className="flex-none text-[10px] text-[var(--cf-text-muted)]">{getDocumentPeriod(doc)}</span>
                         </div>
+                        <p className="mt-1 truncate text-xs text-[var(--cf-text-secondary)]">
+                          {getDocumentTypeLabel(doc)}
+                        </p>
+                        <p className="mt-1 truncate text-[11px] text-[var(--cf-text-muted)]">
+                          {doc.original_filename || doc.file_name || 'Documento sin nombre'}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                      {doc.file_url && (
-                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)} className="text-slate-400 hover:text-white">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id, 'subcontractor')} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400 text-blue-300 bg-blue-500/10 hover:bg-blue-500/30 ring-1 ring-blue-400/30" title="Recomendado: Analizar con IA antes de aprobar">
-                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3 text-blue-400" />}
-                        Analizar con IA
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleApprove(doc.id, 'subcontractor')} disabled={loading === doc.id} className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20">
-                        {loading === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                        Aprobar
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleRejectClick(doc.id, 'subcontractor')} disabled={loading === doc.id} className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20">
-                        <X className="h-3 w-3" />
-                        Rechazar
-                      </Button>
-                    </div>
-                  </div>
+                  </button>
                 )
-              })}
+              })
+            )}
+          </div>
+        </aside>
+
+        <section className="min-w-0">
+          {!selectedDoc ? (
+            <div className="flex h-full min-h-[520px] items-center justify-center px-6 text-center">
+              <div>
+                <FileText className="mx-auto h-6 w-6 text-[var(--cf-text-muted)]" />
+                <p className="mt-3 text-sm font-medium text-[var(--cf-text)]">Selecciona un documento</p>
+                <p className="mt-1 text-xs text-[var(--cf-text-muted)]">La revisión aparecerá aquí.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-full min-h-[620px] flex-col">
+              <div className="border-b border-[var(--cf-border)] px-5 py-4">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {selectedSource === 'conductor' ? 'Conductor' : 'Empresa'}
+                      </Badge>
+                      <Badge variant="outline" className={getDocumentTypeChipClass(selectedDoc)}>
+                        {getDocumentTypeLabel(selectedDoc)}
+                      </Badge>
+                      <span className="text-xs text-[var(--cf-text-muted)]">Período {getDocumentPeriod(selectedDoc)}</span>
+                    </div>
+                    <h2 className="mt-3 truncate text-lg font-semibold text-[var(--cf-text)]">
+                      {selectedDoc.original_filename || selectedDoc.file_name || 'Documento'}
+                    </h2>
+                    <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">
+                      {selectedCompany?.razon_social || selectedDoc.empresa_nombre || 'Sin empresa'}
+                      {selectedCompany?.rut ? ` · ${selectedCompany.rut}` : ''}
+                    </p>
+                    {selectedConductor && (
+                      <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+                        {selectedConductor.nombres} {selectedConductor.apellido_paterno} · {selectedConductor.rut}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAnalyzeDocument(selectedDoc.id, selectedSource)}
+                      disabled={analyzing === selectedDoc.id || loading === selectedDoc.id}
+                      className="gap-1"
+                    >
+                      {analyzing === selectedDoc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      Analizar IA
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRejectClick(selectedDoc.id, selectedSource)}
+                      disabled={loading === selectedDoc.id}
+                      className="gap-1 border-red-500/40 text-red-300 hover:bg-red-500/10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Rechazar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleApprove(selectedDoc.id, selectedSource)}
+                      disabled={loading === selectedDoc.id}
+                      className="gap-1 bg-green-700 hover:bg-green-600"
+                    >
+                      {loading === selectedDoc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                      Aprobar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_240px]">
+                <div className="min-h-[460px] border-b border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 lg:border-b-0 lg:border-r">
+                  {selectedDoc.file_url ? (
+                    selectedDoc.file_url.toLowerCase().includes('.pdf') ? (
+                      <PDFViewer
+                        url={selectedDoc.file_url}
+                        filename={selectedDoc.original_filename || selectedDoc.file_name || 'document.pdf'}
+                      />
+                    ) : (
+                      <div className="flex h-full min-h-[440px] items-center justify-center overflow-auto rounded-[6px] bg-black/20 p-3">
+                        <img
+                          src={selectedDoc.file_url}
+                          alt={selectedDoc.original_filename || selectedDoc.file_name || 'Documento'}
+                          className="max-h-[64vh] max-w-full object-contain"
+                        />
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex min-h-[440px] items-center justify-center text-sm text-[var(--cf-text-muted)]">
+                      Este documento no tiene archivo disponible.
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-5 p-4">
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Contexto</p>
+                    <dl className="mt-3 space-y-3 text-xs">
+                      <div>
+                        <dt className="text-[var(--cf-text-muted)]">Empresa</dt>
+                        <dd className="mt-0.5 text-[var(--cf-text)]">{selectedCompany?.razon_social || selectedDoc.empresa_nombre || 'Sin empresa'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[var(--cf-text-muted)]">RUT</dt>
+                        <dd className="mt-0.5 text-[var(--cf-text)]">{selectedCompany?.rut || selectedDoc.subcontractor_rut || selectedConductor?.rut || '—'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[var(--cf-text-muted)]">Tipo</dt>
+                        <dd className="mt-0.5 text-[var(--cf-text)]">{getDocumentTypeLabel(selectedDoc)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[var(--cf-text-muted)]">Período</dt>
+                        <dd className="mt-0.5 text-[var(--cf-text)]">{getDocumentPeriod(selectedDoc)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[var(--cf-text-muted)]">Subido</dt>
+                        <dd className="mt-0.5 text-[var(--cf-text)]">{getDocumentDate(selectedDoc)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  {selectedDoc.file_url && (
+                    <a
+                      href={buildDocumentAccessUrl(selectedDoc.file_url, 'download')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Button variant="outline" size="sm" className="w-full gap-2">
+                        <Download className="h-3.5 w-3.5" />
+                        Descargar
+                      </Button>
+                    </a>
+                  )}
+
+                  <p className="border-t border-[var(--cf-border)] pt-4 text-[11px] leading-5 text-[var(--cf-text-muted)]">
+                    Al aprobar o rechazar, el documento sale de esta bandeja y se selecciona automáticamente el siguiente.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </section>
+      </div>
 
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-label={`Preview de ${previewDoc?.file_name || 'documento'}`}>
