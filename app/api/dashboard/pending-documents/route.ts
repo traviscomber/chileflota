@@ -18,7 +18,14 @@ type Focus = {
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
 const PAGE_SIZE = 1000
 
-const SINGLETON_COVERAGE_CODES = new Set([\n  'F29',\n  'F30',\n  'CERT_AFIL_MUTUAL',\n  'F30-1_DOÑA_ISIDORA',\n])\n\nconst LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
+const SINGLETON_COVERAGE_CODES = new Set([
+  'F29',
+  'F30',
+  'CERT_AFIL_MUTUAL',
+  'F30-1_DOÑA_ISIDORA',
+])
+
+const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
   'LIQUIDACION_SUELDO',
   'HOJA_VIDA',
   'CERT_ANTECEDENTES',
@@ -69,7 +76,12 @@ function monthIndex(year: number | null | undefined, month: number | null | unde
   return null
 }
 
-function approvedEvidenceCoversPending(\n  pending: any,\n  approved: any,\n  periodicidad: string | null | undefined,\n  typeCode: string | null | undefined,\n) {
+function approvedEvidenceCoversPending(
+  pending: any,
+  approved: any,
+  periodicidad: string | null | undefined,
+  typeCode: string | null | undefined,
+) {
   if (pending.subcontractor_id !== approved.subcontractor_id) return false
   if (pending.document_type_id !== approved.document_type_id) return false
 
