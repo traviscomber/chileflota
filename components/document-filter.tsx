@@ -19,6 +19,8 @@ interface DocumentFilterProps {
   executives?: Array<{ id: string; nombre: string }>
   companies?: Array<{ id: string; nombre: string; rut: string }>
   documentTypes?: Array<{ value: string; label: string }>
+  compact?: boolean
+  hideExecutive?: boolean
 }
 
 export interface DocumentFilters {
@@ -35,6 +37,8 @@ export function DocumentFilter({
   executives = [],
   companies = [],
   documentTypes = [],
+  compact = false,
+  hideExecutive = false,
 }: DocumentFilterProps) {
   const [filters, setFilters] = useState<DocumentFilters>({
     searchQuery: '',
@@ -65,125 +69,134 @@ export function DocumentFilter({
 
   const hasActiveFilters =
     filters.searchQuery ||
-    filters.executiveId ||
+    (!hideExecutive && filters.executiveId) ||
     filters.companyId ||
     filters.documentType ||
     filters.month !== ALL_VALUE ||
     filters.year !== ALL_VALUE
 
   return (
-    <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 mb-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+    <div className={compact
+      ? "border-y border-[var(--cf-border)] bg-[var(--cf-canvas)] px-3 py-3"
+      : "mb-6 rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4"
+    }>
+      {!compact && (
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-medium text-slate-200">Filtrar Documentos</h3>
+            <Filter className="h-4 w-4 text-[var(--cf-text-muted)]" />
+            <h3 className="text-sm font-medium text-[var(--cf-text)]">Filtrar documentos</h3>
           </div>
           {hasActiveFilters && (
             <button
               onClick={handleReset}
-              className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1"
+              className="flex items-center gap-1 text-xs text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]"
             >
-              <X className="w-3 h-3" />
-              Limpiar filtros
+              <X className="h-3 w-3" />
+              Limpiar
             </button>
           )}
         </div>
+      )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <Input
-              placeholder="Buscar por nombre, RUT..."
-              value={filters.searchQuery}
-              onChange={(e) => handleFilterChange({ searchQuery: e.target.value })}
-              className="pl-8 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500"
-            />
-          </div>
-
-          {companies.length > 0 && (
-            <Select
-              value={filters.companyId || 'all'}
-              onValueChange={(value) => handleFilterChange({ companyId: value === 'all' ? undefined : value })}
-            >
-              <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
-                <SelectValue placeholder="Empresa" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="all">Todas las empresas</SelectItem>
-                {companies.map((company) => (
-                  <SelectItem key={company.id} value={company.id}>
-                    {company.nombre} ({company.rut})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {executives.length > 0 && (
-            <Select
-              value={filters.executiveId || 'all'}
-              onValueChange={(value) => handleFilterChange({ executiveId: value === 'all' ? undefined : value })}
-            >
-              <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
-                <SelectValue placeholder="Ejecutiva" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="all">Todas las ejecutivas</SelectItem>
-                {executives.map((exec) => (
-                  <SelectItem key={exec.id} value={exec.id}>
-                    {exec.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          <Select
-            value={filters.documentType || 'all'}
-            onValueChange={(value) => handleFilterChange({ documentType: value === 'all' ? undefined : value })}
-          >
-            <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
-              <SelectValue placeholder="Tipo de documento" />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-600">
-              <SelectItem value="all">Todos los tipos</SelectItem>
-              {documentTypes.length > 0 ? (
-                documentTypes.map((docType) => (
-                  <SelectItem key={docType.value} value={docType.value}>
-                    {docType.label}
-                  </SelectItem>
-                ))
-              ) : (
-                <>
-                  <SelectItem value="license">Licencia</SelectItem>
-                  <SelectItem value="insurance">Seguro</SelectItem>
-                  <SelectItem value="id">Identificacion</SelectItem>
-                  <SelectItem value="other">Otro</SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
+      <div className={compact
+        ? "grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.3fr)_minmax(180px,1fr)_minmax(180px,1fr)_auto]"
+        : "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4"
+      }>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cf-text-muted)]" />
+          <Input
+            placeholder="Buscar empresa, RUT, conductor o archivo"
+            value={filters.searchQuery}
+            onChange={(e) => handleFilterChange({ searchQuery: e.target.value })}
+            className="h-10 border-[var(--cf-border)] bg-[var(--cf-surface)] pl-9 text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)]"
+          />
         </div>
 
-        <DatePeriodFilter
-          value={temporalFilters}
-          onChange={(value) => handleFilterChange(value)}
-          onClear={() => handleFilterChange({ month: ALL_VALUE, year: ALL_VALUE })}
-        />
-
-        {hasActiveFilters && (
-          <Button
-            onClick={handleReset}
-            variant="ghost"
-            size="sm"
-            className="gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 w-full"
+        {companies.length > 0 && (
+          <Select
+            value={filters.companyId || 'all'}
+            onValueChange={(value) => handleFilterChange({ companyId: value === 'all' ? undefined : value })}
           >
-            <X className="w-4 h-4" />
-            Limpiar todos los filtros
-          </Button>
+            <SelectTrigger className="h-10 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)]">
+              <SelectValue placeholder="Empresa" />
+            </SelectTrigger>
+            <SelectContent className="border-[var(--cf-border)] bg-[var(--cf-surface)]">
+              <SelectItem value="all">Todas las empresas</SelectItem>
+              {companies.map((company) => (
+                <SelectItem key={company.id} value={company.id}>
+                  {company.nombre} ({company.rut})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {!hideExecutive && executives.length > 0 && (
+          <Select
+            value={filters.executiveId || 'all'}
+            onValueChange={(value) => handleFilterChange({ executiveId: value === 'all' ? undefined : value })}
+          >
+            <SelectTrigger className="h-10 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)]">
+              <SelectValue placeholder="Ejecutiva" />
+            </SelectTrigger>
+            <SelectContent className="border-[var(--cf-border)] bg-[var(--cf-surface)]">
+              <SelectItem value="all">Todas las ejecutivas</SelectItem>
+              {executives.map((exec) => (
+                <SelectItem key={exec.id} value={exec.id}>
+                  {exec.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Select
+          value={filters.documentType || 'all'}
+          onValueChange={(value) => handleFilterChange({ documentType: value === 'all' ? undefined : value })}
+        >
+          <SelectTrigger className="h-10 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)]">
+            <SelectValue placeholder="Tipo de documento" />
+          </SelectTrigger>
+          <SelectContent className="border-[var(--cf-border)] bg-[var(--cf-surface)]">
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            {documentTypes.map((docType) => (
+              <SelectItem key={docType.value} value={docType.value}>
+                {docType.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {compact ? (
+          <div className="flex items-center gap-2">
+            <DatePeriodFilter
+              value={temporalFilters}
+              onChange={(value) => handleFilterChange(value)}
+              onClear={() => handleFilterChange({ month: ALL_VALUE, year: ALL_VALUE })}
+            />
+            {hasActiveFilters && (
+              <Button
+                type="button"
+                onClick={handleReset}
+                variant="ghost"
+                size="sm"
+                className="h-10 flex-none px-3 text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]"
+                aria-label="Limpiar filtros"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="md:col-span-2 lg:col-span-4">
+            <DatePeriodFilter
+              value={temporalFilters}
+              onChange={(value) => handleFilterChange(value)}
+              onClear={() => handleFilterChange({ month: ALL_VALUE, year: ALL_VALUE })}
+            />
+          </div>
         )}
       </div>
     </div>
   )
-}
+
