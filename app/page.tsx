@@ -13,12 +13,13 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
+  UploadCloud,
+  ScanLine,
+  UserCheck,
+  Truck,
 } from "lucide-react"
 
 export const revalidate = 300
-
-const AI_VISUAL =
-  "https://gcrmfajlebshvohmbfuy.supabase.co/storage/v1/object/public/landing-assets/chileflota/ai-logistics-document-workflow.webp"
 
 async function getPublicProcessedDocumentCount(): Promise<number | null> {
   try {
@@ -46,6 +47,134 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function AccentRule() {
   return <span className="block h-px w-10 bg-[var(--cf-accent)]" aria-hidden="true" />
+}
+
+function HeroWorkflowVisual() {
+  const steps = [
+    { icon: UploadCloud, label: "Subcontratista", meta: "Carga documentación" },
+    { icon: ScanLine, label: "ChileFlota + IA", meta: "Lee · clasifica · alerta" },
+    { icon: UserCheck, label: "Ejecutiva", meta: "Revisa · valida · decide" },
+    { icon: Truck, label: "Operación", meta: "Sigue con respaldo" },
+  ]
+
+  return (
+    <div className="relative flex min-h-[540px] flex-col justify-center overflow-hidden bg-[var(--cf-sidebar)] p-6 sm:p-8 lg:min-h-[690px] lg:p-10">
+      <div className="pointer-events-none absolute inset-0 opacity-35" aria-hidden="true">
+        <div className="absolute inset-0 bg-grid" />
+        <div className="absolute left-[18%] top-0 h-full w-px bg-[var(--cf-border)]" />
+        <div className="absolute left-[50%] top-0 h-full w-px bg-[var(--cf-border)]" />
+        <div className="absolute left-[82%] top-0 h-full w-px bg-[var(--cf-border)]" />
+      </div>
+
+      <div className="relative z-10">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--cf-text-muted)]">Flujo documental operativo</p>
+          <p className="font-mono text-[10px] text-[var(--cf-accent)]">LIVE · 04 ETAPAS</p>
+        </div>
+
+        <div className="relative mt-10">
+          <div className="absolute left-[8%] right-[8%] top-9 hidden h-px bg-[var(--cf-border)] md:block" aria-hidden="true" />
+          <div className="absolute left-[8%] top-9 hidden h-px w-[28%] bg-[var(--cf-accent)] md:block" aria-hidden="true" />
+
+          <div className="grid gap-4 md:grid-cols-4">
+            {steps.map((step, index) => {
+              const Icon = step.icon
+              return (
+                <div key={step.label} className="relative border border-[var(--cf-border)] bg-[rgba(35,35,38,0.94)] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] text-[var(--cf-accent)]">0{index + 1}</span>
+                    <span className="flex h-10 w-10 items-center justify-center border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+                      <Icon className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+                    </span>
+                  </div>
+                  <p className="mt-12 text-base font-semibold">{step.label}</p>
+                  <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">{step.meta}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-px bg-[var(--cf-border)] sm:grid-cols-[1.1fr_0.9fr]">
+          <div className="bg-[var(--cf-surface)] p-5">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Antes</p>
+            <p className="mt-2 text-sm font-medium text-[var(--cf-text-secondary)]">Correos · planillas · mensajes · seguimiento manual</p>
+          </div>
+          <div className="border-l-2 border-l-[var(--cf-accent)] bg-[var(--cf-surface)] p-5">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Con ChileFlota</p>
+            <p className="mt-2 text-sm font-semibold">Una bandeja · una decisión · una evidencia trazable</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AIProcessingVisual() {
+  return (
+    <div className="relative overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+      <div className="absolute inset-0 bg-grid opacity-25" aria-hidden="true" />
+      <div className="relative z-10 p-5 sm:p-6">
+        <div className="flex items-center justify-between border-b border-[var(--cf-border)] pb-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Documento en análisis</p>
+            <p className="mt-2 text-sm font-semibold">F30-1 · Septiembre 2026</p>
+          </div>
+          <span className="flex items-center gap-2 text-xs text-[var(--cf-text-secondary)]">
+            <span className="h-2 w-2 rounded-full bg-[var(--cf-accent)]" />
+            IA asistiendo
+          </span>
+        </div>
+
+        <div className="grid gap-4 py-5 md:grid-cols-[1fr_0.9fr]">
+          <div className="border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
+            <div className="flex items-center justify-between">
+              <FileText className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+              <span className="font-mono text-[10px] text-[var(--cf-text-muted)]">PDF</span>
+            </div>
+            <div className="mt-8 space-y-3">
+              <div className="h-2 w-4/5 bg-[var(--cf-border)]" />
+              <div className="h-2 w-3/5 bg-[var(--cf-border)]" />
+              <div className="h-2 w-11/12 bg-[var(--cf-border)]" />
+              <div className="h-2 w-2/3 bg-[var(--cf-border)]" />
+            </div>
+            <div className="mt-8 grid gap-2 sm:grid-cols-2">
+              <div className="border border-[var(--cf-border)] p-3">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">RUT</p>
+                <p className="mt-2 text-xs font-semibold">Detectado</p>
+              </div>
+              <div className="border border-[var(--cf-border)] p-3">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Periodo</p>
+                <p className="mt-2 text-xs font-semibold">Coincide</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {[
+              ["Tipo documental", "F30-1", "OK"],
+              ["Vigencia", "Septiembre 2026", "OK"],
+              ["RUT empresa", "Coincide", "OK"],
+              ["Confianza", "Alta", "IA"],
+            ].map(([label, value, status]) => (
+              <div key={label} className="grid grid-cols-[1fr_auto] items-center gap-3 border border-[var(--cf-border)] bg-[var(--cf-surface)] p-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">{label}</p>
+                  <p className="mt-1 text-xs font-semibold">{value}</p>
+                </div>
+                <span className="font-mono text-[10px] text-[var(--cf-accent)]">{status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-[var(--cf-border)] pt-4">
+          <p className="text-xs text-[var(--cf-text-muted)]">La IA prepara evidencia y contexto.</p>
+          <p className="text-xs font-semibold">La ejecutiva decide.</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default async function LandingPage() {
@@ -118,29 +247,8 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="relative min-h-[540px] overflow-hidden border-t border-[var(--cf-border)] bg-[var(--cf-sidebar)] lg:min-h-[690px] lg:border-l lg:border-t-0">
-            <img
-              src={AI_VISUAL}
-              alt="Flujo visual de ChileFlota desde la carga documental del subcontratista hasta la validación de la ejecutiva y la continuidad operacional."
-              className="absolute inset-0 h-full w-full object-cover object-center opacity-90"
-              width="1672"
-              height="941"
-            />
-            <div className="absolute inset-0 bg-[rgba(17,18,20,0.28)]" />
-            <div className="absolute inset-x-0 bottom-0 grid gap-px bg-[var(--cf-border)] sm:grid-cols-4">
-              {[
-                ["01", "Subcontratista", "Carga documentación"],
-                ["02", "ChileFlota + IA", "Ordena y extrae"],
-                ["03", "Ejecutiva", "Revisa y decide"],
-                ["04", "Operación", "Sigue con respaldo"],
-              ].map(([number, title, text]) => (
-                <div key={number} className="bg-[rgba(23,23,25,0.94)] p-4">
-                  <p className="font-mono text-[10px] text-[var(--cf-accent)]">{number}</p>
-                  <p className="mt-2 text-sm font-semibold">{title}</p>
-                  <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{text}</p>
-                </div>
-              ))}
-            </div>
+          <div className="border-t border-[var(--cf-border)] lg:border-l lg:border-t-0">
+            <HeroWorkflowVisual />
           </div>
         </div>
 
@@ -267,15 +375,8 @@ export default async function LandingPage() {
                 ChileFlota reduce trabajo manual leyendo, clasificando y estructurando evidencia antes de la revisión humana.
               </p>
 
-              <div className="mt-8 overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
-                <img
-                  src={AI_VISUAL}
-                  alt="Análisis documental asistido por IA dentro del flujo ChileFlota."
-                  width="1672"
-                  height="941"
-                  loading="lazy"
-                  className="block aspect-[16/9] w-full object-cover"
-                />
+              <div className="mt-8">
+                <AIProcessingVisual />
               </div>
             </div>
 
