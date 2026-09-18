@@ -3,13 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import {
   AlertTriangle,
   ArrowRight,
-  BadgeCheck,
   Building2,
-  Clock3,
-  FileCheck2,
   FileText,
-  Layers3,
-  ListChecks,
   ShieldCheck,
   Sparkles,
   Users,
@@ -69,7 +64,7 @@ function HeroWorkflowVisual() {
       <div className="relative z-10">
         <div className="flex items-center justify-between">
           <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--cf-text-muted)]">Flujo documental operativo</p>
-          <p className="font-mono text-[10px] text-[var(--cf-accent)]">LIVE · 04 ETAPAS</p>
+          <p className="font-mono text-[10px] text-[var(--cf-accent)]">FLUJO · 04 ETAPAS</p>
         </div>
 
         <div className="relative mt-10">
@@ -117,8 +112,8 @@ function AIProcessingVisual() {
       <div className="relative z-10 p-5 sm:p-6">
         <div className="flex items-center justify-between border-b border-[var(--cf-border)] pb-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Documento en análisis</p>
-            <p className="mt-2 text-sm font-semibold">F30-1 · Septiembre 2026</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Ejemplo de análisis</p>
+            <p className="mt-2 text-sm font-semibold">Documento laboral · periodo detectado</p>
           </div>
           <span className="flex items-center gap-2 text-xs text-[var(--cf-text-secondary)]">
             <span className="h-2 w-2 rounded-full bg-[var(--cf-accent)]" />
@@ -152,10 +147,10 @@ function AIProcessingVisual() {
 
           <div className="space-y-2">
             {[
-              ["Tipo documental", "F30-1", "OK"],
-              ["Vigencia", "Septiembre 2026", "OK"],
-              ["RUT empresa", "Coincide", "OK"],
-              ["Confianza", "Alta", "IA"],
+              ["Tipo documental", "Detectado", "IA"],
+              ["Periodo", "Extraído", "IA"],
+              ["RUT empresa", "Coincide", "REGLA"],
+              ["Advertencias", "Para revisión", "IA"],
             ].map(([label, value, status]) => (
               <div key={label} className="grid grid-cols-[1fr_auto] items-center gap-3 border border-[var(--cf-border)] bg-[var(--cf-surface)] p-3">
                 <div>
@@ -173,6 +168,146 @@ function AIProcessingVisual() {
           <p className="text-xs font-semibold">La ejecutiva decide.</p>
         </div>
       </div>
+    </div>
+  )
+}
+
+
+function RiskContinuityGraphic() {
+  return (
+    <div className="overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+      <div className="flex items-center justify-between border-b border-[var(--cf-border)] px-5 py-4">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">De evidencia dispersa a decisión verificable</p>
+        <span className="font-mono text-[10px] text-[var(--cf-accent)]">03 CAPAS</span>
+      </div>
+
+      <div className="grid gap-px bg-[var(--cf-border)]">
+        <div className="grid bg-[var(--cf-surface)] p-5 sm:grid-cols-[52px_150px_1fr] sm:items-center">
+          <span className="font-mono text-xs text-[var(--cf-accent)]">01</span>
+          <p className="mt-3 text-sm font-semibold sm:mt-0">Entrada</p>
+          <div className="mt-4 grid gap-2 sm:mt-0 sm:grid-cols-3">
+            {["PDF", "IMAGEN", "FORMULARIO"].map((item) => (
+              <span key={item} className="border border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-3 py-3 text-center font-mono text-[10px] text-[var(--cf-text-secondary)]">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid bg-[var(--cf-surface)] p-5 sm:grid-cols-[52px_150px_1fr] sm:items-center">
+          <span className="font-mono text-xs text-[var(--cf-accent)]">02</span>
+          <p className="mt-3 text-sm font-semibold sm:mt-0">Control</p>
+          <div className="mt-4 grid gap-2 sm:mt-0 sm:grid-cols-3">
+            {[
+              ["Periodo", "¿Corresponde?"],
+              ["Vigencia", "¿Sigue válido?"],
+              ["Requisito", "¿Está cubierto?"],
+            ].map(([label, question]) => (
+              <div key={label} className="border-l border-[var(--cf-accent)] bg-[var(--cf-sidebar)] px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">{label}</p>
+                <p className="mt-1 text-xs font-medium">{question}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid bg-[var(--cf-surface)] p-5 sm:grid-cols-[52px_150px_1fr] sm:items-center">
+          <span className="font-mono text-xs text-[var(--cf-accent)]">03</span>
+          <p className="mt-3 text-sm font-semibold sm:mt-0">Decisión</p>
+          <div className="mt-4 grid gap-px bg-[var(--cf-border)] sm:mt-0 sm:grid-cols-[1fr_auto_1fr]">
+            <div className="bg-[var(--cf-sidebar)] px-4 py-3">
+              <p className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">Evidencia</p>
+              <p className="mt-1 text-xs font-medium">Estado y respaldo visibles</p>
+            </div>
+            <div className="hidden w-12 items-center justify-center bg-[var(--cf-canvas)] sm:flex" aria-hidden="true">
+              <span className="h-px w-5 bg-[var(--cf-accent)]" />
+            </div>
+            <div className="bg-[var(--cf-sidebar)] px-4 py-3">
+              <p className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">Humano</p>
+              <p className="mt-1 text-xs font-medium">Validar y dejar trazabilidad</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ControlLoopGraphic() {
+  const steps = [
+    { number: "01", title: "Consolidar", eyebrow: "Entrada", text: "La evidencia queda vinculada a la empresa, persona o unidad correspondiente.", footer: "Evidencia + contexto" },
+    { number: "02", title: "Priorizar", eyebrow: "Criterio", text: "Requisitos, periodos y vigencias se ordenan para hacer visible lo crítico.", footer: "Riesgo + urgencia" },
+    { number: "03", title: "Resolver", eyebrow: "Salida", text: "El equipo revisa, valida y mantiene trazabilidad sobre cada decisión documental.", footer: "Decisión + respaldo" },
+  ]
+
+  return (
+    <div className="mt-10 overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-sidebar)]">
+      <div className="grid lg:grid-cols-[1fr_64px_1fr_64px_1fr]">
+        {steps.map((step, index) => (
+          <div key={step.number} className="contents">
+            <article className="relative min-h-[300px] bg-[var(--cf-surface)] p-6 sm:p-8">
+              <span className="absolute inset-x-0 top-0 h-1 bg-[var(--cf-accent)]" aria-hidden="true" />
+              <div className="flex items-start justify-between gap-6">
+                <p className="font-mono text-sm text-[var(--cf-accent)]">{step.number}</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">{step.eyebrow}</p>
+              </div>
+              <div className="mt-14">
+                <p className="text-2xl font-semibold tracking-[-0.03em]">{step.title}</p>
+                <p className="mt-4 max-w-sm text-sm leading-6 text-[var(--cf-text-secondary)]">{step.text}</p>
+              </div>
+              <div className="mt-12 border-t border-[var(--cf-border)] pt-4">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">{step.footer}</p>
+              </div>
+            </article>
+            {index < steps.length - 1 ? (
+              <div className="relative hidden bg-[var(--cf-canvas)] lg:block" aria-hidden="true">
+                <span className="absolute left-1/2 top-1/2 h-px w-8 -translate-x-1/2 bg-[var(--cf-border)]" />
+                <span className="absolute left-1/2 top-1/2 h-2 w-2 -translate-y-1/2 translate-x-3 rotate-45 border-r border-t border-[var(--cf-accent)]" />
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <div className="grid border-t border-[var(--cf-border)] bg-[var(--cf-canvas)] sm:grid-cols-3">
+        <div className="p-4 text-xs text-[var(--cf-text-muted)]">Recibir y ordenar evidencia</div>
+        <div className="border-t border-[var(--cf-border)] p-4 text-xs text-[var(--cf-text-muted)] sm:border-l sm:border-t-0">Detectar lo crítico</div>
+        <div className="border-t border-[var(--cf-border)] p-4 text-xs text-[var(--cf-text-muted)] sm:border-l sm:border-t-0">Cerrar con trazabilidad</div>
+      </div>
+    </div>
+  )
+}
+
+function OperationalReadGraphic() {
+  const rows = [
+    ["Qué falta", "Cobertura", "Requisitos sin respaldo suficiente", "Identificar gap"],
+    ["Qué vence", "Vigencia", "Documentos próximos a requerir acción", "Anticipar renovación"],
+    ["Qué está respaldado", "Evidencia", "Documentación validada y disponible", "Demostrar cumplimiento"],
+  ]
+
+  return (
+    <div className="overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-sidebar)]">
+      <div className="grid grid-cols-[1fr_auto] border-b border-[var(--cf-border)] bg-[var(--cf-canvas)] px-5 py-3 text-[10px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)] sm:grid-cols-[180px_120px_1fr_180px]">
+        <span>Pregunta</span>
+        <span className="hidden sm:block">Lectura</span>
+        <span className="hidden sm:block">Evidencia</span>
+        <span>Acción</span>
+      </div>
+      {rows.map(([question, reading, evidence, action], index) => (
+        <div key={question} className="grid gap-4 border-b border-[var(--cf-border)] bg-[var(--cf-surface)] px-5 py-5 last:border-b-0 sm:grid-cols-[180px_120px_1fr_180px] sm:items-center">
+          <div>
+            <p className="font-mono text-[10px] text-[var(--cf-accent)]">0{index + 1}</p>
+            <p className="mt-1 text-sm font-semibold">{question}</p>
+          </div>
+          <p className="text-xs uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">{reading}</p>
+          <div className="relative pl-5">
+            <span className="absolute inset-y-0 left-0 w-px bg-[var(--cf-border)]" aria-hidden="true" />
+            <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{evidence}</p>
+          </div>
+          <div className="border-t border-[var(--cf-border)] pt-3 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+            <p className="text-xs font-medium text-[var(--cf-text)]">{action}</p>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -299,23 +434,7 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <div className="border-y border-[var(--cf-border)]">
-            {[
-              [FileText, "01", "Evidencia distribuida", "La información llega desde múltiples actores, fuentes y formatos."],
-              [Clock3, "02", "Vigencias variables", "Cada requisito tiene periodo, estado, renovación y condición de uso."],
-              [AlertTriangle, "03", "Decisión operacional", "La organización necesita saber si existe respaldo suficiente para operar."],
-            ].map(([Icon, number, title, text]) => {
-              const RowIcon = Icon as typeof FileText
-              return (
-                <div key={String(number)} className="grid gap-4 border-b border-[var(--cf-border)] py-6 last:border-b-0 sm:grid-cols-[48px_44px_190px_1fr] sm:items-center">
-                  <span className="font-mono text-xs text-[var(--cf-accent)]">{String(number)}</span>
-                  <RowIcon className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
-                  <p className="text-sm font-semibold">{String(title)}</p>
-                  <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{String(text)}</p>
-                </div>
-              )
-            })}
-          </div>
+          <RiskContinuityGraphic />
         </div>
       </section>
 
@@ -335,28 +454,7 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-4 lg:grid-cols-3">
-            {[
-              [Layers3, "01", "Consolidar", "La evidencia queda vinculada a la empresa, persona o unidad correspondiente.", "Datos · contexto · visión única"],
-              [ListChecks, "02", "Priorizar", "El sistema ordena requisitos, periodos y vigencias para hacer visible lo crítico.", "Alertas · análisis · foco"],
-              [BadgeCheck, "03", "Resolver", "El equipo revisa, valida y mantiene trazabilidad sobre cada decisión documental.", "Acción · seguimiento · resultados"],
-            ].map(([Icon, number, title, text, footer]) => {
-              const CardIcon = Icon as typeof Layers3
-              return (
-                <article key={String(number)} className="border border-[var(--cf-border)] bg-[var(--cf-surface)] p-6 sm:p-7">
-                  <div className="flex items-start justify-between">
-                    <span className="font-mono text-sm text-[var(--cf-accent)]">{String(number)}</span>
-                    <CardIcon className="h-7 w-7 text-[var(--cf-accent)]" aria-hidden="true" />
-                  </div>
-                  <h3 className="mt-12 text-xl font-semibold">{String(title)}</h3>
-                  <p className="mt-4 min-h-20 text-sm leading-6 text-[var(--cf-text-secondary)]">{String(text)}</p>
-                  <p className="mt-8 border-t border-[var(--cf-border)] pt-4 text-[10px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
-                    {String(footer)}
-                  </p>
-                </article>
-              )
-            })}
-          </div>
+          <ControlLoopGraphic />
         </div>
       </section>
 
@@ -429,25 +527,7 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              [FileCheck2, "Qué falta", "Requisitos sin respaldo suficiente para el periodo operativo vigente.", "Visibilidad total de gaps"],
-              [Clock3, "Qué vence", "Documentación que requiere atención antes de afectar continuidad operacional.", "Menos riesgo, más continuidad"],
-              [BadgeCheck, "Qué está respaldado", "Documentación validada y disponible para revisión, auditoría o mandante.", "Cumplimiento verificable"],
-            ].map(([Icon, title, text, footer]) => {
-              const OpIcon = Icon as typeof FileCheck2
-              return (
-                <article key={String(title)} className="border border-[var(--cf-border)] bg-[var(--cf-surface)] p-6">
-                  <OpIcon className="h-6 w-6 text-[var(--cf-accent)]" aria-hidden="true" />
-                  <h3 className="mt-8 text-xl font-semibold">{String(title)}</h3>
-                  <p className="mt-4 text-sm leading-6 text-[var(--cf-text-secondary)]">{String(text)}</p>
-                  <p className="mt-8 border-t border-[var(--cf-border)] pt-4 text-[10px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
-                    {String(footer)}
-                  </p>
-                </article>
-              )
-            })}
-          </div>
+          <OperationalReadGraphic />
         </div>
       </section>
 
