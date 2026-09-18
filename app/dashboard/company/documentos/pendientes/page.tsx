@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { AlertCircle, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { PendingDocumentsList } from '@/components/pending-documents-list'
 
 function normalizeText(value: unknown) {
@@ -54,11 +55,14 @@ export default function PendientesPage() {
   const searchParams = useSearchParams()
   const [allData, setAllData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const search = searchParams.get('search')?.trim() || ''
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
+      setError(null)
       try {
         const focusMode = searchParams.get('focus_mode')
         const focusId = searchParams.get('focus_id')
@@ -74,14 +78,14 @@ export default function PendientesPage() {
         setAllData(data)
       } catch (error) {
         console.error('[v0] Error fetching pending documents:', error)
-        setAllData({ conductorDocs: [], subDocs: [] })
+        setError('No pudimos cargar la bandeja. Tus documentos no fueron modificados.')
       } finally {
         setLoading(false)
       }
     }
 
     fetchData()
-  }, [searchParams])
+  }, [searchParams, reloadKey])
 
   const filteredData = useMemo(() => {
     const conductorDocs = allData?.conductorDocs || []
@@ -96,10 +100,46 @@ export default function PendientesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
-          <p className="text-slate-400">Cargando documentos...</p>
+      <div className="space-y-4" aria-busy="true" aria-label="Cargando bandeja de documentos">
+        <div className="border-b border-[var(--cf-border)] pb-4">
+          <div className="h-3 w-32 animate-pulse rounded bg-[var(--cf-surface-2)]" />
+          <div className="mt-3 h-7 w-64 animate-pulse rounded bg-[var(--cf-surface-2)]" />
+          <div className="mt-3 h-4 w-48 animate-pulse rounded bg-[var(--cf-surface-2)]" />
+        </div>
+        <div className="h-12 animate-pulse rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)]" />
+        <div className="grid min-h-[66vh] overflow-hidden rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] lg:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="border-b border-[var(--cf-border)] p-4 lg:border-b-0 lg:border-r">
+            <div className="space-y-3">
+              {[0, 1, 2, 3, 4, 5].map((item) => (
+                <div key={item} className="space-y-2 border-b border-[var(--cf-border)] pb-3">
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-[var(--cf-surface-2)]" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-[var(--cf-surface-2)]" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="min-h-[520px] animate-pulse bg-[var(--cf-bg)]" />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[65vh] items-center justify-center px-4">
+        <div className="max-w-md text-center">
+          <AlertCircle className="mx-auto h-6 w-6 text-[var(--cf-warning)]" />
+          <h1 className="mt-4 text-lg font-semibold text-[var(--cf-text)]">No se pudo abrir la bandeja</h1>
+          <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">{error}</p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-5 gap-2"
+            onClick={() => setReloadKey((value) => value + 1)}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Reintentar
+          </Button>
         </div>
       </div>
     )
