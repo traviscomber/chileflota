@@ -1,0 +1,28 @@
+# QA refresh after JWT_SECRET configuration; no runtime behavior change.
+name: Subcontractor Auth Boundary Safety
+
+on:
+  pull_request:
+    paths:
+      - 'lib/subcontractor-auth.ts'
+      - 'app/api/auth/subcontractors/login/**'
+      - 'app/api/auth/subcontractors/profile/**'
+      - 'app/api/subcontractors/[id]/documents/**'
+      - 'app/api/subcontractors/[id]/conductors/**'
+      - '__tests__/subcontractor-auth-boundary.test.ts'
+      - '.github/workflows/subcontractor-auth-boundary-safety.yml'
+
+jobs:
+  subcontractor-auth-boundary-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/subcontractor-auth-boundary.test.ts --runInBand

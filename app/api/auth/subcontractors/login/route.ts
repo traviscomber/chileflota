@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'transportista-secret-key'
+import { signSubcontractorSession } from '@/lib/subcontractor-auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,111 +9,108 @@ export async function POST(request: NextRequest) {
     const rut = body.rut?.trim()
     const password = body.password?.trim()
 
-    console.log('[v0] Login attempt - RUT:', rut, 'Password length:', password?.length)
-
     if (!rut || !password) {
       return NextResponse.json(
         { error: 'RUT y contraseña son requeridos' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     const supabase = createAdminClient()
 
-    // Search for the RUT in transportista_auth - exact match
-    console.log('[v0] Searching for RUT:', rut)
     const { data: authRecord, error: findError } = await supabase
       .from('transportista_auth')
       .select('id, rut, password_hash, is_active, transportista_id')
       .eq('rut', rut)
-      .maybeSingle() // Returns null instead of error if not found
+      .maybeSingle()
 
     if (findError) {
-      console.error('[v0] Database error:', findError)
+      console.error('[subcontractor-login] Database lookup failed', findError)
       return NextResponse.json(
         { error: 'Error en la búsqueda' },
-        { status: 500 }
+        { status: 500 },
       )
     }
 
     if (!authRecord) {
-      console.warn('[v0] RUT not found:', rut)
       return NextResponse.json(
         { error: 'RUT o contraseña incorrectos' },
-        { status: 401 }
+        { status: 401 },
       )
     }
 
-    console.log('[v0] Found auth record for RUT:', authRecord.rut)
-    console.log('[v0] Account is_active:', authRecord.is_active)
-    console.log('[v0] Password hash length:', authRecord.password_hash?.length)
-
-    // Check if account is active
     if (!authRecord.is_active) {
       return NextResponse.json(
         { error: 'Esta cuenta está inactiva' },
-        { status: 403 }
+        { status: 403 },
       )
     }
 
-    // Verify password
-    console.log('[v0] Comparing password with hash...')
     const passwordMatches = await bcrypt.compare(password, authRecord.password_hash)
-    console.log('[v0] Password match result:', passwordMatches)
-
     if (!passwordMatches) {
-      console.warn('[v0] Password mismatch for RUT:', rut)
       return NextResponse.json(
         { error: 'RUT o contraseña incorrectos' },
-        { status: 401 }
+        { status: 401 },
       )
     }
 
-    // Get transportista details
     const { data: transportista, error: transpError } = await supabase
       .from('transportistas')
-      .select('id, rut, razon_social, nombre_fantasia')
+      .select('id, rut, razon_social, nombre_fantasia, is_active')
       .eq('id', authRecord.transportista_id)
       .maybeSingle()
 
-    if (transpError) {
-      console.error('[v0] Error fetching transportista:', transpError)
+    if (transpError || !transportista) {
+      console.error('[subcontractor-login] Canonical transportista mapping unavailable', transpError)
       return NextResponse.json(
         { error: 'Error al cargar datos de la empresa' },
-        { status: 500 }
+        { status: 500 },
       )
     }
 
-    // Create JWT token
-    const token = jwt.sign(
-      {
-        rut: authRecord.rut,
-        transportista_id: transportista?.id,
-        tipo: 'subcontratista',
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    )
+    if (transportista.is_active === false) {
+      return NextResponse.json(
+        { error: 'Esta empresa está inactiva' },
+        { status: 403 },
+      )
+    }
 
-    // Update last_login
+    let token: string
+    try {
+      token = signSubcontractorSession({
+        // transportista_auth is the credential authority. The active mapping to
+        // transportista_id is revalidated on every authenticated request.
+        rut: authRecord.rut,
+        transportistaId: transportista.id,
+      })
+    } catch (error) {
+      if (error instanceof Error && error.message === 'SUBCONTRACTOR_JWT_SECRET_NOT_CONFIGURED') {
+        console.error('[subcontractor-login] JWT secret is not safely configured')
+        return NextResponse.json(
+          { error: 'Servicio de autenticación temporalmente no disponible' },
+          { status: 503 },
+        )
+      }
+      throw error
+    }
+
+    // Preserve the existing successful-login telemetry only after the session can
+    // actually be issued. A configuration failure must not mutate last_login.
     await supabase
       .from('transportista_auth')
       .update({ last_login: new Date().toISOString() })
       .eq('id', authRecord.id)
-      .then(() => console.log('[v0] Updated last_login'))
 
-    // Create response
     const response = NextResponse.json({
       success: true,
       message: 'Login exitoso',
       transportista: {
-        id: transportista?.id,
-        rut: transportista?.rut,
-        nombre: transportista?.razon_social || transportista?.nombre_fantasia,
+        id: transportista.id,
+        rut: transportista.rut,
+        nombre: transportista.razon_social || transportista.nombre_fantasia,
       },
     })
 
-    // Set HTTP-only cookie
     response.cookies.set({
       name: 'transportista_token',
       value: token,
@@ -126,14 +121,12 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
-    console.log('[v0] Login successful for:', rut)
     return response
-
   } catch (error) {
-    console.error('[v0] Login endpoint error:', error instanceof Error ? error.message : error)
+    console.error('[subcontractor-login] Login endpoint failed', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: 'Error al procesar el login', details: error instanceof Error ? error.message : 'Unknown' },
-      { status: 500 }
+      { error: 'Error al procesar el login' },
+      { status: 500 },
     )
   }
 }

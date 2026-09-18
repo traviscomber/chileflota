@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
 import { isMultiInstanceDocumentCode } from '@/lib/subcontractor-document-versioning'
+import { authenticateSubcontractorRequest } from '@/lib/subcontractor-auth'
 
 export const maxDuration = 60
 
@@ -13,21 +14,31 @@ type DocumentVerification = {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
-    const supabase = createAdminClient()
     const { id } = params
+    const auth = await authenticateSubcontractorRequest(request, id)
+    if (!auth.ok) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: auth.status },
+      )
+    }
+
+    const supabase = createAdminClient()
     const formData = await request.formData()
 
     const file = formData.get('file') as File
     const documentTypeId = formData.get('documentTypeId') as string
-    const subcontractorRut = formData.get('subcontractorRut') as string
     const periodMonth = formData.get('documentPeriodMonth') || formData.get('periodMonth')
     const periodYear = formData.get('documentPeriodYear') || formData.get('periodYear')
-    const documentPeriod = normalizeDocumentPeriod(periodMonth as string | null, periodYear as string | null)
+    const documentPeriod = normalizeDocumentPeriod(
+      periodMonth as string | null,
+      periodYear as string | null,
+    )
 
-    if (!file || !documentTypeId || !subcontractorRut || !id) {
+    if (!file || !documentTypeId || !id) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
     }
 
@@ -43,14 +54,14 @@ export async function POST(
 
     let supersedesDocumentId: string | null = null
     const shouldResolveExactPriorVersion = Boolean(
-      documentPeriod && !isMultiInstanceDocumentCode(docType.code)
+      documentPeriod && !isMultiInstanceDocumentCode(docType.code),
     )
 
     if (shouldResolveExactPriorVersion && documentPeriod) {
       const { data: currentDocument, error: currentDocumentError } = await supabase
         .from('subcontractor_documents')
         .select('id')
-        .eq('subcontractor_id', id)
+        .eq('subcontractor_id', auth.identity.transportistaId)
         .eq('document_type_id', documentTypeId)
         .eq('document_period_year', documentPeriod.document_period_year)
         .eq('document_period_month', documentPeriod.document_period_month)
@@ -61,7 +72,7 @@ export async function POST(
 
       if (currentDocumentError) {
         console.error('[documents] exact supersession lookup failed', {
-          subcontractorId: id,
+          subcontractorId: auth.identity.transportistaId,
           documentTypeId,
           periodYear: documentPeriod.document_period_year,
           periodMonth: documentPeriod.document_period_month,
@@ -69,7 +80,7 @@ export async function POST(
         })
         return NextResponse.json(
           { error: 'No fue posible verificar la versión vigente del documento' },
-          { status: 500 }
+          { status: 500 },
         )
       }
 
@@ -78,7 +89,7 @@ export async function POST(
 
     const fileExtension = file.name.split('.').pop() || 'pdf'
     const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`
-    const fileName = `${id}/${safeFileName}`
+    const fileName = `${auth.identity.transportistaId}/${safeFileName}`
 
     try {
       const { data: buckets } = await supabase.storage.listBuckets()
@@ -97,7 +108,7 @@ export async function POST(
     if (buffer.byteLength === 0) {
       return NextResponse.json(
         { error: 'El archivo llegó vacío al servidor. Verifica que el archivo no esté corrupto.' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -111,7 +122,10 @@ export async function POST(
       })
 
     if (uploadError) {
-      return NextResponse.json({ error: `Error al subir el archivo: ${uploadError.message}` }, { status: 500 })
+      return NextResponse.json(
+        { error: `Error al subir el archivo: ${uploadError.message}` },
+        { status: 500 },
+      )
     }
 
     const { data: { publicUrl } } = supabase.storage
@@ -125,8 +139,10 @@ export async function POST(
     else if (docType.periodicidad === 'Anual') expiresAt.setFullYear(expiresAt.getFullYear() + 1)
 
     const insertPayload = {
-      subcontractor_id: id,
-      subcontractor_rut: subcontractorRut,
+      subcontractor_id: auth.identity.transportistaId,
+      // Never trust the form's subcontractorRut. Use the RUT revalidated from
+      // transportista_auth + transportistas for the authenticated session.
+      subcontractor_rut: auth.identity.rut,
       document_type_id: documentTypeId,
       file_url: publicUrl,
       file_name: file.name,
@@ -146,13 +162,13 @@ export async function POST(
     if (saveError && documentPeriod && /document_period/i.test(saveError.message || '')) {
       return NextResponse.json(
         { error: 'La base de datos aun no tiene habilitado el periodo documental. Aplica la migracion 014 antes de subir documentos.' },
-        { status: 503 }
+        { status: 503 },
       )
     }
 
     if (saveError) {
       console.error('[documents] save error', {
-        subcontractorId: id,
+        subcontractorId: auth.identity.transportistaId,
         documentTypeId,
         supersedesDocumentId,
         error: saveError.message,
@@ -163,7 +179,7 @@ export async function POST(
     const { error: alertError } = await supabase
       .from('subcontractor_document_alerts')
       .insert({
-        subcontractor_id: id,
+        subcontractor_id: auth.identity.transportistaId,
         document_id: newDocument.id,
         alert_type: 'pending_review',
         message: `Nuevo documento ${docType.code} subido - Pendiente de revisión`,
@@ -185,16 +201,23 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
-    const supabase = createAdminClient()
     const { id } = params
-
     if (!id) {
       return NextResponse.json({ error: 'Subcontractor ID is required' }, { status: 400 })
     }
 
+    const auth = await authenticateSubcontractorRequest(request, id)
+    if (!auth.ok) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: auth.status },
+      )
+    }
+
+    const supabase = createAdminClient()
     const { data: documents, error: docsError } = await supabase
       .from('subcontractor_documents')
       .select(`
@@ -215,7 +238,7 @@ export async function GET(
         document_period_start,
         document_type:subcontractor_document_types(code, nombre, periodicidad)
       `)
-      .eq('subcontractor_id', id)
+      .eq('subcontractor_id', auth.identity.transportistaId)
       .order('uploaded_at', { ascending: false })
 
     if (docsError) {
@@ -277,7 +300,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      subcontractorId: id,
+      subcontractorId: auth.identity.transportistaId,
       documents: documentsWithVerification,
       requirements: documentTypes || [],
       summary,
@@ -286,7 +309,7 @@ export async function GET(
     console.error('[documents] GET error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error interno del servidor' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
