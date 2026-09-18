@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { createAdminClient } from "@/lib/supabase/admin"
 import {
   ArrowRight,
   BellRing,
@@ -10,6 +11,29 @@ import {
   UserRoundCheck,
   UsersRound,
 } from "lucide-react"
+
+export const revalidate = 300
+
+async function getPublicProcessedDocumentCount(): Promise<number | null> {
+  try {
+    const supabase = createAdminClient()
+
+    const [subcontractorTotal, uploadedTotal] = await Promise.all([
+      supabase.from("subcontractor_documents").select("id", { count: "exact", head: true }),
+      supabase.from("uploaded_documents").select("id", { count: "exact", head: true }),
+    ])
+
+    if (subcontractorTotal.error || uploadedTotal.error) {
+      console.error("[landing] Could not load public processed-document count")
+      return null
+    }
+
+    return Number(subcontractorTotal.count || 0) + Number(uploadedTotal.count || 0)
+  } catch (error) {
+    console.error("[landing] Public processed-document count failed:", error instanceof Error ? error.message : String(error))
+    return null
+  }
+}
 
 const operations = [
   {
@@ -79,7 +103,10 @@ const questions = [
   },
 ]
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const processedDocumentCount = await getPublicProcessedDocumentCount()
+  const formatNumber = new Intl.NumberFormat("es-CL")
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#111214] text-[#F2F0EB]">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-[#303238] bg-[#111214]/95 backdrop-blur-md">
@@ -176,6 +203,31 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {processedDocumentCount !== null && processedDocumentCount > 0 && (
+        <section className="border-y border-[#303238] bg-[#151618] px-5 py-14 sm:px-6 lg:px-8 lg:py-16">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:items-end lg:gap-16">
+            <div>
+              <div className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[#9CC5B1]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#39765B]" />
+                Actividad real del sistema
+              </div>
+              <p className="mt-5 text-5xl font-medium tracking-[-0.055em] text-[#F2F0EB] sm:text-6xl lg:text-7xl">
+                {formatNumber.format(processedDocumentCount)}
+              </p>
+            </div>
+
+            <div className="border-l-2 border-[#742D3D] pl-6 sm:pl-8">
+              <h2 className="max-w-2xl text-2xl font-medium tracking-[-0.03em] text-[#E4E1DC] sm:text-3xl">
+                documentos procesados por ChileFlota.
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-[#A9ADB3]">
+                Cifra agregada y actualizada automáticamente. La landing no expone documentos, estados, nombres, RUT, empresas, contenido ni información personal.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section id="alcance" className="border-y border-[#303238] bg-[#151618] px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-7xl">
