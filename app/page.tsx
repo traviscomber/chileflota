@@ -111,11 +111,11 @@ export default async function LandingPage() {
                 </div>
 
                 <h1 className="mt-6 text-5xl font-semibold leading-[0.97] tracking-[-0.05em] text-[var(--cf-text)] sm:text-6xl lg:text-[68px]">
-                  Saber si una flota puede operar. Sin buscar documento por documento.
+                  El subcontratista carga. La ejecutiva valida. La operación sigue.
                 </h1>
 
-                <p className="mt-7 max-w-[560px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
-                  ChileFlota reúne documentos, vigencias y revisión en una sola vista para mostrar qué está respaldado, qué falta y qué requiere atención.
+                <p className="mt-7 max-w-[570px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
+                  ChileFlota reemplaza el intercambio disperso de correos, planillas y mensajes por un flujo único de carga, revisión y evidencia trazable.
                 </p>
 
                 <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -138,52 +138,32 @@ export default async function LandingPage() {
 
             <div className="border-t border-[var(--cf-border)] py-12 lg:border-l lg:border-t-0 lg:pl-14">
               <div className="flex h-full flex-col justify-center">
-                <SectionIndex>Una lectura operacional</SectionIndex>
+                <SectionIndex>Flujo real de trabajo</SectionIndex>
 
                 <div className="mt-7 space-y-px bg-[var(--cf-border)]">
-                  <div className="grid gap-4 bg-[var(--cf-surface)] p-6 sm:grid-cols-[128px_1fr] sm:items-center">
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">01 · Personas y flota</p>
-                    <div className="flex flex-wrap gap-2">
-                      {["Transportistas", "Conductores", "Vehículos"].map((item) => (
-                        <span key={item} className="rounded-[4px] bg-[var(--cf-surface-raised)] px-3 py-2 text-sm text-[var(--cf-text-secondary)]">
-                          {item}
-                        </span>
-                      ))}
+                  {[
+                    ["01", "Subcontratista", "Carga sus documentos directamente en la plataforma."],
+                    ["02", "ChileFlota", "Ordena la evidencia y la incorpora a la bandeja de revisión correspondiente."],
+                    ["03", "Ejecutiva", "Revisa el documento y decide aprobar o rechazar con trazabilidad."],
+                    ["04", "Operación", "El estado queda actualizado y la evidencia disponible para seguir operando."],
+                  ].map(([number, actor, text]) => (
+                    <div key={number} className="grid gap-4 bg-[var(--cf-surface)] p-5 sm:grid-cols-[52px_120px_1fr] sm:items-center">
+                      <span className="font-mono text-xs text-[var(--cf-accent)]">{number}</span>
+                      <p className="text-sm font-semibold text-[var(--cf-text)]">{actor}</p>
+                      <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
                     </div>
-                  </div>
-
-                  <div className="grid gap-4 bg-[var(--cf-surface)] p-6 sm:grid-cols-[128px_1fr] sm:items-center">
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">02 · Evidencia</p>
-                    <div>
-                      <p className="text-lg font-semibold text-[var(--cf-text)]">Documentos + vigencias + historial</p>
-                      <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">Todo asociado a la entidad y periodo correctos.</p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 bg-[var(--cf-surface)] p-6 sm:grid-cols-[128px_1fr] sm:items-center">
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">03 · Resultado</p>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      <div className="border-l-2 border-[var(--cf-success)] pl-3">
-                        <p className="text-sm font-semibold text-[var(--cf-text)]">Respaldado</p>
-                        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Puede demostrarse</p>
-                      </div>
-                      <div className="border-l-2 border-[var(--cf-warning)] pl-3">
-                        <p className="text-sm font-semibold text-[var(--cf-text)]">Por vencer</p>
-                        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Requiere atención</p>
-                      </div>
-                      <div className="border-l-2 border-[var(--cf-danger)] pl-3">
-                        <p className="text-sm font-semibold text-[var(--cf-text)]">Faltante</p>
-                        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Debe resolverse</p>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
-                <div className="mt-8 border-l-2 border-[var(--cf-accent)] pl-5">
-                  <p className="text-sm text-[var(--cf-text-secondary)]">La pregunta que responde ChileFlota:</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">
-                    ¿Qué puede operar hoy y qué necesita acción?
-                  </p>
+                <div className="mt-8 grid gap-5 border-t border-[var(--cf-border)] pt-6 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Antes</p>
+                    <p className="mt-2 text-base font-semibold text-[var(--cf-text)]">Correos, planillas, mensajes y seguimiento manual.</p>
+                  </div>
+                  <div className="border-l-2 border-[var(--cf-accent)] pl-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Con ChileFlota</p>
+                    <p className="mt-2 text-base font-semibold text-[var(--cf-text)]">Una bandeja, una decisión, una evidencia trazable.</p>
+                  </div>
                 </div>
               </div>
             </div>
