@@ -62,24 +62,10 @@ function SectionIndex({ children }: { children: React.ReactNode }) {
 
 function HeroOperationalBackdrop() {
   return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1768207750854-fb0cbd9c19f0?auto=format&fit=crop&fm=jpg&q=82&w=2400')",
-        }}
-      />
-      <div className="absolute inset-0 bg-[rgba(9,10,12,0.48)]" />
-      <div className="absolute inset-y-0 left-0 w-[64%] bg-[linear-gradient(90deg,rgba(17,18,20,0.99)_0%,rgba(17,18,20,0.95)_58%,rgba(17,18,20,0.18)_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(180deg,rgba(17,18,20,0)_0%,rgba(17,18,20,0.82)_58%,rgba(17,18,20,0.98)_100%)]" />
-      <div className="absolute inset-0 bg-grid opacity-20" />
-      <div className="absolute right-8 top-28 hidden border-l border-[var(--cf-border)] pl-5 lg:block">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--cf-text-muted)]">Flota en movimiento</p>
-        <p className="mt-2 max-w-[150px] text-xs leading-5 text-[var(--cf-text-secondary)]">
-          Documentación bajo control.
-        </p>
-      </div>
+    <div className="absolute inset-0 overflow-hidden bg-[var(--cf-canvas)]" aria-hidden="true">
+      <div className="absolute inset-0 bg-grid opacity-35" />
+      <div className="absolute inset-y-0 right-0 w-[48%] bg-[var(--cf-sidebar)]" />
+      <div className="absolute inset-y-0 right-[48%] w-px bg-[var(--cf-border)]" />
     </div>
   )
 }
@@ -112,46 +98,100 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      <section className="relative min-h-[760px] overflow-hidden border-b border-[var(--cf-border)] pt-16">
+      <section className="relative overflow-hidden border-b border-[var(--cf-border)] pt-16">
         <HeroOperationalBackdrop />
 
-        <div className="relative z-10 mx-auto flex min-h-[760px] max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-1 items-center py-14 lg:py-20">
-            <div className="max-w-[690px]">
-              <div className="flex items-center gap-4">
-                <SectionIndex>Control documental de flota</SectionIndex>
-                <span className="hidden h-px w-12 bg-[var(--cf-border)] sm:block" />
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid min-h-[650px] lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="flex items-center py-16 pr-0 lg:pr-14">
+              <div className="max-w-[620px]">
+                <div className="flex items-center gap-4">
+                  <SectionIndex>Control documental de flota</SectionIndex>
+                  <span className="hidden h-px w-12 bg-[var(--cf-border)] sm:block" />
+                </div>
+
+                <h1 className="mt-6 text-5xl font-semibold leading-[0.97] tracking-[-0.05em] text-[var(--cf-text)] sm:text-6xl lg:text-[68px]">
+                  Saber si una flota puede operar. Sin buscar documento por documento.
+                </h1>
+
+                <p className="mt-7 max-w-[560px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
+                  ChileFlota reúne documentos, vigencias y revisión en una sola vista para mostrar qué está respaldado, qué falta y qué requiere atención.
+                </p>
+
+                <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    href="/login"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-6 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)]"
+                  >
+                    Ingresar a la plataforma
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                  <a
+                    href="#modelo-operacional"
+                    className="inline-flex h-12 items-center justify-center rounded-[var(--cf-radius)] border border-[var(--cf-border)] px-6 text-sm font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
+                  >
+                    Ver cómo funciona
+                  </a>
+                </div>
               </div>
+            </div>
 
-              <h1 className="mt-6 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-[var(--cf-text)] sm:text-6xl lg:text-[72px]">
-                Cumplimiento documental para una operación continua.
-              </h1>
+            <div className="border-t border-[var(--cf-border)] py-12 lg:border-l lg:border-t-0 lg:pl-14">
+              <div className="flex h-full flex-col justify-center">
+                <SectionIndex>Una lectura operacional</SectionIndex>
 
-              <p className="mt-7 max-w-[610px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
-                ChileFlota centraliza evidencia, vigencias y revisión documental para que la flota opere con respaldo y sin reconstruir información entre correos, planillas y mensajes.
-              </p>
+                <div className="mt-7 space-y-px bg-[var(--cf-border)]">
+                  <div className="grid gap-4 bg-[var(--cf-surface)] p-6 sm:grid-cols-[128px_1fr] sm:items-center">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">01 · Personas y flota</p>
+                    <div className="flex flex-wrap gap-2">
+                      {["Transportistas", "Conductores", "Vehículos"].map((item) => (
+                        <span key={item} className="rounded-[4px] bg-[var(--cf-surface-raised)] px-3 py-2 text-sm text-[var(--cf-text-secondary)]">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/login"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--cf-radius)] bg-[var(--cf-accent)] px-6 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)]"
-                >
-                  Ingresar a la plataforma
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-                <a
-                  href="#modelo-operacional"
-                  className="inline-flex h-12 items-center justify-center rounded-[var(--cf-radius)] border border-[var(--cf-border)] bg-[rgba(17,18,20,0.72)] px-6 text-sm font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
-                >
-                  Ver modelo operacional
-                </a>
+                  <div className="grid gap-4 bg-[var(--cf-surface)] p-6 sm:grid-cols-[128px_1fr] sm:items-center">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">02 · Evidencia</p>
+                    <div>
+                      <p className="text-lg font-semibold text-[var(--cf-text)]">Documentos + vigencias + historial</p>
+                      <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">Todo asociado a la entidad y periodo correctos.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 bg-[var(--cf-surface)] p-6 sm:grid-cols-[128px_1fr] sm:items-center">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">03 · Resultado</p>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="border-l-2 border-[var(--cf-success)] pl-3">
+                        <p className="text-sm font-semibold text-[var(--cf-text)]">Respaldado</p>
+                        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Puede demostrarse</p>
+                      </div>
+                      <div className="border-l-2 border-[var(--cf-warning)] pl-3">
+                        <p className="text-sm font-semibold text-[var(--cf-text)]">Por vencer</p>
+                        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Requiere atención</p>
+                      </div>
+                      <div className="border-l-2 border-[var(--cf-danger)] pl-3">
+                        <p className="text-sm font-semibold text-[var(--cf-text)]">Faltante</p>
+                        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Debe resolverse</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 border-l-2 border-[var(--cf-accent)] pl-5">
+                  <p className="text-sm text-[var(--cf-text-secondary)]">La pregunta que responde ChileFlota:</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">
+                    ¿Qué puede operar hoy y qué necesita acción?
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid border-t border-[var(--cf-border)] bg-[rgba(17,18,20,0.94)] sm:grid-cols-3">
+          <div className="grid border-t border-[var(--cf-border)] bg-[var(--cf-sidebar)] sm:grid-cols-3">
             <div className="px-5 py-5 sm:px-6">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Actividad registrada</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Documentos procesados</p>
               {processedDocumentCount !== null && processedDocumentCount > 0 ? (
                 <p className="mt-2 text-4xl font-semibold tracking-[-0.045em] text-[var(--cf-text)]">
                   {formatNumber.format(processedDocumentCount)}
@@ -159,19 +199,16 @@ export default async function LandingPage() {
               ) : (
                 <p className="mt-2 text-xl font-semibold text-[var(--cf-text)]">Operación activa</p>
               )}
-              <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">documentos procesados por ChileFlota</p>
             </div>
 
             <div className="border-t border-[var(--cf-border)] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
               <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Implementación activa</p>
               <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Transportes Labbe</p>
-              <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">control documental operacional</p>
             </div>
 
             <div className="border-t border-[var(--cf-border)] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Lectura operacional</p>
-              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Faltantes · vigencias · respaldo</p>
-              <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">actividad agregada, sin datos personales</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Sin exponer datos</p>
+              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">Sólo evidencia agregada pública</p>
             </div>
           </div>
         </div>
