@@ -35,21 +35,21 @@ async function getPublicProcessedDocumentCount(): Promise<number | null> {
 const workQuestions = [
   {
     icon: FolderSearch2,
-    eyebrow: "Ahora",
-    title: "Qué falta.",
-    text: "Lo pendiente aparece antes de que alguien tenga que perseguirlo.",
+    eyebrow: "Cobertura",
+    title: "Qué falta",
+    text: "Requisitos sin respaldo suficiente para el periodo operativo vigente.",
   },
   {
     icon: FileClock,
-    eyebrow: "Después",
-    title: "Qué vence.",
-    text: "La próxima urgencia deja de ser una sorpresa.",
+    eyebrow: "Vigencia",
+    title: "Qué vence",
+    text: "Documentación que requiere atención antes de afectar continuidad operacional.",
   },
   {
     icon: FileCheck2,
-    eyebrow: "Siempre",
-    title: "Qué está respaldado.",
-    text: "La evidencia queda disponible cuando la operación la necesita.",
+    eyebrow: "Evidencia",
+    title: "Qué está respaldado",
+    text: "Documentación validada y disponible para revisión, auditoría o mandante.",
   },
 ]
 
@@ -77,7 +77,7 @@ export default async function LandingPage() {
             href="/login"
             className="inline-flex h-9 items-center justify-center gap-2 rounded-[5px] bg-[#742D3D] px-4 text-sm font-medium text-[#F2F0EB] transition-colors hover:bg-[#87364A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#87364A]"
           >
-            Ingresar
+            Acceder a la plataforma
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
@@ -94,13 +94,12 @@ export default async function LandingPage() {
             </div>
 
             <h1 className="text-5xl font-medium leading-[0.96] tracking-[-0.06em] sm:text-6xl lg:text-[82px]">
-              Todo parece en regla.
-              <span className="block text-[#B36A79]">Hasta que no.</span>
+              Cumplimiento documental
+              <span className="block text-[#B36A79]">para una operación continua.</span>
             </h1>
 
             <p className="mt-8 max-w-2xl text-base leading-7 text-[#A9ADB3] sm:text-lg sm:leading-8">
-              Un documento vence. Otro no llegó. Alguien pregunta si el camión puede salir.
-              ChileFlota hace visible la respuesta antes de que se convierta en problema.
+              ChileFlota centraliza evidencia, vigencias y revisión documental para que la operación pueda determinar con claridad qué está habilitado, qué requiere atención y qué debe resolverse.
             </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -108,14 +107,14 @@ export default async function LandingPage() {
                 href="/login"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-[5px] bg-[#742D3D] px-5 text-sm font-semibold text-[#F2F0EB] transition-colors hover:bg-[#87364A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#87364A]"
               >
-                Entrar a ChileFlota
+                Ingresar a la plataforma
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <a
                 href="#como-cambia"
                 className="inline-flex h-12 items-center justify-center px-5 text-sm font-medium text-[#C6C8CC] transition-colors hover:text-[#F2F0EB]"
               >
-                Ver cómo cambia la operación
+                Ver modelo operacional
               </a>
             </div>
           </div>
@@ -127,10 +126,10 @@ export default async function LandingPage() {
               </p>
               <div className="max-w-xl pb-1">
                 <p className="text-lg font-medium tracking-[-0.02em] text-[#E4E1DC]">
-                  documentos ya han pasado por ChileFlota.
+                  documentos procesados por ChileFlota.
                 </p>
                 <p className="mt-1 text-xs text-[#777C84]">
-                  Actividad agregada del sistema. Sin exponer documentos ni datos personales.
+                  Actividad agregada de la implementación activa. Sin exposición de documentos ni datos personales.
                 </p>
               </div>
             </div>
@@ -143,18 +142,18 @@ export default async function LandingPage() {
           <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">
-                01 / El problema
+                01 / Riesgo operacional
               </p>
               <h2 className="mt-4 max-w-md text-3xl font-medium leading-tight tracking-[-0.04em] sm:text-4xl">
-                Los documentos no fallan de golpe. Se van perdiendo de vista.
+                La documentación forma parte de la continuidad operacional.
               </h2>
             </div>
 
             <div className="space-y-0 border-y border-[#303238]">
               {[
-                ["Llega evidencia", "por correo, carga o gestión diaria."],
-                ["Cambia el contexto", "vence, se reemplaza, se observa o deja de servir."],
-                ["Aparece la pregunta", "¿está listo para operar o no?"],
+                ["Evidencia distribuida", "La información llega desde múltiples actores y canales."],
+                ["Vigencias variables", "Cada requisito tiene periodo, estado y condición de uso."],
+                ["Decisión operacional", "La organización necesita saber si existe respaldo suficiente para operar."],
               ].map(([title, text], index) => (
                 <div
                   key={title}
@@ -174,19 +173,19 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-7xl">
           <div className="max-w-4xl">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">
-              02 / El cambio
+              02 / Modelo de control
             </p>
             <h2 className="mt-4 text-3xl font-medium leading-tight tracking-[-0.04em] sm:text-5xl">
-              De perseguir archivos
-              <span className="block text-[#B36A79]">a trabajar una bandeja.</span>
+              Una sola lectura
+              <span className="block text-[#B36A79]">para revisar, resolver y demostrar.</span>
             </h2>
           </div>
 
           <div className="mt-12 grid gap-px bg-[#303238] lg:grid-cols-3">
             {[
-              ["Entra", "La evidencia llega y queda asociada a quien corresponde."],
-              ["Se entiende", "El sistema ordena periodo, requisito y contexto."],
-              ["Se resuelve", "La ejecutiva revisa, decide y sigue con el siguiente."],
+              ["Consolidar", "La evidencia queda vinculada a la empresa, persona o unidad correspondiente."],
+              ["Priorizar", "El sistema ordena requisitos, periodos y vigencias para hacer visible lo que requiere atención."],
+              ["Resolver", "El equipo revisa, valida y mantiene trazabilidad sobre cada decisión documental."],
             ].map(([title, text], index) => (
               <article key={title} className="min-h-64 bg-[#181A1D] p-7 sm:p-8">
                 <span className="font-mono text-[10px] tracking-[0.16em] text-[#5F636A]">0{index + 1}</span>
@@ -203,10 +202,10 @@ export default async function LandingPage() {
           <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">
-                03 / Lo que importa
+                03 / Lectura operacional
               </p>
               <h2 className="mt-4 max-w-md text-3xl font-medium leading-tight tracking-[-0.04em] sm:text-4xl">
-                La operación necesita respuestas, no otra carpeta.
+                La operación necesita respuestas verificables.
               </h2>
             </div>
 
@@ -234,10 +233,10 @@ export default async function LandingPage() {
           <div className="grid gap-10 border-y border-[#303238] py-10 lg:grid-cols-[0.72fr_1.28fr] lg:items-center lg:gap-20 lg:py-14">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">
-                04 / Ya está ocurriendo
+                04 / Evidencia operacional
               </p>
               <h2 className="mt-4 text-3xl font-medium tracking-[-0.04em] sm:text-4xl">
-                No es una maqueta.
+                Implementación activa y operación registrada.
               </h2>
             </div>
 
@@ -250,7 +249,7 @@ export default async function LandingPage() {
               </div>
               <p className="mt-4 text-2xl font-medium tracking-[-0.03em]">Transportes Labbe</p>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#8F949B]">
-                ChileFlota ya está siendo usado para ordenar y revisar la operación documental real.
+                ChileFlota opera actualmente sobre una implementación productiva para el control y revisión documental de Transportes Labbe.
               </p>
             </div>
           </div>
@@ -264,8 +263,8 @@ export default async function LandingPage() {
               Acceso clientes
             </p>
             <h2 className="mt-4 text-4xl font-medium leading-[1.02] tracking-[-0.05em] sm:text-5xl lg:text-6xl">
-              Menos persecución.
-              <span className="block text-[#B36A79]">Más operación.</span>
+              Control documental
+              <span className="block text-[#B36A79]">con criterio operacional.</span>
             </h2>
           </div>
 
