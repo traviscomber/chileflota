@@ -75,7 +75,8 @@ function approvedEvidenceCoversPending(\n  pending: any,\n  approved: any,\n  pe
 
   const pendingName = normalizeFileName(pending.file_name)
   const approvedName = normalizeFileName(approved.file_name)
-  if (!pendingName || pendingName !== approvedName) return false
+  const sameInstance = SINGLETON_COVERAGE_CODES.has(typeCode || '') || (pendingName && pendingName === approvedName)
+  if (!sameInstance) return false
 
   const pendingMonth = monthIndex(
     pending.document_period_year,
