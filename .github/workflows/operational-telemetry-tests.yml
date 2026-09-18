@@ -1,0 +1,32 @@
+name: Operational Telemetry Safety Tests
+
+on:
+  pull_request:
+    paths:
+      - 'lib/operational-telemetry.ts'
+      - 'app/api/company/documents/[id]/status/route.ts'
+      - '__tests__/operational-telemetry.test.ts'
+      - '.github/workflows/operational-telemetry-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/operational-telemetry.ts'
+      - 'app/api/company/documents/[id]/status/route.ts'
+      - '__tests__/operational-telemetry.test.ts'
+      - '.github/workflows/operational-telemetry-tests.yml'
+
+jobs:
+  telemetry-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/operational-telemetry.test.ts --runInBand

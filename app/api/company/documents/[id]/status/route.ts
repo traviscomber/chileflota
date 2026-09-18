@@ -4,6 +4,7 @@ import { changeDocumentStatus } from '@/lib/document-status-service'
 import { verifyAuth } from '@/lib/auth-middleware'
 import { validateChangeStatusRequest } from '@/lib/validation/schemas'
 import { canChangeDocumentStatus } from '@/lib/document-authorization'
+import { emitOperationalEvent } from '@/lib/operational-telemetry'
 
 export async function PATCH(
   request: NextRequest,
@@ -82,12 +83,30 @@ export async function PATCH(
       reason: body.reason,
       userId: user.id,
       userEmail: user.email,
-      documentType: body.documentType || 'conductor'  // NEW: Accept document type from frontend
+      documentType: body.documentType || 'conductor'
     })
 
     if (!result.success) {
       console.log('[v0] STATUS ENDPOINT - Status change failed:', result.message)
       return NextResponse.json({ error: result.message }, { status: 400 })
+    }
+
+    // Product telemetry is independent from the audit trail and fail-open.
+    // The emitter is a no-op unless OPERATIONAL_TELEMETRY_ENABLED=true.
+    if (result.newStatus === 'approved' || result.newStatus === 'rejected') {
+      await emitOperationalEvent({
+        eventName: result.newStatus === 'approved' ? 'document_approved' : 'document_rejected',
+        actorProfileId: user.id,
+        actorRole: user.role,
+        entityType: 'document',
+        entityId: documentId,
+        source: 'company.document_status',
+        metadata: {
+          document_type: body.documentType || 'conductor',
+          previous_status: result.previousStatus,
+          new_status: result.newStatus,
+        },
+      })
     }
 
     console.log('[v0] STATUS ENDPOINT - Status change successful:', { documentId, newStatus: result.newStatus })
