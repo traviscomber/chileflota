@@ -31,6 +31,8 @@ interface PendingDocument {
   ejecutiva?: string
   reviewed_by_ejecutiva?: string
   uploaded_by_ejecutiva?: string
+  subcontractor_rut?: string
+  empresa_nombre?: string
   docType?: { code: string; nombre: string }
   conductores?: {
     id: string
@@ -46,10 +48,12 @@ interface PendingDocument {
   transportistas?: {
     id: string
     razon_social: string
+    nombre_fantasia?: string | null
     rut: string
   } | {
     id: string
     razon_social: string
+    nombre_fantasia?: string | null
     rut: string
   }[]
 }
@@ -59,8 +63,18 @@ interface Props {
   subDocs: PendingDocument[]
 }
 
+const normalizeSearchText = (value: unknown) =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const normalizeRut = (value: unknown) =>
+  normalizeSearchText(value).replace(/[^0-9k]/g, '')
+
 export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs: propSubDocs }: Props) {
-  // Use props directly for display, local state only for removal after approve/reject
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState<string | null>(null)
@@ -80,18 +94,15 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [rejectReason, setRejectReason] = useState('')
   const [docType, setDocType] = useState<'conductor' | 'subcontractor'>('conductor')
 
-  // Reset removed IDs when props change (new filter applied)
   useEffect(() => {
     setRemovedIds(new Set())
   }, [propConductorDocs, propSubDocs])
 
-  // Filter out removed docs from props
   const conductorDocs = propConductorDocs.filter(doc => !removedIds.has(doc.id))
   const subDocs = propSubDocs.filter(doc => !removedIds.has(doc.id))
 
   const totalPendientes = conductorDocs.length + subDocs.length
 
-  // Helper to extract executive name
   const getExecutive = (doc: PendingDocument) => {
     return doc.ejecutiva || doc.reviewed_by_ejecutiva || doc.uploaded_by_ejecutiva || 'No especificado'
   }
@@ -118,7 +129,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   }
   const metaChipClass = 'whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.14em] border border-slate-600/50 bg-slate-950/40 text-slate-100 shadow-sm backdrop-blur-sm'
 
-  // Get all documents combined
   const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
     try {
       const dateB = new Date(getDocumentPeriodDate(b) || b.uploaded_at || b.created_at || 0).getTime()
@@ -130,7 +140,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     }
   })
 
-  // Get unique executives and companies for filter options
   const executives = useMemo(() => {
     const execs = new Map<string, string>()
     allDocs.forEach((doc) => {
@@ -173,34 +182,47 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     return Array.from(comps).map(([id, data]) => ({ id, ...data }))
   }, [allDocs])
 
-  // Filter documents based on filter criteria
   const filteredDocs = useMemo(() => {
     const result = allDocs.filter((doc) => {
-      // Search query
       if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase()
-        const filename = (doc.original_filename || doc.file_name || '').toLowerCase()
+        const query = normalizeSearchText(filters.searchQuery)
+        const queryRut = normalizeRut(filters.searchQuery)
+        const filename = normalizeSearchText(doc.original_filename || doc.file_name || '')
         const transportista = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas) : null
         const conductorData = doc.conductores ? (Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores) : null
-        const company = [transportista?.razon_social, transportista?.rut, (doc as any).subcontractor_rut].filter(Boolean).join(' ').toLowerCase()
-        const conductor = [conductorData?.nombres, conductorData?.apellido_paterno, conductorData?.rut].filter(Boolean).join(' ').toLowerCase()
-        
-        if (!filename.includes(query) && !company.includes(query) && !conductor.includes(query)) {
+        const companyText = normalizeSearchText([
+          transportista?.razon_social,
+          transportista?.nombre_fantasia,
+          doc.empresa_nombre,
+          transportista?.rut,
+          doc.subcontractor_rut,
+        ].filter(Boolean).join(' '))
+        const conductorText = normalizeSearchText([
+          conductorData?.nombres,
+          conductorData?.apellido_paterno,
+          conductorData?.rut,
+        ].filter(Boolean).join(' '))
+        const companyRuts = [transportista?.rut, doc.subcontractor_rut].map(normalizeRut).filter(Boolean)
+        const conductorRut = normalizeRut(conductorData?.rut)
+        const rutMatches = Boolean(queryRut) && (
+          companyRuts.some((rut) => rut.includes(queryRut)) ||
+          conductorRut.includes(queryRut)
+        )
+
+        if (!filename.includes(query) && !companyText.includes(query) && !conductorText.includes(query) && !rutMatches) {
           return false
         }
       }
 
-      // Executive filter
       if (filters.executiveId) {
         if (getExecutive(doc) !== filters.executiveId) {
           return false
         }
       }
 
-      // Company filter
       if (filters.companyId) {
         try {
-          const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0]?.id : doc.transportistas?.id) : (doc as any).subcontractor_rut
+          const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0]?.id : doc.transportistas?.id) : doc.subcontractor_rut
           if (docCompany !== filters.companyId) {
             return false
           }
@@ -259,8 +281,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
   const handleProvideFeedback = async (correctedType?: string, correctedDate?: string) => {
     if (!analysisResult) return
-    
-    // Save AI feedback (fire and forget - non-blocking)
+
     fetch('/api/company/ai-training/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -274,9 +295,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         isAccurate: !correctedType && !correctedDate,
         confidenceScore: analysisResult.analysis.confidence,
       })
-    }).catch(() => {}) // ignore feedback errors
+    }).catch(() => {})
 
-    // Always approve the document after feedback
     setShowAnalysisModal(false)
     if (analysisDocId) {
       handleStatusChange(analysisDocId, 'aprobado', analysisDocType)
@@ -287,14 +307,14 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     setLoading(docId)
     try {
       console.log('[v0] Pending docs: Changing status', { docId, status: newStatus, reason, type })
-      
+
       const response = await fetch(`/api/company/documents/${docId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          status: newStatus,  // Send Spanish - API will normalize to English
-          reason: reason,     // Use 'reason', not 'rejection_reason'
-          documentType: type  // NEW: Send which table to use (conductor or subcontractor)
+        body: JSON.stringify({
+          status: newStatus,
+          reason: reason,
+          documentType: type
         })
       })
 
@@ -309,24 +329,21 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       const result = await response.json()
       console.log('[v0] Pending docs: Status change successful', result)
 
-      // Remove from local list immediately (UI feedback)
       setRemovedIds(prev => new Set([...prev, docId]))
 
-      // BROADCAST SYNC EVENT - with small delay to ensure DB write is committed
       console.log('[v0] Pending docs: Broadcasting status change event after 200ms delay')
       setTimeout(() => {
         broadcastSync({
           type: 'document_status_changed',
           documentId: docId,
           timestamp: Date.now(),
-          data: { 
+          data: {
             oldStatus: 'pending',
             newStatus: newStatus === 'aprobado' ? 'approved' : 'rejected'
           }
         })
       }, 200)
 
-      // Show success toast
       const msg = document.createElement('div')
       msg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
       msg.textContent = `Documento ${newStatus === 'aprobado' ? 'aprobado' : 'rechazado'}`
@@ -360,12 +377,10 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     }
   }
 
-  // Listen for document sync events and refetch pending documents if needed
   useEffect(() => {
     const unsubscribe = onSync((event) => {
       console.log('[v0] PendingDocumentsList: Received sync event', event.type)
-      
-      // When status changes elsewhere, remove from pending list
+
       if (event.type === 'document_status_changed' && event.documentId) {
         const docId = event.documentId
         console.log('[v0] PendingDocumentsList: Removing document from pending list:', docId)
@@ -378,7 +393,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/company/documentos">
@@ -399,15 +413,13 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         </div>
       </div>
 
-      {/* Filter */}
-      <DocumentFilter 
+      <DocumentFilter
         onFilterChange={setFilters}
         executives={executives}
         companies={companies}
         documentTypes={documentTypes}
       />
 
-      {/* Conductor Documents Section */}
       <Card className="border-blue-500/30 bg-blue-500/5">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -431,8 +443,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).map((doc) => {
                 const c = Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores
                 return (
-                  <div 
-                    key={doc.id} 
+                  <div
+                    key={doc.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -498,7 +510,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         </CardContent>
       </Card>
 
-      {/* Subcontractor Documents Section */}
       <Card className="border-orange-500/30 bg-orange-500/5">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -522,8 +533,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).map((doc) => {
                 const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
                 return (
-                  <div 
-                    key={doc.id} 
+                  <div
+                    key={doc.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -591,7 +602,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         </CardContent>
       </Card>
 
-      {/* Preview Modal */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-label={`Preview de ${previewDoc?.file_name || 'documento'}`}>
           <DialogHeader className="flex flex-row items-center justify-between">
@@ -615,7 +625,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               </a>
             )}
           </DialogHeader>
-          
+
           {previewDoc?.file_url && (
             <div className="w-full">
               {previewDoc.file_url.toLowerCase().endsWith('.pdf') ? (
@@ -624,7 +634,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                   filename={previewDoc.original_filename || previewDoc?.file_name || 'document.pdf'}
                 />
               ) : (
-                // Fallback for non-PDF files (images, etc)
                 <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
                   <img
                     src={previewDoc.file_url}
@@ -635,7 +644,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               )}
             </div>
           )}
-          
+
           <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
@@ -669,7 +678,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         </DialogContent>
       </Dialog>
 
-      {/* Reject Reason Modal */}
       <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
         <DialogContent>
           <DialogHeader>
@@ -697,7 +705,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         </DialogContent>
       </Dialog>
 
-      {/* Analysis Results Modal */}
       <Dialog open={showAnalysisModal} onOpenChange={setShowAnalysisModal}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -706,38 +713,36 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               Resultados del Analisis IA
             </DialogTitle>
           </DialogHeader>
-          
+
           {analysisResult && (
             <div className="space-y-4">
-              {/* Document Info */}
               <div className="bg-slate-800/50 rounded-lg p-3">
                 <p className="text-sm text-slate-400">Archivo</p>
                 <p className="text-white font-medium">{analysisResult.originalDocument?.file_name || 'Sin nombre'}</p>
               </div>
 
-              {/* Analysis Results */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-slate-800/50 rounded-lg p-3">
                   <p className="text-sm text-slate-400">Tipo Detectado</p>
                   <p className="text-white font-medium">{analysisResult.analysis?.documentType || 'No detectado'}</p>
                 </div>
-                
+
                 <div className="bg-slate-800/50 rounded-lg p-3">
                   <p className="text-sm text-slate-400">Confianza</p>
                   <p className="text-white font-medium">
-                    {analysisResult.analysis?.confidence 
-                      ? `${Math.round(analysisResult.analysis.confidence * 100)}%` 
+                    {analysisResult.analysis?.confidence
+                      ? `${Math.round(analysisResult.analysis.confidence * 100)}%`
                       : 'N/A'}
                   </p>
                 </div>
-                
+
                 {analysisResult.analysis?.expirationDate && (
                   <div className="bg-slate-800/50 rounded-lg p-3">
                     <p className="text-sm text-slate-400">Fecha Vencimiento</p>
                     <p className="text-white font-medium">{analysisResult.analysis.expirationDate}</p>
                   </div>
                 )}
-                
+
                 {analysisResult.analysis?.documentNumber && (
                   <div className="bg-slate-800/50 rounded-lg p-3">
                     <p className="text-sm text-slate-400">Numero Documento</p>
@@ -746,7 +751,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 )}
               </div>
 
-              {/* Extracted Text Summary */}
               {analysisResult.analysis?.extractedText && (
                 <div className="bg-slate-800/50 rounded-lg p-3">
                   <p className="text-sm text-slate-400 mb-1">Informacion Extraida</p>
@@ -754,7 +758,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 </div>
               )}
 
-              {/* Warnings */}
               {analysisResult.analysis?.warnings?.length > 0 && (
                 <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3">
                   <p className="text-sm text-yellow-400 font-medium mb-1">Advertencias</p>
@@ -766,7 +769,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 </div>
               )}
 
-              {/* Feedback Section - optional, trains AI model */}
               <div className="border-t border-slate-700 pt-3">
                 <p className="text-xs text-slate-400 mb-2">
                   Feedback opcional — ayuda a entrenar el modelo
@@ -795,7 +797,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 </div>
               </div>
 
-              {/* Action buttons */}
               <div className="flex justify-end pt-2 gap-2">
                 <Button
                   variant="ghost"

@@ -20,6 +20,8 @@ const MONTHS = [
   'Diciembre',
 ]
 
+const CHILE_TIME_ZONE = 'America/Santiago'
+
 export function getMonthOptions() {
   return [
     { value: ALL_VALUE, label: 'Todos los meses' },
@@ -32,7 +34,9 @@ export function getMonthOptions() {
 
 export function getYearOptions(yearsBack = 5, yearsForward = 1) {
   const options: Array<{ value: string; label: string }> = [{ value: ALL_VALUE, label: 'Todos los años' }]
-  const now = new Date().getFullYear()
+  const now = Number(
+    new Intl.DateTimeFormat('en-US', { timeZone: CHILE_TIME_ZONE, year: 'numeric' }).format(new Date()),
+  )
 
   for (let year = now + yearsForward; year >= now - yearsBack; year--) {
     options.push({ value: String(year), label: String(year) })
@@ -43,24 +47,52 @@ export function getYearOptions(yearsBack = 5, yearsForward = 1) {
 
 export function getMonthYearRange(month: string, year: string) {
   if (month !== ALL_VALUE && month && year !== ALL_VALUE && year) {
-    const start = new Date(Number(year), Number(month) - 1, 1)
-    const end = new Date(Number(year), Number(month), 0, 23, 59, 59, 999)
+    const numericYear = Number(year)
+    const numericMonth = Number(month)
+    const start = new Date(Date.UTC(numericYear, numericMonth - 1, 1))
+    const end = new Date(Date.UTC(numericYear, numericMonth, 1) - 1)
     return { start, end }
   }
 
   if (year !== ALL_VALUE && year) {
-    const start = new Date(Number(year), 0, 1)
-    const end = new Date(Number(year), 11, 31, 23, 59, 59, 999)
+    const numericYear = Number(year)
+    const start = new Date(Date.UTC(numericYear, 0, 1))
+    const end = new Date(Date.UTC(numericYear + 1, 0, 1) - 1)
     return { start, end }
   }
 
   if (month !== ALL_VALUE && month) {
-    const start = new Date(1900, Number(month) - 1, 1)
-    const end = new Date(2100, Number(month), 0, 23, 59, 59, 999)
+    const numericMonth = Number(month)
+    const start = new Date(Date.UTC(1900, numericMonth - 1, 1))
+    const end = new Date(Date.UTC(2100, numericMonth, 1) - 1)
     return { start, end }
   }
 
   return null
+}
+
+function getCalendarParts(value: string | Date) {
+  if (typeof value === 'string') {
+    const dateOnlyMatch = /^(\d{4})-(\d{2})(?:-|$)/.exec(value.trim())
+    if (dateOnlyMatch) {
+      return { year: Number(dateOnlyMatch[1]), month: Number(dateOnlyMatch[2]) }
+    }
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: CHILE_TIME_ZONE,
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(date)
+
+  const parsedYear = Number(parts.find((part) => part.type === 'year')?.value)
+  const parsedMonth = Number(parts.find((part) => part.type === 'month')?.value)
+
+  if (!parsedYear || !parsedMonth) return null
+  return { year: parsedYear, month: parsedMonth }
 }
 
 export function filterByMonthYear<T>(
@@ -69,18 +101,20 @@ export function filterByMonthYear<T>(
   month: string,
   year: string
 ) {
-  const range = getMonthYearRange(month, year)
+  const requestedMonth = month !== ALL_VALUE && month ? Number(month) : null
+  const requestedYear = year !== ALL_VALUE && year ? Number(year) : null
 
-  if (!range) {
-    return items
-  }
+  if (!requestedMonth && !requestedYear) return items
 
   return items.filter((item) => {
     const value = dateAccessor(item)
     if (!value) return false
-    const date = value instanceof Date ? value : new Date(value)
-    if (Number.isNaN(date.getTime())) return false
-    return date >= range.start && date <= range.end
+
+    const parts = getCalendarParts(value)
+    if (!parts) return false
+    if (requestedMonth && parts.month !== requestedMonth) return false
+    if (requestedYear && parts.year !== requestedYear) return false
+    return true
   })
 }
 
