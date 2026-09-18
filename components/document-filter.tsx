@@ -77,7 +77,7 @@ export function DocumentFilter({
 
   return (
     <div className={compact
-      ? "border-y border-[var(--cf-border)] bg-[var(--cf-canvas)] px-3 py-3"
+      ? "border-y border-[var(--cf-border)] bg-[var(--cf-bg)] px-3 py-3"
       : "mb-6 rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4"
     }>
       {!compact && (
