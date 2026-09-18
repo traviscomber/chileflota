@@ -253,34 +253,60 @@ export default async function LandingPage() {
 
       <section className="border-y border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
+          <div className="grid gap-10 lg:grid-cols-[0.62fr_1.38fr] lg:gap-16">
             <div>
               <SectionIndex>03 / IA aplicada al proceso</SectionIndex>
               <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em]">
                 La IA prepara la revisión. La ejecutiva toma la decisión.
               </h2>
               <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
-                ChileFlota usa IA para reducir trabajo manual sobre cada archivo sin quitar el control humano del proceso documental.
+                El subcontratista carga la evidencia. ChileFlota la lee, estructura y alerta. La ejecutiva valida con el documento y su contexto en la misma vista.
               </p>
+
+              <div className="mt-8 space-y-5 border-t border-[var(--cf-border)] pt-6">
+                {[
+                  ["Lectura automática", "Tipo, emisión, vencimiento, número, texto, confianza y advertencias."],
+                  ["Validación especializada", "Reglas sobre F30-1, periodo, RUT y señales de inconsistencia."],
+                  ["Alertas operacionales", "Vencidos y próximos vencimientos pasan de dato a acción."],
+                  ["Feedback humano", "La corrección de la ejecutiva queda registrada para mejorar el análisis."],
+                ].map(([title, text], index) => (
+                  <div key={title} className="grid grid-cols-[28px_1fr] gap-3">
+                    <span className="font-mono text-xs text-[var(--cf-accent)]">0{index + 1}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--cf-text)]">{title}</p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-px bg-[var(--cf-border)]">
-              {[
-                ["01", "Lectura automática", "Extrae tipo de documento, fechas de emisión y vencimiento, número de documento, texto y nivel de confianza."],
-                ["02", "PDF e imágenes", "Lee texto nativo cuando existe y usa lectura visual como respaldo para documentos escaneados o imágenes."],
-                ["03", "Validaciones especializadas", "Aplica reglas específicas sobre documentos como F30-1, periodo, RUT y señales de inconsistencia."],
-                ["04", "Alertas operacionales", "Detecta vencimientos y próximos vencimientos para convertir análisis documental en acciones concretas."],
-                ["05", "Corrección humana", "La ejecutiva puede confirmar o corregir el análisis; esas correcciones quedan registradas como feedback."],
-              ].map(([number, title, text]) => (
-                <div key={number} className="grid gap-4 bg-[var(--cf-surface)] p-5 sm:grid-cols-[52px_180px_1fr] sm:items-center">
-                  <span className="font-mono text-xs text-[var(--cf-accent)]">{number}</span>
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-[var(--cf-focus-ring)]" aria-hidden="true" />
-                    <p className="text-sm font-semibold text-[var(--cf-text)]">{title}</p>
-                  </div>
-                  <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
+            <div>
+              <div className="overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+                <img
+                  src="https://gcrmfajlebshvohmbfuy.supabase.co/storage/v1/object/public/landing-assets/chileflota/ai-logistics-document-workflow.webp"
+                  alt="Flujo visual de ChileFlota: carga documental del subcontratista, análisis asistido por IA, validación de la ejecutiva y continuidad operacional de la flota."
+                  width="900"
+                  height="507"
+                  loading="lazy"
+                  className="block h-auto w-full"
+                />
+              </div>
+
+              <div className="grid gap-px bg-[var(--cf-border)] sm:grid-cols-3">
+                <div className="bg-[var(--cf-surface)] p-5">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Entrada</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--cf-text)]">Documentos del subcontratista</p>
                 </div>
-              ))}
+                <div className="bg-[var(--cf-surface)] p-5">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">IA + revisión</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--cf-text)]">Extracción, alertas y validación humana</p>
+                </div>
+                <div className="bg-[var(--cf-surface)] p-5">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Resultado</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--cf-text)]">Evidencia lista para operar</p>
+                </div>
+              </div>
             </div>
           </div>
 
