@@ -18,7 +18,7 @@ type Focus = {
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
 const PAGE_SIZE = 1000
 
-const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
+const SINGLETON_COVERAGE_CODES = new Set([\n  'F29',\n  'F30',\n  'CERT_AFIL_MUTUAL',\n  'F30-1_DOÑA_ISIDORA',\n])\n\nconst LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
   'LIQUIDACION_SUELDO',
   'HOJA_VIDA',
   'CERT_ANTECEDENTES',
@@ -69,7 +69,7 @@ function monthIndex(year: number | null | undefined, month: number | null | unde
   return null
 }
 
-function approvedEvidenceCoversPending(pending: any, approved: any, periodicidad: string | null | undefined) {
+function approvedEvidenceCoversPending(\n  pending: any,\n  approved: any,\n  periodicidad: string | null | undefined,\n  typeCode: string | null | undefined,\n) {
   if (pending.subcontractor_id !== approved.subcontractor_id) return false
   if (pending.document_type_id !== approved.document_type_id) return false
 
@@ -458,7 +458,7 @@ export async function GET(request: Request) {
       }
 
       const approvedCandidates = approvedByCompanyType.get(`${doc.subcontractor_id}:${doc.document_type_id}`) || []
-      if (approvedCandidates.some((approved: any) => approvedEvidenceCoversPending(doc, approved, typeInfo?.periodicidad))) {
+      if (approvedCandidates.some((approved: any) => approvedEvidenceCoversPending(doc, approved, typeInfo?.periodicidad, typeInfo?.code))) {
         suppressedByApprovedEvidence += 1
         return false
       }
