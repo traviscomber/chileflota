@@ -533,7 +533,11 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
           <div className="flex items-center justify-between border-b border-[var(--cf-border)] px-4 py-3">
             <div>
               <p className="text-sm font-medium text-[var(--cf-text)]">Pendientes</p>
-              <p className="text-xs text-[var(--cf-text-muted)]">{inboxDocs.length.toLocaleString('es-CL')} visibles</p>
+              <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--cf-text-muted)]">
+                <span>{inboxDocs.length.toLocaleString('es-CL')} visibles</span>
+                <span aria-hidden="true">·</span>
+                <span>más antiguos primero</span>
+              </div>
             </div>
             <Clock className="h-4 w-4 text-[#D9B65C]" />
           </div>
@@ -569,7 +573,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`mt-1 h-2 w-2 flex-none rounded-full ${source === 'conductor' ? 'bg-blue-400' : 'bg-amber-400'}`} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <p className="truncate text-sm font-medium text-[var(--cf-text)]">
@@ -579,9 +582,14 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                             (getWaitDays(doc) || 0) >= 7 ? 'text-[var(--cf-warning)]' : 'text-[var(--cf-text-muted)]'
                           }`}>{getWaitLabel(doc)}</span>
                         </div>
-                        <p className="mt-1 truncate text-xs text-[var(--cf-text-secondary)]">
-                          {getDocumentTypeLabel(doc)}
-                        </p>
+                        <div className="mt-1 flex min-w-0 items-center gap-2">
+                          <span className="flex-none text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">
+                            {source === 'conductor' ? 'Conductor' : 'Empresa'}
+                          </span>
+                          <span className="truncate text-xs text-[var(--cf-text-secondary)]">
+                            {getDocumentTypeLabel(doc)}
+                          </span>
+                        </div>
                         <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[var(--cf-text-muted)]">
                           <span className="truncate">{doc.original_filename || doc.file_name || 'Documento sin nombre'}</span>
                           <span className="flex-none">· {getDocumentPeriod(doc)}</span>
@@ -696,7 +704,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               </div>
 
               <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_240px]">
-                <div className="min-h-[460px] border-b border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 lg:border-b-0 lg:border-r">
+                <div className="min-h-[460px] border-b border-[var(--cf-border)] bg-[var(--cf-bg)] p-4 lg:border-b-0 lg:border-r">
                   {selectedDoc.file_url ? (
                     selectedDoc.file_url.toLowerCase().includes('.pdf') ? (
                       <PDFViewer
@@ -742,6 +750,14 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                       <div>
                         <dt className="text-[var(--cf-text-muted)]">Subido</dt>
                         <dd className="mt-0.5 text-[var(--cf-text)]">{getDocumentDate(selectedDoc)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[var(--cf-text-muted)]">En espera</dt>
+                        <dd className={`mt-0.5 font-medium ${
+                          (getWaitDays(selectedDoc) || 0) >= 7 ? 'text-[var(--cf-warning)]' : 'text-[var(--cf-text)]'
+                        }`}>
+                          {getWaitLabel(selectedDoc)}
+                        </dd>
                       </div>
                     </dl>
                   </div>
