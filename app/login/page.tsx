@@ -37,7 +37,9 @@ export default function LoginPage() {
       document.cookie = `user_organization_id=${encodeURIComponent(data.user.organization_id || '')}; path=/; expires=${expiryDate.toUTCString()}`
 
       setTimeout(() => {
-        window.location.href = '/dashboard/company'
+        window.location.href = data.user.role === 'ejecutiva'
+          ? '/dashboard/company/documentos/pendientes'
+          : '/dashboard/company'
       }, 300)
     } catch (err) {
       setError('Error al conectar con el servidor')
