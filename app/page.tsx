@@ -53,63 +53,75 @@ function AccentRule() {
 
 function HeroWorkflowVisual() {
   const steps = [
-    { icon: UploadCloud, label: "Subcontratista", meta: "Carga documentación" },
-    { icon: ScanLine, label: "ChileFlota + IA", meta: "Lee · clasifica · alerta" },
-    { icon: UserCheck, label: "Ejecutiva", meta: "Revisa · valida · decide" },
-    { icon: Truck, label: "Operación", meta: "Sigue con respaldo" },
+    {
+      icon: UploadCloud,
+      label: "Subcontratista",
+      text: "Carga sus documentos directamente en la plataforma.",
+    },
+    {
+      icon: ScanLine,
+      label: "ChileFlota + IA",
+      text: "Ordena la evidencia, extrae datos verificables y la incorpora a la bandeja correspondiente.",
+    },
+    {
+      icon: UserCheck,
+      label: "Ejecutiva",
+      text: "Revisa el documento y decide aprobar o rechazar con trazabilidad.",
+    },
+    {
+      icon: ShieldCheck,
+      label: "Operación",
+      text: "El estado queda actualizado y la evidencia disponible para seguir operando.",
+    },
   ]
 
   return (
-    <div className="relative min-h-[540px] overflow-hidden bg-[var(--cf-sidebar)] lg:min-h-[690px]">
-      <div className="relative h-[270px] overflow-hidden border-b border-[var(--cf-border)] sm:h-[310px] lg:h-[330px]">
-        <img
-          src={LABBE_HERO_IMAGE}
-          alt="Operación real de Transportes Labbe."
-          className="h-full w-full object-cover grayscale-[35%] contrast-[1.05]"
-          loading="eager"
-        />
-        <div className="absolute inset-0 bg-[rgba(23,23,25,0.34)]" aria-hidden="true" />
-        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-6 bg-[rgba(23,23,25,0.88)] px-5 py-4 sm:px-7">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Implementación real</p>
-            <p className="mt-1 text-sm font-semibold">Transportes Labbe · Paine, Chile</p>
-          </div>
-          <p className="hidden max-w-xs text-right text-xs leading-5 text-[var(--cf-text-secondary)] sm:block">
-            La capa visual muestra la operación; ChileFlota agrega control documental y trazabilidad.
-          </p>
-        </div>
+    <div className="relative flex min-h-[620px] flex-col justify-center overflow-hidden bg-[var(--cf-sidebar)] p-5 sm:p-7 lg:min-h-[720px] lg:p-10">
+      <div className="pointer-events-none absolute inset-0 opacity-30" aria-hidden="true">
+        <div className="absolute inset-0 bg-grid" />
+        <div className="absolute inset-y-0 left-[33%] w-px bg-[var(--cf-border)]" />
+        <div className="absolute inset-y-0 left-[66%] w-px bg-[var(--cf-border)]" />
       </div>
 
-      <div className="p-5 sm:p-7 lg:p-8">
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--cf-text-muted)]">Flujo documental operativo</p>
-          <p className="font-mono text-[10px] text-[var(--cf-accent)]">FLUJO · 04 ETAPAS</p>
+      <div className="relative z-10">
+        <div className="flex items-center gap-4">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--cf-text-muted)]">Flujo real de trabajo</p>
+          <span className="h-px flex-1 bg-[var(--cf-border)]" aria-hidden="true" />
         </div>
 
-        <div className="mt-5 grid gap-px bg-[var(--cf-border)] sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-7 overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-surface)]">
           {steps.map((step, index) => {
             const Icon = step.icon
             return (
-              <div key={step.label} className="bg-[var(--cf-surface)] p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] text-[var(--cf-accent)]">0{index + 1}</span>
-                  <Icon className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
+              <div
+                key={step.label}
+                className="grid gap-4 border-b border-[var(--cf-border)] px-4 py-5 last:border-b-0 sm:grid-cols-[42px_48px_150px_1fr] sm:items-center sm:px-5"
+              >
+                <span className="font-mono text-xs text-[var(--cf-accent)]">0{index + 1}</span>
+                <span className="flex h-10 w-10 items-center justify-center border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+                  <Icon className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+                </span>
+                <p className="text-sm font-semibold">{step.label}</p>
+                <div className="border-t border-[var(--cf-border)] pt-4 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+                  <p className="text-sm leading-6 text-[var(--cf-text-secondary)]">{step.text}</p>
                 </div>
-                <p className="mt-5 text-sm font-semibold">{step.label}</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">{step.meta}</p>
               </div>
             )
           })}
         </div>
 
-        <div className="mt-5 grid gap-px bg-[var(--cf-border)] sm:grid-cols-[1.1fr_0.9fr]">
-          <div className="bg-[var(--cf-canvas)] p-4">
+        <div className="mt-7 grid gap-0 border-t border-[var(--cf-border)] pt-6 sm:grid-cols-2">
+          <div className="pr-0 sm:pr-6">
             <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Antes</p>
-            <p className="mt-2 text-xs font-medium text-[var(--cf-text-secondary)]">Correos · planillas · mensajes · seguimiento manual</p>
+            <p className="mt-2 text-sm font-medium leading-6 text-[var(--cf-text-secondary)]">
+              Correos, planillas, mensajes y seguimiento manual.
+            </p>
           </div>
-          <div className="border-l-2 border-l-[var(--cf-accent)] bg-[var(--cf-canvas)] p-4">
+          <div className="mt-5 border-l-2 border-[var(--cf-accent)] pl-5 sm:mt-0 sm:pl-6">
             <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Con ChileFlota</p>
-            <p className="mt-2 text-xs font-semibold">Una bandeja · una decisión · evidencia trazable</p>
+            <p className="mt-2 text-sm font-semibold leading-6">
+              Una bandeja, una decisión, una evidencia trazable.
+            </p>
           </div>
         </div>
       </div>
@@ -360,7 +372,7 @@ export default async function LandingPage() {
       </header>
 
       <section id="solucion" className="relative border-b border-[var(--cf-border)] pt-16">
-        <div className="mx-auto grid max-w-7xl lg:grid-cols-[0.7fr_1.3fr]">
+        <div className="mx-auto grid max-w-[1480px] lg:grid-cols-[0.92fr_1.08fr]">
           <div className="flex min-h-[690px] items-center px-4 py-16 sm:px-6 lg:px-8 lg:pr-14">
             <div className="max-w-[590px]">
               <div className="flex items-center gap-4">
@@ -368,12 +380,13 @@ export default async function LandingPage() {
                 <AccentRule />
               </div>
 
-              <h1 className="mt-6 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] sm:text-6xl lg:text-[68px]">
-                El subcontratista carga. La ejecutiva valida. La operación sigue.
+              <h1 className="mt-6 max-w-[680px] text-5xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-[72px]">
+                El subcontratista carga. La ejecutiva valida.{" "}
+                <span className="text-[var(--cf-accent)]">La operación sigue.</span>
               </h1>
 
-              <p className="mt-7 max-w-[560px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
-                ChileFlota centraliza la documentación de la flota. Los subcontratistas cargan, la IA estructura la información, la ejecutiva valida y la operación gana trazabilidad, tiempo y continuidad.
+              <p className="mt-7 max-w-[620px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
+                ChileFlota reemplaza el intercambio disperso de correos, planillas y mensajes por un flujo único de carga, revisión y evidencia trazable.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -390,6 +403,10 @@ export default async function LandingPage() {
                 >
                   Ver cómo funciona
                 </a>
+              </div>
+              <div className="mt-14 flex items-center gap-4 text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">
+                <span className="h-px w-8 bg-[var(--cf-text-secondary)]" aria-hidden="true" />
+                <span>Operaciones más simples. Flotas más seguras.</span>
               </div>
             </div>
           </div>
