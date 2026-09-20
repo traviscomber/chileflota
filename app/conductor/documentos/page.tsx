@@ -120,15 +120,19 @@ export default function ConductorDocumentosPage() {
   }, [])
 
   useEffect(() => {
-    // Calculate compliance percentage based on required docs that are approved
-    const approvedCount = REQUIRED_DOCUMENTS.filter(reqDoc => {
-      const uploaded = documents.find(d => 
-        d.document_type_id === reqDoc.type || d.document_type === reqDoc.type
-      )
-      return uploaded && (uploaded.validation_status === 'approved' || uploaded.validation_status === 'validated')
+    const approvedCount = REQUIRED_DOCUMENTS.filter((reqDoc) => {
+      const latest = documents
+        .filter((doc) =>
+          doc.document_type_id === reqDoc.type ||
+          doc.document_type === reqDoc.type ||
+          (doc.document_type_id && doc.document_type_id.toUpperCase() === reqDoc.type.toUpperCase())
+        )
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+
+      return latest && ['approved', 'validated'].includes(latest.validation_status)
     }).length
-    const percentage = Math.round((approvedCount / REQUIRED_DOCUMENTS.length) * 100)
-    setCompliancePercentage(percentage)
+
+    setCompliancePercentage(Math.round((approvedCount / REQUIRED_DOCUMENTS.length) * 100))
   }, [documents])
 
   useEffect(() => {
@@ -292,22 +296,27 @@ export default function ConductorDocumentosPage() {
 
     switch (status) {
       case 'approved':
+      case 'validated':
         return <Badge className="bg-green-900/30 text-green-300 border border-green-900/50">Aprobado</Badge>
       case 'rejected':
         return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Rechazado</Badge>
+      case 'expired':
+        return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Vencido</Badge>
       default:
-        return <Badge className="bg-slate-700/50 text-slate-300 border border-slate-600">En Revisión</Badge>
+        return <Badge className="bg-slate-700/50 text-slate-300 border border-slate-600">En revisión</Badge>
     }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-        return <CheckCircle2 className="h-5 w-5 text-green-600" />
+      case 'validated':
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />
       case 'rejected':
-        return <AlertCircle className="h-5 w-5 text-red-600" />
+      case 'expired':
+        return <AlertCircle className="h-5 w-5 text-red-500" />
       default:
-        return <Loader className="h-5 w-5 text-yellow-600 animate-spin" />
+        return <Clock className="h-5 w-5 text-amber-400" />
     }
   }
 
@@ -394,9 +403,9 @@ export default function ConductorDocumentosPage() {
   return (
       <div className="space-y-8">
         {/* Header with Compliance */}
-        <div className="flex justify-between items-start border-b border-slate-700 pb-6">
+        <div className="flex flex-col gap-4 border-b border-slate-700 pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-5xl font-bold text-white">Mis Documentos</h1>
+            <h1 className="text-3xl font-bold text-white sm:text-5xl">Mis Documentos</h1>
             <p className="text-slate-300 mt-2">Sube y gestiona tus documentos requeridos para trabajar con Labbe</p>
           </div>
           <div className="min-w-max rounded-lg border border-slate-700 bg-slate-800 p-4">
@@ -440,6 +449,17 @@ export default function ConductorDocumentosPage() {
         </Alert>
       )}
 
+      {(documentSummary.actionRequired > 0 || documentSummary.expiringSoon > 0) && (
+        <Alert className="border-orange-900/50 bg-orange-950/30">
+          <AlertCircle className="h-4 w-4 text-orange-300" />
+          <AlertDescription className="text-orange-100">
+            Necesita atención: {documentSummary.actionRequired} documento(s) requieren acción
+            {documentSummary.expiringSoon > 0 ? ` y ${documentSummary.expiringSoon} están próximos a vencer` : ''}.
+            Los mostramos primero.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Documents Required */}
       <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
         <CardHeader>
@@ -460,7 +480,7 @@ export default function ConductorDocumentosPage() {
                 return (
                   <div
                     key={reqDoc.type}
-                    className="flex items-center justify-between p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 bg-slate-800/20 transition-all"
+                    className="flex flex-col gap-3 rounded-lg border border-slate-700 bg-slate-800/20 p-4 transition-all hover:bg-slate-800/50 sm:flex-row sm:items-center sm:justify-between"
                   >
                   <div className="flex items-center gap-4 flex-1">
                     <div className="flex-shrink-0">
@@ -494,7 +514,7 @@ export default function ConductorDocumentosPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
                       {(needsAction(uploadedDoc) || isExpiringSoon(uploadedDoc)) && (
                         <Button
                           type="button"
