@@ -4,8 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, ArrowLeft, FileText, Check, X, Loader2, Download, Sparkles, ChevronUp, ChevronDown } from "lucide-react"
-import Link from "next/link"
+import { Clock, FileText, Check, X, Loader2, Download, Sparkles, ChevronUp, ChevronDown } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -477,14 +476,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     <div className="space-y-4">
       <div aria-live="polite" className="sr-only">{statusMessage}</div>
       <div className="flex flex-col gap-4 border-b border-[var(--cf-border)] pb-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-start gap-3">
-          <Link href="/dashboard/company">
-            <Button variant="ghost" size="sm" className="mt-0.5 gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Inicio
-            </Button>
-          </Link>
-          <div>
+        <div>
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Bandeja de trabajo</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">
               Documentos pendientes
@@ -498,7 +490,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 {sessionReviewed.toLocaleString('es-CL')} resueltos en esta sesión
               </span>
             </div>
-          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
