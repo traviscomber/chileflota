@@ -227,6 +227,12 @@ export default function SubcontractorDashboardPage() {
     return docDate >= start && docDate <= end
   })
 
+  const statusSummary = {
+    approved: filteredDocuments.filter((doc) => doc.status === 'approved').length,
+    inReview: filteredDocuments.filter((doc) => ['uploaded', 'pending'].includes(doc.status)).length,
+    actionRequired: filteredDocuments.filter((doc) => ['rejected', 'expired'].includes(doc.status)).length,
+  }
+
   const minDate = new Date()
   minDate.setMonth(minDate.getMonth() - 4)
   const minDateString = minDate.toISOString().split('T')[0]
@@ -236,7 +242,8 @@ export default function SubcontractorDashboardPage() {
       case 'approved':
         return <div className="flex items-center gap-1 text-green-400"><CheckCircle className="w-4 h-4" /> Aprobado</div>
       case 'uploaded':
-        return <div className="flex items-center gap-1 text-blue-400"><Clock className="w-4 h-4" /> Bajo revisión</div>
+      case 'pending':
+        return <div className="flex items-center gap-1 text-amber-300"><Clock className="w-4 h-4" /> En revisión</div>
       case 'expired':
         return <div className="flex items-center gap-1 text-red-400"><AlertCircle className="w-4 h-4" /> Vencido</div>
       case 'rejected':
@@ -369,7 +376,12 @@ export default function SubcontractorDashboardPage() {
 
         <Card className="border-slate-700 bg-slate-800/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Documentos Subidos ({filteredDocuments.length} de {documents.length})</CardTitle>
+            <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Estado de documentos</CardTitle>
+            <CardDescription className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-sm">
+              <span className="font-medium text-green-300">{statusSummary.approved} aprobados</span>
+              <span className="text-amber-300">{statusSummary.inReview} en revisión</span>
+              <span className={statusSummary.actionRequired > 0 ? 'font-medium text-red-300' : 'text-slate-400'}>{statusSummary.actionRequired} requieren acción</span>
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {filteredDocuments.length === 0 ? (
@@ -383,7 +395,10 @@ export default function SubcontractorDashboardPage() {
                       {getAdvancedBadge(doc)}
                       <p className="text-xs text-slate-400 mt-1">Periodo: {getDocumentPeriodLabel(doc)}</p>
                       <p className="text-xs text-slate-500">Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}</p>
-                      {doc.status === 'rejected' && doc.rejection_reason && <p className="text-xs text-red-400 mt-1">Motivo del rechazo: {doc.rejection_reason}</p>}
+                      {doc.status === 'approved' && <p className="mt-1 text-xs text-green-300">Documento validado. No requiere acción.</p>}
+                      {['uploaded', 'pending'].includes(doc.status) && <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>}
+                      {doc.status === 'rejected' && doc.rejection_reason && <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2"><p className="text-xs font-medium text-red-300">Requiere acción</p><p className="mt-1 text-xs text-red-200">Motivo: {doc.rejection_reason}</p><p className="mt-1 text-xs text-red-300">Corrige el documento y vuelve a subirlo.</p></div>}
+                      {doc.status === 'expired' && <p className="mt-1 text-xs font-medium text-red-300">Documento vencido. Debes renovarlo.</p>}
                     </div>
                     <div className="text-right">
                       {getStatusBadge(doc.status)}
