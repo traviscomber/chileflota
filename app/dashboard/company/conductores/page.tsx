@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AddConductorModal } from '@/components/add-conductor-modal'
@@ -131,9 +130,9 @@ export default function ConductoresPage() {
 
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="h-10 gap-2 bg-[var(--cf-accent)] px-4 text-sm text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]"
+          className="min-h-11 gap-2 bg-[var(--cf-accent)] px-4 text-sm text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)] sm:min-h-10"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4" aria-hidden="true" />
           Agregar conductor
         </Button>
       </div>
@@ -177,35 +176,37 @@ export default function ConductoresPage() {
 
         {ejecutivas.length > 0 && (
           <div className="space-y-3 border-t border-[var(--cf-border)] pt-4">
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Filtrar por ejecutiva</p>
-            <div className="flex flex-wrap gap-2">
-              <Badge
-                variant="outline"
-                className={`cursor-pointer rounded-[4px] border-[var(--cf-border)] px-3 py-1.5 text-xs transition-colors ${
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Filtrar por ejecutiva</p>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar conductores por ejecutiva">
+              <button
+                type="button"
+                aria-pressed={selectedEjecutiva === null}
+                className={`min-h-11 rounded-[5px] border border-[var(--cf-border)] px-3 py-2 text-xs font-medium transition-colors sm:min-h-9 ${
                   selectedEjecutiva === null
                     ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
-                    : 'bg-transparent text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]'
+                    : 'bg-transparent text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]'
                 }`}
                 onClick={() => setSelectedEjecutiva(null)}
               >
                 Todos ({driversByDate.length})
-              </Badge>
+              </button>
               {ejecutivas.map((ejecutiva) => {
                 const count = ejecutivaCounts.get(ejecutiva) || 0
                 const selected = selectedEjecutiva === ejecutiva
                 return (
-                  <Badge
+                  <button
                     key={ejecutiva}
-                    variant="outline"
-                    className={`cursor-pointer rounded-[4px] border-[var(--cf-border)] px-3 py-1.5 text-xs transition-colors ${
+                    type="button"
+                    aria-pressed={selected}
+                    className={`min-h-11 rounded-[5px] border border-[var(--cf-border)] px-3 py-2 text-xs font-medium transition-colors sm:min-h-9 ${
                       selected
                         ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
-                        : 'bg-transparent text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]'
+                        : 'bg-transparent text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]'
                     }`}
                     onClick={() => setSelectedEjecutiva(ejecutiva)}
                   >
                     {ejecutiva} ({count})
-                  </Badge>
+                  </button>
                 )
               })}
             </div>
@@ -216,7 +217,7 @@ export default function ConductoresPage() {
       <section className="space-y-3" aria-labelledby="driver-directory-title">
         <div className="flex flex-col gap-2 border-b border-[var(--cf-border)] pb-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Directorio operacional</p>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Directorio operacional</p>
             <h2 id="driver-directory-title" className="mt-1 text-base font-semibold text-[var(--cf-text)]">
               {filteredDrivers.length.toLocaleString('es-CL')} conductores
             </h2>
@@ -229,13 +230,13 @@ export default function ConductoresPage() {
         {isLoading ? (
           <StatePanel>Cargando conductores…</StatePanel>
         ) : error ? (
-          <div className="rounded-[6px] border border-[#45242B] bg-[var(--cf-surface)] px-5 py-6 text-sm text-[var(--cf-text-secondary)]">
-            <p className="font-medium text-[#E17B8C]">No fue posible cargar los conductores.</p>
+          <div className="rounded-[6px] border border-[var(--cf-danger)] bg-[var(--cf-surface)] px-5 py-6 text-sm text-[var(--cf-text-secondary)]">
+            <p className="font-medium text-[var(--cf-danger)]">No fue posible cargar los conductores.</p>
             <p className="mt-2 text-xs text-[var(--cf-text-muted)]">{error?.message || 'Error desconocido'}</p>
             <Button
               variant="outline"
               onClick={() => mutate()}
-              className="mt-4 h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]"
+              className="mt-4 min-h-11 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] sm:min-h-9"
             >
               Reintentar
             </Button>
@@ -263,7 +264,7 @@ function SectionHeading({ eyebrow, title, description, id }: { eyebrow: string; 
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
       <div>
-        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">{eyebrow}</p>
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">{eyebrow}</p>
         <h2 id={id} className="mt-1 text-base font-semibold text-[var(--cf-text)]">{title}</h2>
       </div>
       <p className="max-w-xl text-xs leading-5 text-[var(--cf-text-muted)] sm:text-right">{description}</p>
@@ -284,7 +285,7 @@ function Metric({
   tone?: 'success' | 'warning'
   divided?: boolean
 }) {
-  const indicator = tone === 'success' ? 'bg-[#67C18D]' : tone === 'warning' ? 'bg-[#E6A35A]' : 'bg-[var(--cf-text-muted)]'
+  const indicator = tone === 'success' ? 'bg-[var(--cf-success)]' : tone === 'warning' ? 'bg-[var(--cf-warning)]' : 'bg-[var(--cf-text-muted)]'
 
   return (
     <div className={`min-w-0 p-4 ${divided ? 'border-l border-[var(--cf-border)]' : ''}`}>
