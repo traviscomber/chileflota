@@ -328,13 +328,44 @@ export default function ConductorDocumentosPage() {
     'Documento'
 
   const getDocumentByType = (type: string) => {
-    // Match on document_type_id (e.g. 'LIC_CONDUCIR') or document_type name
-    return documents.find(d => 
-      d.document_type_id === type || 
-      d.document_type === type ||
-      (d.document_type_id && d.document_type_id.toUpperCase() === type.toUpperCase())
-    )
+    return documents
+      .filter(d =>
+        d.document_type_id === type ||
+        d.document_type === type ||
+        (d.document_type_id && d.document_type_id.toUpperCase() === type.toUpperCase())
+      )
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
   }
+
+  const isExpiringSoon = (doc?: UploadedDocument) => {
+    if (!doc?.expiration_date || !['approved', 'validated'].includes(doc.validation_status)) return false
+    const days = Math.ceil((new Date(doc.expiration_date).getTime() - Date.now()) / 86400000)
+    return days >= 0 && days <= 30
+  }
+
+  const needsAction = (doc?: UploadedDocument) => {
+    if (!doc) return true
+    if (['rejected', 'expired'].includes(doc.validation_status)) return true
+    if (doc.expiration_date && new Date(doc.expiration_date).getTime() < Date.now()) return true
+    return false
+  }
+
+  const focusUploadFor = (documentType: string) => {
+    setSelectedDocumentType(documentType)
+    document.getElementById('upload-document')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const requiredDocumentsByPriority = [...REQUIRED_DOCUMENTS].sort((a, b) => {
+    const aDoc = getDocumentByType(a.type)
+    const bDoc = getDocumentByType(b.type)
+    const rank = (doc?: UploadedDocument) => {
+      if (needsAction(doc)) return 0
+      if (isExpiringSoon(doc)) return 1
+      if (doc?.validation_status === 'pending') return 2
+      return 3
+    }
+    return rank(aDoc) - rank(bDoc)
+  })
 
   const historicalDocuments = useMemo(() => {
     return filterByMonthYear(documents, (doc) => doc.created_at, archiveFilters.month, archiveFilters.year)
@@ -342,10 +373,22 @@ export default function ConductorDocumentosPage() {
   }, [documents, archiveFilters.month, archiveFilters.year])
 
   const documentSummary = useMemo(() => {
-    const approved = documents.filter((doc) => ['approved', 'validated'].includes(doc.validation_status)).length
-    const inReview = documents.filter((doc) => doc.validation_status === 'pending').length
-    const actionRequired = documents.filter((doc) => ['rejected', 'expired'].includes(doc.validation_status)).length
-    return { approved, inReview, actionRequired }
+    const current = REQUIRED_DOCUMENTS.map((required) =>
+      documents
+        .filter((doc) =>
+          doc.document_type_id === required.type ||
+          doc.document_type === required.type ||
+          (doc.document_type_id && doc.document_type_id.toUpperCase() === required.type.toUpperCase())
+        )
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    )
+
+    const approved = current.filter((doc) => doc && ['approved', 'validated'].includes(doc.validation_status) && !isExpiringSoon(doc)).length
+    const inReview = current.filter((doc) => doc?.validation_status === 'pending').length
+    const expiringSoon = current.filter((doc) => isExpiringSoon(doc)).length
+    const actionRequired = current.filter((doc) => needsAction(doc)).length
+
+    return { approved, inReview, expiringSoon, actionRequired }
   }, [documents])
 
   return (
@@ -361,11 +404,14 @@ export default function ConductorDocumentosPage() {
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
               <span className="font-medium text-green-300">{documentSummary.approved} al día</span>
               <span className="text-slate-300">{documentSummary.inReview} en revisión</span>
+              <span className={documentSummary.expiringSoon > 0 ? 'font-medium text-orange-300' : 'text-slate-400'}>
+                {documentSummary.expiringSoon} por vencer
+              </span>
               <span className={documentSummary.actionRequired > 0 ? 'font-medium text-red-300' : 'text-slate-400'}>
                 {documentSummary.actionRequired} requiere acción
               </span>
             </div>
-            <p className="mt-2 text-xs text-slate-500">{compliancePercentage}% de documentos requeridos aprobados</p>
+            <p className="mt-2 text-xs text-slate-500">{compliancePercentage}% de requisitos aprobados</p>
           </div>
         </div>
 
@@ -409,7 +455,7 @@ export default function ConductorDocumentosPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {REQUIRED_DOCUMENTS.map((reqDoc) => {
+              {requiredDocumentsByPriority.map((reqDoc) => {
                 const uploadedDoc = getDocumentByType(reqDoc.type)
                 return (
                   <div
@@ -436,6 +482,9 @@ export default function ConductorDocumentosPage() {
                       {uploadedDoc?.validation_status === 'pending' && (
                         <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>
                       )}
+                      {isExpiringSoon(uploadedDoc) && (
+                        <p className="mt-1 text-xs font-medium text-orange-300">Próximo a vencer. Conviene renovarlo antes de que afecte tu habilitación.</p>
+                      )}
                         {uploadedDoc?.rejection_reason && (
                           <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2">
                             <p className="text-xs font-medium uppercase tracking-wide text-red-300">Requiere acción</p>
@@ -445,7 +494,17 @@ export default function ConductorDocumentosPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      {(needsAction(uploadedDoc) || isExpiringSoon(uploadedDoc)) && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-orange-500 text-slate-950 hover:bg-orange-400"
+                          onClick={() => focusUploadFor(reqDoc.type)}
+                        >
+                          {uploadedDoc ? 'Reemplazar' : 'Subir'}
+                        </Button>
+                      )}
                       {uploadedDoc ? (
                         <>
                           {getStatusBadge(uploadedDoc.validation_status, uploadedDoc.expiration_date)}
@@ -482,7 +541,7 @@ export default function ConductorDocumentosPage() {
       </Card>
 
       {/* Upload Section */}
-      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
+      <Card id="upload-document" className="scroll-mt-6 border-slate-700 bg-slate-800/30 shadow-lg">
         <CardHeader>
           <CardTitle className="text-white">Subir documento</CardTitle>
           <CardDescription className="text-slate-400">
