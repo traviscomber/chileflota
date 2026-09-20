@@ -128,9 +128,8 @@ export default function ConductorDocumentosPage() {
     const approvedCount = REQUIRED_DOCUMENTS.filter((reqDoc) => {
       const latest = documents
         .filter((doc) =>
-          doc.document_type_id === reqDoc.type ||
-          doc.document_type === reqDoc.type ||
-          (doc.document_type_id && doc.document_type_id.toUpperCase() === reqDoc.type.toUpperCase())
+          [doc.document_type_id, doc.document_type, doc.document_type_code]
+            .some((value) => normalizeDocumentCode(value) === normalizeDocumentCode(reqDoc.type))
         )
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
 
@@ -352,22 +351,36 @@ export default function ConductorDocumentosPage() {
     return fileName.trim()
   }
 
+  const normalizeDocumentCode = (value?: string | null) => {
+    if (!value) return ''
+    const normalized = value.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+    const aliases: Record<string, string> = {
+      LICENCIA_CONDUCIR: 'LIC_CONDUCIR',
+      HOJA_VIDA_CONDUCTOR: 'HOJA_VIDA',
+      CERTIFICADO_ANTECEDENTES: 'CERT_ANTECEDENTES',
+      CEDULA_IDENTIDAD: 'CEDULA_IDENTIDAD',
+      REVISION_TECNICA: 'REVISION_TECNICA',
+      SEGURO_OBLIGATORIO_SOAP: 'SOAP',
+    }
+    return aliases[normalized] || normalized
+  }
+
   const getDocumentLabel = (doc: UploadedDocument) =>
     doc.document_type_name ||
     DOCUMENT_TYPES.find((type) =>
-      type.id === doc.document_type_id ||
-      type.code === doc.document_type ||
-      type.code === doc.document_type_code
+      normalizeDocumentCode(type.code) === normalizeDocumentCode(doc.document_type_id) ||
+      normalizeDocumentCode(type.code) === normalizeDocumentCode(doc.document_type) ||
+      normalizeDocumentCode(type.code) === normalizeDocumentCode(doc.document_type_code)
     )?.label ||
     doc.document_type ||
     'Documento'
 
   const getDocumentByType = (type: string) => {
+    const target = normalizeDocumentCode(type)
     return documents
-      .filter(d =>
-        d.document_type_id === type ||
-        d.document_type === type ||
-        (d.document_type_id && d.document_type_id.toUpperCase() === type.toUpperCase())
+      .filter((d) =>
+        [d.document_type_id, d.document_type, d.document_type_code]
+          .some((value) => normalizeDocumentCode(value) === target)
       )
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
   }
@@ -415,9 +428,8 @@ export default function ConductorDocumentosPage() {
     const current = REQUIRED_DOCUMENTS.map((required) =>
       documents
         .filter((doc) =>
-          doc.document_type_id === required.type ||
-          doc.document_type === required.type ||
-          (doc.document_type_id && doc.document_type_id.toUpperCase() === required.type.toUpperCase())
+          [doc.document_type_id, doc.document_type, doc.document_type_code]
+            .some((value) => normalizeDocumentCode(value) === normalizeDocumentCode(required.type))
         )
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
     )
