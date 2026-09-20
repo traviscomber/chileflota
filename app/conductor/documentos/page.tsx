@@ -12,6 +12,7 @@ import { useDocumentSync } from '@/contexts/document-sync-context'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, filterByMonthYear, type DateFilterValue } from '@/lib/date-filters'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
+import { getDocumentPeriodDate, getDocumentPeriodLabel } from '@/lib/document-period'
 
 interface UploadedDocument {
   id: string
@@ -27,6 +28,9 @@ interface UploadedDocument {
   created_at: string
   expiration_date?: string
   rejection_reason?: string
+  document_period_month?: number | string | null
+  document_period_year?: number | string | null
+  document_period_start?: string | null
 }
 
 interface RequiredDocument {
@@ -107,6 +111,7 @@ export default function ConductorDocumentosPage() {
   const { broadcastSync } = useDocumentSync()
   const [compliancePercentage, setCompliancePercentage] = useState(0)
   const [selectedDocumentType, setSelectedDocumentType] = useState('LIC_CONDUCIR')
+  const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -186,6 +191,24 @@ export default function ConductorDocumentosPage() {
   const handleFileUpload = async (file: File) => {
     if (!file) return
 
+    const match = /^(\d{4})-(\d{2})-\d{2}$/.exec(documentDate)
+    const uploadYear = match?.[1] || String(new Date().getFullYear())
+    const uploadMonth = match?.[2] || String(new Date().getMonth() + 1).padStart(2, '0')
+    const now = new Date()
+    const currentMonth = String(now.getMonth() + 1).padStart(2, '0')
+    const currentYear = String(now.getFullYear())
+
+    if (uploadMonth !== currentMonth || uploadYear !== currentYear) {
+      const periodLabel = new Date(Number(uploadYear), Number(uploadMonth) - 1, 1).toLocaleDateString('es-CL', {
+        month: 'long',
+        year: 'numeric',
+      })
+      const confirmed = window.confirm(
+        `Estás subiendo este documento para ${periodLabel}. Quedará asociado a ese período histórico. ¿Confirmas?`
+      )
+      if (!confirmed) return
+    }
+
     setIsUploading(true)
     setError('')
     setSuccess('')
@@ -195,6 +218,9 @@ export default function ConductorDocumentosPage() {
       formData.append('file', file)
       // Use selected document type
       formData.append('documentType', selectedDocumentType)
+      formData.append('documentDate', documentDate)
+      formData.append('documentPeriodMonth', uploadMonth)
+      formData.append('documentPeriodYear', uploadYear)
 
       // Fetch uses Supabase cookies automatically (set during login)
       const response = await fetch('/api/conductor/upload-document', {
@@ -377,8 +403,12 @@ export default function ConductorDocumentosPage() {
   })
 
   const historicalDocuments = useMemo(() => {
-    return filterByMonthYear(documents, (doc) => doc.created_at, archiveFilters.month, archiveFilters.year)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    return filterByMonthYear(
+      documents,
+      (doc) => getDocumentPeriodDate(doc) || doc.created_at,
+      archiveFilters.month,
+      archiveFilters.year
+    ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }, [documents, archiveFilters.month, archiveFilters.year])
 
   const documentSummary = useMemo(() => {
@@ -565,14 +595,15 @@ export default function ConductorDocumentosPage() {
         <CardHeader>
           <CardTitle className="text-white">Subir documento</CardTitle>
           <CardDescription className="text-slate-400">
-            Úsalo cuando falte un documento o necesites reemplazar uno rechazado o vencido.
+            Úsalo cuando falte un documento o necesites reemplazar uno rechazado o vencido. También puedes cargar documentos de períodos anteriores; te pediremos confirmación antes de guardarlos.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-300">
-              Tipo de documento
-            </label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">
+                Tipo de documento
+              </label>
             <select
               value={selectedDocumentType}
               onChange={(e) => setSelectedDocumentType(e.target.value)}
@@ -583,7 +614,21 @@ export default function ConductorDocumentosPage() {
                   {doc.label}
                 </option>
               ))}
-            </select>
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">
+                Fecha del documento
+              </label>
+              <input
+                type="date"
+                value={documentDate}
+                onChange={(e) => setDocumentDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-white transition-colors focus:border-orange-500 focus:outline-none"
+              />
+              <p className="mt-1 text-xs text-slate-500">Esta fecha define el período histórico del documento.</p>
+            </div>
           </div>
 
           <label
@@ -655,7 +700,7 @@ export default function ConductorDocumentosPage() {
                       <p className="mt-0.5 truncate text-xs text-slate-500">{getDisplayFileName(doc.file_name)}</p>
                     )}
                     <p className="text-sm text-slate-400">
-                      Subido: {new Date(doc.created_at).toLocaleDateString('es-CL')}
+                      Período: {getDocumentPeriodLabel(doc)} · Subido: {new Date(doc.created_at).toLocaleDateString('es-CL')}
                       {doc.expiration_date ? ` • Vence: ${new Date(doc.expiration_date).toLocaleDateString('es-CL')}` : ''}
                     </p>
                   </div>
