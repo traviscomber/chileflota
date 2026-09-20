@@ -88,14 +88,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (path.startsWith('/admin')) {
-    const userEmail = request.cookies.get('user_email')?.value
-    if (!userEmail) {
+    if (!appSession) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    const userRole = request.cookies.get('user_role')?.value
-    if (userRole !== 'ejecutiva' && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/login', request.url))
+    if (!['ejecutiva', 'admin'].includes(appSession.role)) {
+      return NextResponse.redirect(new URL('/dashboard/company', request.url))
     }
 
     return NextResponse.next()
