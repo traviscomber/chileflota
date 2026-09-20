@@ -117,19 +117,20 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                   (item.href !== '/dashboard/company' && pathname.startsWith(`${item.href}/`))
 
                 return (
-                  <Link key={item.href} href={item.href}>
-                    <button
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm font-normal transition-colors',
-                        isActive
-                          ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
-                          : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
-                      )}
-                    >
-                      <Icon className="h-4 w-4 flex-shrink-0" />
-                      <span>{item.label}</span>
-                    </button>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={cn(
+                      'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm font-normal transition-colors',
+                      isActive
+                        ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
+                        : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                    <span>{item.label}</span>
                   </Link>
                 )
               })}
@@ -144,19 +145,20 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           const isActive = pathname === item.href
 
           return (
-            <Link key={item.href} href={item.href}>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-sm font-normal transition-colors',
-                  isActive
-                    ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
-                    : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
-                )}
-              >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                <span>{item.label}</span>
-              </button>
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setSidebarOpen(false)}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-sm font-normal transition-colors',
+                isActive
+                  ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
+                  : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
+              )}
+            >
+              <Icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+              <span>{item.label}</span>
             </Link>
           )
         })}
