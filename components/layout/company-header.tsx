@@ -264,7 +264,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
           variant="ghost"
           size="icon"
           aria-label="Abrir navegación"
-          className="h-10 w-10 flex-shrink-0 rounded-[5px] text-[var(--cf-text)] hover:bg-[var(--cf-surface-2)] md:hidden"
+          className="h-11 w-11 flex-shrink-0 rounded-[5px] text-[var(--cf-text)] hover:bg-[var(--cf-surface-2)] md:hidden"
           onClick={onMenuClick}
         >
           <Menu className="h-5 w-5" />
@@ -288,7 +288,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
               onFocus={() => searchValue.trim().length >= 2 && setSearchOpen(true)}
               onChange={(e) => setSearchValue(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              className="h-9 rounded-[5px] border-[var(--cf-line)] bg-[var(--cf-surface-2)] pl-9 pr-16 text-sm text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)] focus-visible:border-[var(--cf-burgundy)] focus-visible:ring-[var(--cf-focus-ring)]/30"
+              className="h-11 rounded-[5px] border-[var(--cf-line)] bg-[var(--cf-surface-2)] pl-9 pr-16 text-sm text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)] focus-visible:border-[var(--cf-burgundy)] focus-visible:ring-[var(--cf-focus-ring)]/30 sm:h-9"
             />
             <span
               aria-label="Consulta operacional con IA"
@@ -405,7 +405,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
             variant="ghost"
             size="sm"
             onClick={() => setProfileOpen(!profileOpen)}
-            className="h-9 rounded-[5px] px-2 text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)] sm:px-3"
+            className="h-11 rounded-[5px] px-2 text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)] sm:h-9 sm:px-3"
           >
             <User className="h-4 w-4 flex-shrink-0" />
             <span className="hidden max-w-[220px] truncate text-xs font-normal sm:inline">
