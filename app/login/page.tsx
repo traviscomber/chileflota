@@ -48,35 +48,35 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#171719] px-4 py-10 text-[#E7E7E9]">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--cf-canvas)] px-4 py-10 text-[var(--cf-text)]">
       <section className="w-full max-w-[420px]">
         <div className="mb-8">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#7D7D84]">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">
             Plataforma de compliance operacional
           </p>
-          <h1 className="mt-3 text-[28px] font-semibold tracking-[-0.035em] text-[#E7E7E9]">
+          <h1 className="mt-3 text-[28px] font-semibold tracking-[-0.035em] text-[var(--cf-text)]">
             ChileFlota
           </h1>
-          <p className="mt-2 text-sm text-[#B1B1B6]">Transportes Labbé</p>
+          <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">Transportes Labbé</p>
         </div>
 
-        <div className="rounded-[8px] border border-[#36363B] bg-[#232326] p-6 sm:p-7">
+        <div className="rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-6 sm:p-7">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold tracking-[-0.02em] text-[#E7E7E9]">Iniciar sesión</h2>
-            <p className="mt-1 text-sm leading-6 text-[#B1B1B6]">
+            <h2 className="text-lg font-semibold tracking-[-0.02em] text-[var(--cf-text)]">Iniciar sesión</h2>
+            <p className="mt-1 text-sm leading-6 text-[var(--cf-text-secondary)]">
               Acceso al workspace operacional de ChileFlota.
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 rounded-[6px] border border-[#6D3341] bg-[#3B2029] px-3 py-2.5">
-              <p className="text-sm font-medium text-[#E9A4B4]">{error}</p>
+            <div className="mb-4 rounded-[6px] border border-[var(--cf-danger)]/40 bg-[var(--cf-danger-soft)] px-3 py-2.5">
+              <p className="text-sm font-medium text-[var(--cf-danger)]">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-[#D2D2D5]">
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">
                 Correo electrónico
               </label>
               <input
@@ -85,7 +85,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nombre@empresa.cl"
-                className="h-11 w-full rounded-[6px] border border-[#36363B] bg-[#1D1D1F] px-3.5 text-sm text-[#E7E7E9] outline-none transition-colors placeholder:text-[#7D7D84] focus:border-[#C86A82] focus:ring-1 focus:ring-[#C86A82] disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-11 w-full rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] px-3.5 text-sm text-[var(--cf-text)] outline-none transition-colors placeholder:text-[var(--cf-text-muted)] focus:border-[var(--cf-focus-ring)] focus:ring-1 focus:ring-[var(--cf-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={loading}
                 autoComplete="email"
                 required
@@ -95,14 +95,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#873146] px-4 text-sm font-medium text-[#E7E7E9] transition-colors hover:bg-[#9B3A52] focus:outline-none focus:ring-2 focus:ring-[#C86A82] focus:ring-offset-2 focus:ring-offset-[#232326] disabled:cursor-not-allowed disabled:bg-[#3B2029] disabled:text-[#7D7D84]"
+              className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[var(--cf-accent)] px-4 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--cf-focus-ring)] focus:ring-offset-2 focus:ring-offset-[var(--cf-surface)] disabled:cursor-not-allowed disabled:bg-[var(--cf-danger-soft)] disabled:text-[var(--cf-text-muted)]"
             >
               {loading ? 'Ingresando…' : 'Ingresar'}
             </button>
           </form>
         </div>
 
-        <p className="mt-5 text-center text-xs text-[#7D7D84]">
+        <p className="mt-5 text-center text-xs text-[var(--cf-text-muted)]">
           Tecnología provista por N3uralia
         </p>
       </section>
