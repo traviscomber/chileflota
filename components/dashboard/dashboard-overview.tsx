@@ -316,82 +316,86 @@ export function DashboardOverview() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <button
-              onClick={() => router.push("/dashboard/company/documentos")}
+            <Link
+              href="/dashboard/company/documentos"
               className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
               <FileText className="mb-4 h-4 w-4 text-[var(--cf-text-muted)] transition-colors group-hover:text-[var(--cf-text-secondary)]" />
               <p className="text-xs font-medium text-[var(--cf-text-muted)]">Procesados</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
               <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Histórico procesado por ChileFlota</p>
-            </button>
+            </Link>
 
-            <button
-              onClick={() => router.push("/dashboard/company/documentos/aprobados")}
+            <Link
+              href="/dashboard/company/documentos/aprobados"
               className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
-              <CheckCircle className="mb-4 h-4 w-4 text-[#67C18D]" />
+              <CheckCircle className="mb-4 h-4 w-4 text-[var(--cf-success)]" />
               <p className="text-xs font-medium text-[var(--cf-text-muted)]">Aprobados</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{approvedDocuments.toLocaleString('es-CL')}</p>
               <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Validados en el período actual</p>
-            </button>
+            </Link>
 
-            <button
-              onClick={() => router.push("/dashboard/company/documentos/pendientes")}
+            <Link
+              href="/dashboard/company/documentos/pendientes"
               className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
-              <Clock className="mb-4 h-4 w-4 text-[#D9B65C]" />
+              <Clock className="mb-4 h-4 w-4 text-[var(--cf-warning)]" />
               <p className="text-xs font-medium text-[var(--cf-text-muted)]">Pendientes</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{pendingDocuments.toLocaleString('es-CL')}</p>
               <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Esperan revisión humana</p>
-            </button>
+            </Link>
 
-            <button
-              onClick={() => router.push("/dashboard/company/documentos/rechazados")}
+            <Link
+              href="/dashboard/company/documentos/rechazados"
               className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
-              <AlertTriangle className="mb-4 h-4 w-4 text-[#E17B8C]" />
+              <AlertTriangle className="mb-4 h-4 w-4 text-[var(--cf-danger)]" />
               <p className="text-xs font-medium text-[var(--cf-text-muted)]">Rechazados</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{rejectedDocuments.toLocaleString('es-CL')}</p>
               <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Requieren corrección o nueva evidencia</p>
-            </button>
+            </Link>
           </div>
 
           <div className="mt-4 flex flex-col gap-4 border-t border-[var(--cf-border)] pt-4 lg:flex-row lg:items-center lg:justify-between">
             <p className="text-sm text-[var(--cf-text-secondary)]">
               {openRiskItems > 0 ? (
                 <>
-                  <span className="font-medium text-[#E6A35A]">{openRiskItems.toLocaleString('es-CL')} documentos requieren atención</span>
+                  <span className="font-medium text-[var(--cf-warning)]">{openRiskItems.toLocaleString('es-CL')} documentos requieren atención</span>
                   <span className="text-[var(--cf-text-muted)]"> · {rejectedDocuments} rechazados · {pendingDocuments} pendientes</span>
                 </>
               ) : (
-                <span className="font-medium text-[#67C18D]">Sin revisiones críticas abiertas en el período actual.</span>
+                <span className="font-medium text-[var(--cf-success)]">Sin revisiones críticas abiertas en el período actual.</span>
               )}
             </p>
 
-            <div className="flex flex-wrap gap-2">
-              <Link href="/dashboard/company/documentos/vencidos">
-                <Button variant="outline" size="sm" className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
-                  Ver vencidos <ArrowRight className="ml-1.5 h-3 w-3" />
-                </Button>
+            <nav className="flex flex-wrap gap-2" aria-label="Acciones de control documental">
+              <Link
+                href="/dashboard/company/documentos/vencidos"
+                className="inline-flex min-h-11 items-center justify-center rounded-[5px] border border-[var(--cf-border)] px-3 text-xs font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)] sm:min-h-9"
+              >
+                Ver vencidos <ArrowRight className="ml-1.5 h-3 w-3" aria-hidden="true" />
               </Link>
-              <Link href="/dashboard/company/documentos/renovar">
-                <Button variant="outline" size="sm" className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
-                  Renovaciones <ArrowRight className="ml-1.5 h-3 w-3" />
-                </Button>
+              <Link
+                href="/dashboard/company/documentos/renovar"
+                className="inline-flex min-h-11 items-center justify-center rounded-[5px] border border-[var(--cf-border)] px-3 text-xs font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)] sm:min-h-9"
+              >
+                Renovaciones <ArrowRight className="ml-1.5 h-3 w-3" aria-hidden="true" />
               </Link>
-              <Link href="/dashboard/company/reportes">
-                <Button variant="outline" size="sm" className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
-                  Reportes <ArrowRight className="ml-1.5 h-3 w-3" />
-                </Button>
+              <Link
+                href="/dashboard/company/reportes"
+                className="inline-flex min-h-11 items-center justify-center rounded-[5px] border border-[var(--cf-border)] px-3 text-xs font-medium text-[var(--cf-text-secondary)] transition-colors hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)] sm:min-h-9"
+              >
+                Reportes <ArrowRight className="ml-1.5 h-3 w-3" aria-hidden="true" />
               </Link>
-              <Link href="/dashboard/company/compliance">
-                <Button size="sm" className="h-9 bg-[var(--cf-accent)] text-xs text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]">
-                  <Shield className="mr-1.5 h-3 w-3" />
-                  Matriz
-                </Button>
+              <Link
+                href="/dashboard/company/compliance"
+                className="inline-flex min-h-11 items-center justify-center rounded-[5px] bg-[var(--cf-accent)] px-3 text-xs font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)] sm:min-h-9"
+              >
+                <Shield className="mr-1.5 h-3 w-3" aria-hidden="true" />
+                Matriz
               </Link>
-            </div>
+            </nav>
           </div>
         </CardContent>
       </Card>
@@ -415,22 +419,22 @@ export function DashboardOverview() {
                   return (
                     <>
                       {approved > 0 && (
-                        <span className="rounded-[4px] bg-[#173B2C] px-2 py-1 text-xs font-medium text-[#67C18D]">
+                        <span className="rounded-[4px] border border-[var(--cf-success)] bg-[var(--cf-surface-2)] px-2 py-1 text-xs font-medium text-[var(--cf-success)]">
                           {approved} aprobados
                         </span>
                       )}
                       {rejected > 0 && (
-                        <span className="rounded-[4px] bg-[#45242B] px-2 py-1 text-xs font-medium text-[#E17B8C]">
+                        <span className="rounded-[4px] border border-[var(--cf-danger)] bg-[var(--cf-surface-2)] px-2 py-1 text-xs font-medium text-[var(--cf-danger)]">
                           {rejected} rechazados
                         </span>
                       )}
                       {pending > 0 && (
-                        <span className="rounded-[4px] bg-[#40341B] px-2 py-1 text-xs font-medium text-[#D9B65C]">
+                        <span className="rounded-[4px] border border-[var(--cf-warning)] bg-[var(--cf-surface-2)] px-2 py-1 text-xs font-medium text-[var(--cf-warning)]">
                           {pending} en revisión
                         </span>
                       )}
                       {expiring > 0 && (
-                        <span className="rounded-[4px] bg-[#4A2F18] px-2 py-1 text-xs font-medium text-[#E6A35A]">
+                        <span className="rounded-[4px] border border-[var(--cf-warning)] bg-[var(--cf-surface-2)] px-2 py-1 text-xs font-medium text-[var(--cf-warning)]">
                           {expiring} por vencer
                         </span>
                       )}
