@@ -444,7 +444,7 @@ export function DashboardOverview() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
+                  className="min-h-11 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)] sm:min-h-9"
                   onClick={() => router.push('/dashboard/company/alertas')}
                 >
                   Ver todas
