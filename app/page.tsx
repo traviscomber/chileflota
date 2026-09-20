@@ -11,13 +11,10 @@ import {
   UploadCloud,
   ScanLine,
   UserCheck,
-  Truck,
 } from "lucide-react"
 
 export const revalidate = 300
 
-const LABBE_HERO_IMAGE =
-  "https://labbe.cl/wp-content/uploads/2022/01/ADF7E6D3-84BB-4C9A-A3D2-FD27DCDB12AA-1400x788.jpg"
 const LABBE_OPERATION_IMAGE =
   "https://labbe.cl/wp-content/uploads/2021/12/IMG_0071.jpg"
 const LABBE_FLEET_IMAGE =
