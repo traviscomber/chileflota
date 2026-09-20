@@ -204,7 +204,7 @@ export default function ConductorDocumentosPage() {
       }
 
       const result = await response.json()
-      setSuccess('Documento subido exitosamente. Se validará en 24-48 horas.')
+      setSuccess('Documento recibido correctamente. Quedó en revisión; no necesitas volver a subirlo.')
       
       // Broadcast sync event so dashboard and other components update
       if (result.syncEvent) {
@@ -325,6 +325,13 @@ export default function ConductorDocumentosPage() {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }, [documents, archiveFilters.month, archiveFilters.year])
 
+  const documentSummary = useMemo(() => {
+    const approved = documents.filter((doc) => ['approved', 'validated'].includes(doc.validation_status)).length
+    const inReview = documents.filter((doc) => doc.validation_status === 'pending').length
+    const actionRequired = documents.filter((doc) => ['rejected', 'expired'].includes(doc.validation_status)).length
+    return { approved, inReview, actionRequired }
+  }, [documents])
+
   return (
       <div className="space-y-8">
         {/* Header with Compliance */}
@@ -333,15 +340,16 @@ export default function ConductorDocumentosPage() {
             <h1 className="text-5xl font-bold text-white">Mis Documentos</h1>
             <p className="text-slate-300 mt-2">Sube y gestiona tus documentos requeridos para trabajar con Labbe</p>
           </div>
-          <div className="text-right bg-slate-800 border border-slate-700 rounded-lg p-4 min-w-max">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">Cumplimiento</p>
-            <p className="text-4xl font-bold text-orange-500 mt-1">{compliancePercentage}%</p>
-            <div className="w-32 bg-slate-700 rounded-full h-2 mt-3">
-              <div
-                className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${compliancePercentage}%` }}
-              />
+          <div className="min-w-max rounded-lg border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Estado documental</p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              <span className="font-medium text-green-300">{documentSummary.approved} al día</span>
+              <span className="text-slate-300">{documentSummary.inReview} en revisión</span>
+              <span className={documentSummary.actionRequired > 0 ? 'font-medium text-red-300' : 'text-slate-400'}>
+                {documentSummary.actionRequired} requiere acción
+              </span>
             </div>
+            <p className="mt-2 text-xs text-slate-500">{compliancePercentage}% de documentos requeridos aprobados</p>
           </div>
         </div>
 
@@ -466,9 +474,11 @@ export default function ConductorDocumentosPage() {
                       <p className="font-medium text-white">{reqDoc.label}</p>
                       <p className="text-sm text-slate-300">{reqDoc.description}</p>
                         {uploadedDoc?.rejection_reason && (
-                          <p className="text-sm text-red-400 mt-1">
-                            Razón del rechazo: {uploadedDoc.rejection_reason}
-                          </p>
+                          <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2">
+                            <p className="text-xs font-medium uppercase tracking-wide text-red-300">Requiere acción</p>
+                            <p className="mt-1 text-sm text-red-200">Motivo: {uploadedDoc.rejection_reason}</p>
+                            <p className="mt-1 text-xs text-red-300">Sube una nueva versión de este documento.</p>
+                          </div>
                         )}
                       </div>
                     </div>
