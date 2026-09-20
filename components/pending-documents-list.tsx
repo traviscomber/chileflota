@@ -4,14 +4,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, ArrowLeft, FileText, Check, X, Loader2, Download, Sparkles, ChevronUp, ChevronDown } from "lucide-react"
-import Link from "next/link"
+import { Clock, FileText, Check, X, Loader2, Download, Sparkles, ChevronUp, ChevronDown } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { formatToChileTime } from '@/lib/timezone-utils'
-import { getDocTypeIcon } from '@/lib/document-type-icons'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
@@ -85,6 +84,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [analysisResult, setAnalysisResult] = useState<any>(null)
   const [analysisDocId, setAnalysisDocId] = useState<string | null>(null)
   const [analysisDocType, setAnalysisDocType] = useState<'conductor' | 'subcontractor'>('conductor')
+  const [showCorrectionFields, setShowCorrectionFields] = useState(false)
+  const [correctedType, setCorrectedType] = useState('')
+  const [correctedDate, setCorrectedDate] = useState('')
   const [filters, setFilters] = useState<DocumentFilters>({
     searchQuery: '',
     month: ALL_VALUE,
@@ -144,11 +146,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     return `${days} días`
   }
 
-  const getDocumentTypeChipClass = (doc: PendingDocument) => {
-    const iconConfig = getDocTypeIcon(doc.docType)
-    return `${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} border shadow-sm backdrop-blur-sm`
-  }
-  const metaChipClass = 'whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.14em] border border-slate-600/50 bg-slate-950/40 text-slate-100 shadow-sm backdrop-blur-sm'
+  const getDocumentTypeChipClass = (_doc: PendingDocument) =>
+    'rounded-[4px] border border-[var(--cf-border)] bg-[var(--cf-surface-2)] text-xs font-medium text-[var(--cf-text-secondary)]'
 
   const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
     try {
@@ -348,6 +347,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       setAnalysisResult(result)
       setAnalysisDocId(docId)
       setAnalysisDocType(type)
+      setCorrectedType(result.analysis?.documentType || '')
+      setCorrectedDate(result.analysis?.expirationDate || '')
+      setShowCorrectionFields(false)
       setShowAnalysisModal(true)
     } catch (error) {
       const msg = document.createElement('div')
@@ -474,14 +476,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     <div className="space-y-4">
       <div aria-live="polite" className="sr-only">{statusMessage}</div>
       <div className="flex flex-col gap-4 border-b border-[var(--cf-border)] pb-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-start gap-3">
-          <Link href="/dashboard/company">
-            <Button variant="ghost" size="sm" className="mt-0.5 gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Inicio
-            </Button>
-          </Link>
-          <div>
+        <div>
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Bandeja de trabajo</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">
               Documentos pendientes
@@ -495,7 +490,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 {sessionReviewed.toLocaleString('es-CL')} resueltos en esta sesión
               </span>
             </div>
-          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -510,7 +504,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               variant={inboxSource === value ? 'default' : 'outline'}
               size="sm"
               onClick={() => setInboxSource(value)}
-              className="gap-2"
+              className="min-h-11 gap-2 sm:min-h-9"
             >
               {label}
               <span className="text-xs opacity-70">{count.toLocaleString('es-CL')}</span>
@@ -539,13 +533,13 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 <span>más antiguos primero</span>
               </div>
             </div>
-            <Clock className="h-4 w-4 text-[#D9B65C]" />
+            <Clock className="h-4 w-4 text-[var(--cf-warning)]" />
           </div>
 
           <div className="max-h-[38vh] overflow-y-auto lg:max-h-[70vh]">
             {inboxDocs.length === 0 ? (
               <div className="px-5 py-12 text-center">
-                <Check className="mx-auto h-5 w-5 text-[#67C18D]" />
+                <Check className="mx-auto h-5 w-5 text-[var(--cf-success)]" />
                 <p className="mt-3 text-sm font-medium text-[var(--cf-text)]">Bandeja al día</p>
                 <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">
                   No hay documentos pendientes con estos filtros.
@@ -578,19 +572,19 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                           <p className="truncate text-sm font-medium text-[var(--cf-text)]">
                             {company?.razon_social || doc.empresa_nombre || (conductor ? `${conductor.nombres} ${conductor.apellido_paterno}` : 'Sin empresa')}
                           </p>
-                          <span className={`flex-none text-[10px] font-medium ${
+                          <span className={`flex-none text-xs font-medium ${
                             (getWaitDays(doc) || 0) >= 7 ? 'text-[var(--cf-warning)]' : 'text-[var(--cf-text-muted)]'
                           }`}>{getWaitLabel(doc)}</span>
                         </div>
                         <div className="mt-1 flex min-w-0 items-center gap-2">
-                          <span className="flex-none text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">
+                          <span className="flex-none text-xs font-semibold uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">
                             {source === 'conductor' ? 'Conductor' : 'Empresa'}
                           </span>
                           <span className="truncate text-xs text-[var(--cf-text-secondary)]">
                             {getDocumentTypeLabel(doc)}
                           </span>
                         </div>
-                        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-[var(--cf-text-muted)]">
+                        <div className="mt-1 flex min-w-0 items-center gap-2 text-xs text-[var(--cf-text-muted)]">
                           <span className="truncate">{doc.original_filename || doc.file_name || 'Documento sin nombre'}</span>
                           <span className="flex-none">· {getDocumentPeriod(doc)}</span>
                         </div>
@@ -640,21 +634,21 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="mr-1 flex items-center rounded-[5px] border border-[var(--cf-border)]">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center rounded-[5px] border border-[var(--cf-border)]">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => selectRelative(-1)}
                         disabled={selectedIndex <= 0}
-                        className="h-8 rounded-r-none px-2 text-[var(--cf-text-muted)]"
+                        className="h-11 rounded-r-none px-3 text-[var(--cf-text-muted)] sm:h-8 sm:px-2"
                         aria-label="Documento anterior"
                         title="Documento anterior · Flecha arriba"
                       >
                         <ChevronUp className="h-3.5 w-3.5" />
                       </Button>
-                      <span className="min-w-[58px] border-x border-[var(--cf-border)] px-2 text-center text-[10px] text-[var(--cf-text-muted)]">
+                      <span className="min-w-[58px] border-x border-[var(--cf-border)] px-2 text-center text-xs text-[var(--cf-text-muted)]">
                         {selectedIndex + 1} / {inboxDocs.length}
                       </span>
                       <Button
@@ -663,7 +657,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                         size="sm"
                         onClick={() => selectRelative(1)}
                         disabled={selectedIndex < 0 || selectedIndex >= inboxDocs.length - 1}
-                        className="h-8 rounded-l-none px-2 text-[var(--cf-text-muted)]"
+                        className="h-11 rounded-l-none px-3 text-[var(--cf-text-muted)] sm:h-8 sm:px-2"
                         aria-label="Documento siguiente"
                         title="Documento siguiente · Flecha abajo"
                       >
@@ -675,30 +669,32 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                       size="sm"
                       onClick={() => handleAnalyzeDocument(selectedDoc.id, selectedSource)}
                       disabled={analyzing === selectedDoc.id || loading === selectedDoc.id}
-                      className="gap-1"
+                      className="min-h-11 gap-1 sm:min-h-9"
                     >
                       {analyzing === selectedDoc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                       Analizar IA
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRejectClick(selectedDoc.id, selectedSource)}
-                      disabled={loading === selectedDoc.id}
-                      className="gap-1 border-red-500/40 text-red-300 hover:bg-red-500/10"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      Rechazar
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleApprove(selectedDoc.id, selectedSource)}
-                      disabled={loading === selectedDoc.id}
-                      className="gap-1 bg-green-700 hover:bg-green-600"
-                    >
-                      {loading === selectedDoc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                      Aprobar
-                    </Button>
+                    <div className="flex items-center gap-2 border-l border-[var(--cf-border)] pl-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRejectClick(selectedDoc.id, selectedSource)}
+                        disabled={loading === selectedDoc.id}
+                        className="min-h-11 gap-1 border-[var(--cf-danger)] text-[var(--cf-danger)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-danger)] sm:min-h-9"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        Rechazar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(selectedDoc.id, selectedSource)}
+                        disabled={loading === selectedDoc.id}
+                        className="min-h-11 gap-1 bg-[var(--cf-success)] text-[var(--cf-text)] hover:opacity-90 sm:min-h-9"
+                      >
+                        {loading === selectedDoc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                        Aprobar
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -729,7 +725,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
                 <div className="space-y-5 p-4">
                   <div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Contexto</p>
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Contexto</p>
                     <dl className="mt-3 space-y-3 text-xs">
                       <div>
                         <dt className="text-[var(--cf-text-muted)]">Empresa</dt>
@@ -776,7 +772,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                     </a>
                   )}
 
-                  <div className="border-t border-[var(--cf-border)] pt-4 text-[11px] leading-5 text-[var(--cf-text-muted)]">
+                  <div className="border-t border-[var(--cf-border)] pt-4 text-xs leading-5 text-[var(--cf-text-muted)]">
                     <p>Al resolver un documento, la bandeja avanza automáticamente.</p>
                     <p className="mt-1">Usa ↑ y ↓ para recorrer la cola sin soltar el teclado.</p>
                   </div>
@@ -802,7 +798,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/20"
+                  className="gap-1 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]"
                 >
                   <Download className="h-4 w-4" />
                   Descargar
@@ -819,7 +815,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                   filename={previewDoc.original_filename || previewDoc?.file_name || 'document.pdf'}
                 />
               ) : (
-                <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
+                <div className="flex max-h-[60vh] items-center justify-center overflow-auto rounded-[5px] bg-[var(--cf-bg)] p-4">
                   <img
                     src={previewDoc.file_url}
                     alt="Preview"
@@ -840,7 +836,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 }
                 setPreviewDoc(null)
               }}
-              className="gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20"
+              className="gap-1 border-[var(--cf-success)] text-[var(--cf-success)] hover:bg-[var(--cf-surface-2)]"
             >
               <Check className="h-4 w-4" />
               Aprobar
@@ -854,7 +850,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                   setPreviewDoc(null)
                 }
               }}
-              className="gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
+              className="gap-1 border-[var(--cf-danger)] text-[var(--cf-danger)] hover:bg-[var(--cf-surface-2)]"
             >
               <X className="h-4 w-4" />
               Rechazar
@@ -866,13 +862,33 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Motivo del Rechazo</DialogTitle>
+            <DialogTitle>Motivo del rechazo</DialogTitle>
           </DialogHeader>
+          {rejectDocId && (() => {
+            const doc = allDocs.find((item) => item.id === rejectDocId)
+            if (!doc) return null
+            const company = doc.transportistas
+              ? (Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas)
+              : null
+            return (
+              <div className="border-y border-[var(--cf-border)] py-3 text-sm">
+                <p className="font-medium text-[var(--cf-text)]">{doc.original_filename || doc.file_name || 'Documento'}</p>
+                <p className="mt-1 text-[var(--cf-text-secondary)]">
+                  {company?.razon_social || doc.empresa_nombre || 'Sin empresa'} · {getDocumentTypeLabel(doc)}
+                </p>
+                <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Estado actual: pendiente de revisión</p>
+              </div>
+            )
+          })()}
+          <label className="text-sm font-medium text-[var(--cf-text)]" htmlFor="reject-reason">
+            Motivo
+          </label>
           <Textarea
-            placeholder="Ingrese el motivo del rechazo (opcional)"
+            id="reject-reason"
+            placeholder="Describe por qué se rechaza este documento"
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
-            className="min-h-[100px]"
+            className="min-h-[110px]"
           />
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="ghost" onClick={() => setShowRejectModal(false)}>
@@ -894,27 +910,27 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-blue-400" />
-              Resultados del Analisis IA
+              <Sparkles className="h-5 w-5 text-[var(--cf-accent)]" />
+              Resultado del análisis IA
             </DialogTitle>
           </DialogHeader>
 
           {analysisResult && (
             <div className="space-y-4">
-              <div className="bg-slate-800/50 rounded-lg p-3">
-                <p className="text-sm text-slate-400">Archivo</p>
-                <p className="text-white font-medium">{analysisResult.originalDocument?.file_name || 'Sin nombre'}</p>
+              <div className="rounded-[5px] bg-[var(--cf-surface-2)] p-3">
+                <p className="text-sm text-[var(--cf-text-muted)]">Archivo</p>
+                <p className="font-medium text-[var(--cf-text)]">{analysisResult.originalDocument?.file_name || 'Sin nombre'}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-800/50 rounded-lg p-3">
-                  <p className="text-sm text-slate-400">Tipo Detectado</p>
-                  <p className="text-white font-medium">{analysisResult.analysis?.documentType || 'No detectado'}</p>
+                <div className="rounded-[5px] bg-[var(--cf-surface-2)] p-3">
+                  <p className="text-sm text-[var(--cf-text-muted)]">Tipo Detectado</p>
+                  <p className="font-medium text-[var(--cf-text)]">{analysisResult.analysis?.documentType || 'No detectado'}</p>
                 </div>
 
-                <div className="bg-slate-800/50 rounded-lg p-3">
-                  <p className="text-sm text-slate-400">Confianza</p>
-                  <p className="text-white font-medium">
+                <div className="rounded-[5px] bg-[var(--cf-surface-2)] p-3">
+                  <p className="text-sm text-[var(--cf-text-muted)]">Confianza</p>
+                  <p className="font-medium text-[var(--cf-text)]">
                     {analysisResult.analysis?.confidence
                       ? `${Math.round(analysisResult.analysis.confidence * 100)}%`
                       : 'N/A'}
@@ -922,31 +938,31 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 </div>
 
                 {analysisResult.analysis?.expirationDate && (
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <p className="text-sm text-slate-400">Fecha Vencimiento</p>
-                    <p className="text-white font-medium">{analysisResult.analysis.expirationDate}</p>
+                  <div className="rounded-[5px] bg-[var(--cf-surface-2)] p-3">
+                    <p className="text-sm text-[var(--cf-text-muted)]">Fecha Vencimiento</p>
+                    <p className="font-medium text-[var(--cf-text)]">{analysisResult.analysis.expirationDate}</p>
                   </div>
                 )}
 
                 {analysisResult.analysis?.documentNumber && (
-                  <div className="bg-slate-800/50 rounded-lg p-3">
-                    <p className="text-sm text-slate-400">Numero Documento</p>
-                    <p className="text-white font-medium">{analysisResult.analysis.documentNumber}</p>
+                  <div className="rounded-[5px] bg-[var(--cf-surface-2)] p-3">
+                    <p className="text-sm text-[var(--cf-text-muted)]">Numero Documento</p>
+                    <p className="font-medium text-[var(--cf-text)]">{analysisResult.analysis.documentNumber}</p>
                   </div>
                 )}
               </div>
 
               {analysisResult.analysis?.extractedText && (
-                <div className="bg-slate-800/50 rounded-lg p-3">
-                  <p className="text-sm text-slate-400 mb-1">Informacion Extraida</p>
-                  <p className="text-white text-sm">{analysisResult.analysis.extractedText}</p>
+                <div className="rounded-[5px] bg-[var(--cf-surface-2)] p-3">
+                  <p className="text-sm text-[var(--cf-text-muted)] mb-1">Informacion Extraida</p>
+                  <p className="text-sm text-[var(--cf-text)]">{analysisResult.analysis.extractedText}</p>
                 </div>
               )}
 
               {analysisResult.analysis?.warnings?.length > 0 && (
-                <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3">
-                  <p className="text-sm text-yellow-400 font-medium mb-1">Advertencias</p>
-                  <ul className="text-yellow-200 text-sm list-disc list-inside">
+                <div className="rounded-[5px] border border-[var(--cf-warning)] bg-[var(--cf-surface-2)] p-3">
+                  <p className="mb-1 text-sm font-medium text-[var(--cf-warning)]">Advertencias</p>
+                  <ul className="list-inside list-disc text-sm text-[var(--cf-text-secondary)]">
                     {analysisResult.analysis.warnings.map((w: string, i: number) => (
                       <li key={i}>{w}</li>
                     ))}
@@ -954,45 +970,74 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 </div>
               )}
 
-              <div className="border-t border-slate-700 pt-3">
-                <p className="text-xs text-slate-400 mb-2">
-                  Feedback opcional — ayuda a entrenar el modelo
-                </p>
-                <div className="flex gap-2">
+              <div className="border-t border-[var(--cf-border)] pt-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-[var(--cf-text-secondary)]">Corrección humana</p>
+                    <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+                      Ajusta el resultado sólo si la evidencia muestra otra información.
+                    </p>
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 border-slate-600 text-slate-400 hover:bg-slate-700/40 text-xs"
-                    onClick={() => {
-                      const correctedType = window.prompt(
-                        'Ingrese el tipo de documento correcto:',
-                        analysisResult?.analysis?.documentType || ''
-                      )
-                      if (correctedType) {
-                        const correctedDate = window.prompt(
-                          'Ingrese la fecha de vencimiento correcta (DD/MM/YYYY) o deje vacío:',
-                          analysisResult?.analysis?.expirationDate || ''
-                        )
-                        handleProvideFeedback(correctedType, correctedDate || undefined)
-                      }
-                    }}
+                    className="border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)]"
+                    onClick={() => setShowCorrectionFields((value) => !value)}
+                    aria-expanded={showCorrectionFields}
                   >
-                    Corregir tipo / fecha
+                    {showCorrectionFields ? 'Ocultar' : 'Corregir'}
                   </Button>
                 </div>
+
+                {showCorrectionFields && (
+                  <div className="mt-4 space-y-4 border-l-2 border-[var(--cf-accent)] pl-4">
+                    <div>
+                      <label htmlFor="corrected-document-type" className="text-xs font-medium text-[var(--cf-text)]">
+                        Tipo de documento
+                      </label>
+                      <Input
+                        id="corrected-document-type"
+                        value={correctedType}
+                        onChange={(event) => setCorrectedType(event.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="corrected-expiration-date" className="text-xs font-medium text-[var(--cf-text)]">
+                        Fecha de vencimiento
+                      </label>
+                      <Input
+                        id="corrected-expiration-date"
+                        value={correctedDate}
+                        onChange={(event) => setCorrectedDate(event.target.value)}
+                        placeholder="DD/MM/AAAA"
+                        className="mt-2"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!correctedType.trim()}
+                      onClick={() => handleProvideFeedback(correctedType.trim(), correctedDate.trim() || undefined)}
+                    >
+                      Aplicar corrección y aprobar
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end pt-2 gap-2">
                 <Button
                   variant="ghost"
                   onClick={() => setShowAnalysisModal(false)}
-                  className="text-slate-400"
+                  className="text-[var(--cf-text-secondary)]"
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={() => handleProvideFeedback()}
-                  className="bg-green-600 hover:bg-green-700 gap-1"
+                  className="gap-1 bg-[var(--cf-success)] text-[var(--cf-text)] hover:opacity-90"
                 >
                   <Check className="h-4 w-4" />
                   Aprobar Documento
