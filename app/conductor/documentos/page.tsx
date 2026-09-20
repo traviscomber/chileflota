@@ -311,6 +311,22 @@ export default function ConductorDocumentosPage() {
     }
   }
 
+  const getDisplayFileName = (fileName?: string) => {
+    if (!fileName) return null
+    if (/^inbound\d+\.[a-z0-9]+$/i.test(fileName.trim())) return null
+    return fileName.trim()
+  }
+
+  const getDocumentLabel = (doc: UploadedDocument) =>
+    doc.document_type_name ||
+    DOCUMENT_TYPES.find((type) =>
+      type.id === doc.document_type_id ||
+      type.code === doc.document_type ||
+      type.code === doc.document_type_code
+    )?.label ||
+    doc.document_type ||
+    'Documento'
+
   const getDocumentByType = (type: string) => {
     // Match on document_type_id (e.g. 'LIC_CONDUCIR') or document_type name
     return documents.find(d => 
@@ -378,68 +394,6 @@ export default function ConductorDocumentosPage() {
         </Alert>
       )}
 
-      {/* Upload Section */}
-      <Card className="border-slate-700 bg-gradient-to-r from-slate-800/50 to-slate-800/30 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-white">Subir Documento</CardTitle>
-          <CardDescription className="text-slate-400">
-            Selecciona el tipo de documento y arrastra o haz clic para seleccionar (PDF, JPG, PNG - Máximo 10MB)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Document Type Selector */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Tipo de Documento
-            </label>
-            <select
-              value={selectedDocumentType}
-              onChange={(e) => setSelectedDocumentType(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 transition-colors"
-            >
-              {DOCUMENT_TYPES.map((doc) => (
-                <option key={doc.id} value={doc.code}>
-                  {doc.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Upload Area */}
-          <label
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
-              isDragging
-                ? 'bg-orange-500/10 border-orange-500/50'
-                : 'bg-slate-800/30 hover:bg-slate-800/50 border-slate-600'
-            }`}
-          >
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Upload className={`h-10 w-10 mb-2 ${isDragging ? 'text-orange-400' : 'text-slate-500'}`} />
-              <p className="mb-2 text-sm font-semibold text-slate-300">
-                {isDragging ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí o haz clic'}
-              </p>
-              <p className="text-xs text-slate-500">PDF, JPG, PNG</p>
-            </div>
-            <input
-              type="file"
-              className="hidden"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={handleInputChange}
-              disabled={isUploading}
-            />
-          </label>
-          {isUploading && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <Loader className="h-4 w-4 animate-spin text-orange-500" />
-              <span className="text-sm text-slate-300">Subiendo documento...</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Documents Required */}
       <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
         <CardHeader>
@@ -473,6 +427,15 @@ export default function ConductorDocumentosPage() {
                     <div className="flex-1">
                       <p className="font-medium text-white">{reqDoc.label}</p>
                       <p className="text-sm text-slate-300">{reqDoc.description}</p>
+                      {getDisplayFileName(uploadedDoc?.file_name) && (
+                        <p className="mt-1 text-xs text-slate-500">{getDisplayFileName(uploadedDoc?.file_name)}</p>
+                      )}
+                      {uploadedDoc && ['approved', 'validated'].includes(uploadedDoc.validation_status) && (
+                        <p className="mt-1 text-xs text-green-300">Documento validado. No requiere acción.</p>
+                      )}
+                      {uploadedDoc?.validation_status === 'pending' && (
+                        <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>
+                      )}
                         {uploadedDoc?.rejection_reason && (
                           <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2">
                             <p className="text-xs font-medium uppercase tracking-wide text-red-300">Requiere acción</p>
@@ -518,19 +481,68 @@ export default function ConductorDocumentosPage() {
         </CardContent>
       </Card>
 
-      {/* Info Card */}
-      <Card className="bg-gradient-to-r from-orange-950/40 to-orange-900/30 border-orange-900/50">
+      {/* Upload Section */}
+      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-orange-300 flex items-center gap-2">
-            <HelpCircle className="h-5 w-5" />
-            ¿Necesitas ayuda?
-          </CardTitle>
+          <CardTitle className="text-white">Subir documento</CardTitle>
+          <CardDescription className="text-slate-400">
+            Úsalo cuando falte un documento o necesites reemplazar uno rechazado o vencido.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="text-orange-100 text-sm space-y-2">
-          <p>• Los documentos se validan en 24-48 horas</p>
-          <p>• Recibirás notificaciones por email y WhatsApp</p>
-          <p>• Puedes subir nuevas versiones si un documento es rechazado</p>
-          <p>• Contacta con soporte@labbe.cl si tienes preguntas</p>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-300">
+              Tipo de documento
+            </label>
+            <select
+              value={selectedDocumentType}
+              onChange={(e) => setSelectedDocumentType(e.target.value)}
+              className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-white transition-colors focus:border-orange-500 focus:outline-none"
+            >
+              {DOCUMENT_TYPES.map((doc) => (
+                <option key={doc.id} value={doc.code}>
+                  {doc.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <label
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all ${
+              isDragging
+                ? 'border-orange-500/50 bg-orange-500/10'
+                : 'border-slate-600 bg-slate-800/30 hover:bg-slate-800/50'
+            }`}
+          >
+            <Upload className={`mb-2 h-8 w-8 ${isDragging ? 'text-orange-400' : 'text-slate-500'}`} />
+            <p className="text-sm font-semibold text-slate-300">
+              {isDragging ? 'Suelta el archivo aquí' : 'Arrastra un archivo o haz clic'}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">PDF, JPG o PNG · máximo 10 MB</p>
+            <input
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={handleInputChange}
+              disabled={isUploading}
+            />
+          </label>
+
+          {isUploading && (
+            <div className="flex items-center justify-center gap-2">
+              <Loader className="h-4 w-4 animate-spin text-orange-500" />
+              <span className="text-sm text-slate-300">Subiendo documento...</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-700 bg-slate-800/30">
+        <CardContent className="pt-6 text-sm text-slate-300">
+          Si un documento está en revisión, no necesitas volver a subirlo. Si está rechazado o vencido, revisa el motivo y reemplázalo.
         </CardContent>
       </Card>
 
@@ -558,8 +570,11 @@ export default function ConductorDocumentosPage() {
                 <div key={doc.id} className="flex items-center justify-between gap-4 rounded-lg border border-slate-700 bg-slate-900/50 p-4">
                   <div className="min-w-0">
                     <p className="font-medium text-white truncate">
-                      {doc.file_name || doc.document_type_name || doc.document_type || 'Documento'}
+                      {getDocumentLabel(doc)}
                     </p>
+                    {getDisplayFileName(doc.file_name) && (
+                      <p className="mt-0.5 truncate text-xs text-slate-500">{getDisplayFileName(doc.file_name)}</p>
+                    )}
                     <p className="text-sm text-slate-400">
                       Subido: {new Date(doc.created_at).toLocaleDateString('es-CL')}
                       {doc.expiration_date ? ` • Vence: ${new Date(doc.expiration_date).toLocaleDateString('es-CL')}` : ''}
