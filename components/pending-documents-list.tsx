@@ -513,7 +513,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               variant={inboxSource === value ? 'default' : 'outline'}
               size="sm"
               onClick={() => setInboxSource(value)}
-              className="gap-2"
+              className="min-h-11 gap-2 sm:min-h-9"
             >
               {label}
               <span className="text-xs opacity-70">{count.toLocaleString('es-CL')}</span>
@@ -651,7 +651,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                         size="sm"
                         onClick={() => selectRelative(-1)}
                         disabled={selectedIndex <= 0}
-                        className="h-8 rounded-r-none px-2 text-[var(--cf-text-muted)]"
+                        className="h-11 rounded-r-none px-3 text-[var(--cf-text-muted)] sm:h-8 sm:px-2"
                         aria-label="Documento anterior"
                         title="Documento anterior · Flecha arriba"
                       >
@@ -666,7 +666,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                         size="sm"
                         onClick={() => selectRelative(1)}
                         disabled={selectedIndex < 0 || selectedIndex >= inboxDocs.length - 1}
-                        className="h-8 rounded-l-none px-2 text-[var(--cf-text-muted)]"
+                        className="h-11 rounded-l-none px-3 text-[var(--cf-text-muted)] sm:h-8 sm:px-2"
                         aria-label="Documento siguiente"
                         title="Documento siguiente · Flecha abajo"
                       >
@@ -678,7 +678,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                       size="sm"
                       onClick={() => handleAnalyzeDocument(selectedDoc.id, selectedSource)}
                       disabled={analyzing === selectedDoc.id || loading === selectedDoc.id}
-                      className="gap-1"
+                      className="min-h-11 gap-1 sm:min-h-9"
                     >
                       {analyzing === selectedDoc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                       Analizar IA
@@ -689,7 +689,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                         size="sm"
                         onClick={() => handleRejectClick(selectedDoc.id, selectedSource)}
                         disabled={loading === selectedDoc.id}
-                        className="gap-1 border-[var(--cf-danger)] text-[var(--cf-danger)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-danger)]"
+                        className="min-h-11 gap-1 border-[var(--cf-danger)] text-[var(--cf-danger)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-danger)] sm:min-h-9"
                       >
                         <X className="h-3.5 w-3.5" />
                         Rechazar
@@ -698,7 +698,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                         size="sm"
                         onClick={() => handleApprove(selectedDoc.id, selectedSource)}
                         disabled={loading === selectedDoc.id}
-                        className="gap-1 bg-[var(--cf-success)] text-[var(--cf-text)] hover:opacity-90"
+                        className="min-h-11 gap-1 bg-[var(--cf-success)] text-[var(--cf-text)] hover:opacity-90 sm:min-h-9"
                       >
                         {loading === selectedDoc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                         Aprobar
