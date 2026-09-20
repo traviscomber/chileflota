@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText, HelpCircle, Calendar, ShieldCheck } from 'lucide-react'
-import { HelpBox } from '@/components/ui/help-box'
 import { getDocumentPeriodDate, getDocumentPeriodLabel } from '@/lib/document-period'
 
 interface DocumentType {
@@ -227,17 +226,41 @@ export default function SubcontractorDashboardPage() {
     return docDate >= start && docDate <= end
   })
 
+  const isExpiringSoon = (doc: Document) => {
+    if (!doc.expires_at || doc.status !== 'approved') return false
+    const days = Math.ceil((new Date(doc.expires_at).getTime() - Date.now()) / 86400000)
+    return days >= 0 && days <= 30
+  }
+
   const statusSummary = {
-    approved: filteredDocuments.filter((doc) => doc.status === 'approved').length,
+    approved: filteredDocuments.filter((doc) => doc.status === 'approved' && !isExpiringSoon(doc)).length,
     inReview: filteredDocuments.filter((doc) => ['uploaded', 'pending'].includes(doc.status)).length,
+    expiringSoon: filteredDocuments.filter((doc) => isExpiringSoon(doc)).length,
     actionRequired: filteredDocuments.filter((doc) => ['rejected', 'expired'].includes(doc.status)).length,
   }
+
+  const sortedFilteredDocuments = [...filteredDocuments].sort((a, b) => {
+    const rank = (doc: Document) => {
+      if (['rejected', 'expired'].includes(doc.status)) return 0
+      if (isExpiringSoon(doc)) return 1
+      if (['uploaded', 'pending'].includes(doc.status)) return 2
+      return 3
+    }
+    return rank(a) - rank(b) || new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
+  })
 
   const minDate = new Date()
   minDate.setMonth(minDate.getMonth() - 4)
   const minDateString = minDate.toISOString().split('T')[0]
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, expiresAt?: string) => {
+    if (status === 'approved' && expiresAt) {
+      const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000)
+      if (days >= 0 && days <= 30) {
+        return <div className="flex items-center gap-1 text-orange-300"><Clock className="w-4 h-4" /> Por vencer</div>
+      }
+    }
+
     switch (status) {
       case 'approved':
         return <div className="flex items-center gap-1 text-green-400"><CheckCircle className="w-4 h-4" /> Aprobado</div>
@@ -260,6 +283,11 @@ export default function SubcontractorDashboardPage() {
     if (!fileName) return null
     if (/^inbound\d+\.[a-z0-9]+$/i.test(fileName.trim())) return null
     return fileName.trim()
+  }
+
+  const focusUploadFor = (documentTypeId: string) => {
+    setSelectedDocType(documentTypeId)
+    document.getElementById('upload-document')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const getAdvancedBadge = (doc: Document) => {
@@ -293,19 +321,6 @@ export default function SubcontractorDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <HelpBox
-          variant="info"
-          title="Portal de Subcontratistas - Gestión de Documentos"
-          description="Sistema para subir, gestionar y monitorear el estado de documentos requeridos por la empresa de transporte."
-          tips={[
-            'Selecciona el tipo de documento en el dropdown y adjunta el archivo (PDF, JPG o PNG máximo 50MB).',
-            "VERDE 'Aprobado' = documento validado y activo. AZUL 'Bajo revisión' = tu documento fue recibido y está siendo validado.",
-            'La validación avanzada es un valor adicional. Si un archivo no tiene badge, eso no lo invalida.',
-            "ROJO 'Rechazado' = revisa el motivo del rechazo y sube nuevamente. ROJO 'Vencido' = renueva el documento antes de la fecha indicada.",
-            'Mantén todos los documentos actualizados para mantener tu estado activo en la plataforma.',
-          ]}
-        />
-
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">{transportista.nombre}</h1>
@@ -351,6 +366,7 @@ export default function SubcontractorDashboardPage() {
             <CardDescription className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-sm">
               <span className="font-medium text-green-300">{statusSummary.approved} aprobados</span>
               <span className="text-amber-300">{statusSummary.inReview} en revisión</span>
+              <span className={statusSummary.expiringSoon > 0 ? 'font-medium text-orange-300' : 'text-slate-400'}>{statusSummary.expiringSoon} por vencer</span>
               <span className={statusSummary.actionRequired > 0 ? 'font-medium text-red-300' : 'text-slate-400'}>{statusSummary.actionRequired} requieren acción</span>
             </CardDescription>
           </CardHeader>
@@ -359,7 +375,7 @@ export default function SubcontractorDashboardPage() {
               <p className="text-slate-400 text-center py-8">{documents.length === 0 ? 'Aún no has subido documentos' : 'No hay documentos en este período'}</p>
             ) : (
               <div className="space-y-2">
-                {filteredDocuments.map((doc) => (
+                {sortedFilteredDocuments.map((doc) => (
                   <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600">
                     <div className="flex-1">
                       <p className="text-white font-medium">{getDocumentTypeLabel(doc.document_type_id)}</p>
@@ -369,14 +385,25 @@ export default function SubcontractorDashboardPage() {
                       {getAdvancedBadge(doc)}
                       <p className="text-xs text-slate-400 mt-1">Periodo: {getDocumentPeriodLabel(doc)}</p>
                       <p className="text-xs text-slate-500">Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}</p>
-                      {doc.status === 'approved' && <p className="mt-1 text-xs text-green-300">Documento validado. No requiere acción.</p>}
+                      {doc.status === 'approved' && !isExpiringSoon(doc) && <p className="mt-1 text-xs text-green-300">Documento validado. No requiere acción.</p>}
+                      {isExpiringSoon(doc) && <p className="mt-1 text-xs font-medium text-orange-300">Próximo a vencer. Conviene renovarlo antes de que afecte tu cumplimiento.</p>}
                       {['uploaded', 'pending'].includes(doc.status) && <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>}
                       {doc.status === 'rejected' && doc.rejection_reason && <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2"><p className="text-xs font-medium text-red-300">Requiere acción</p><p className="mt-1 text-xs text-red-200">Motivo: {doc.rejection_reason}</p><p className="mt-1 text-xs text-red-300">Corrige el documento y vuelve a subirlo.</p></div>}
                       {doc.status === 'expired' && <p className="mt-1 text-xs font-medium text-red-300">Documento vencido. Debes renovarlo.</p>}
                     </div>
-                    <div className="text-right">
-                      {getStatusBadge(doc.status)}
-                      {doc.expires_at && <p className="text-xs text-slate-400 mt-1">Vence: {new Date(doc.expires_at).toLocaleDateString('es-CL')}</p>}
+                    <div className="ml-4 flex shrink-0 flex-col items-end gap-2 text-right">
+                      {(['rejected', 'expired'].includes(doc.status) || isExpiringSoon(doc)) && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-orange-500 text-slate-950 hover:bg-orange-400"
+                          onClick={() => focusUploadFor(doc.document_type_id)}
+                        >
+                          Reemplazar
+                        </Button>
+                      )}
+                      {getStatusBadge(doc.status, doc.expires_at)}
+                      {doc.expires_at && <p className="text-xs text-slate-400">Vence: {new Date(doc.expires_at).toLocaleDateString('es-CL')}</p>}
                     </div>
                   </div>
                 ))}
@@ -385,10 +412,10 @@ export default function SubcontractorDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-700 bg-slate-800/50">
+        <Card id="upload-document" className="scroll-mt-6 border-slate-700 bg-slate-800/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5" /> Subir Documento</CardTitle>
-            <CardDescription>Selecciona el tipo de documento y adjunta el archivo</CardDescription>
+            <CardDescription>Úsalo cuando falte un documento o necesites reemplazar uno rechazado, vencido o próximo a vencer.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpload} className="space-y-4">
