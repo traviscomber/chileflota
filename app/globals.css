@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-montserrat);
-  --font-mono: var(--font-jetbrains);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-inter);
 
   --color-background: #171719;
   --color-foreground: #E7E7E9;
@@ -44,8 +44,15 @@
   --cf-burgundy-hover: #9B3A52;
   --cf-focus-ring: #C86A82;
   --cf-success: #67C18D;
+  --cf-success-soft: #173B2C;
   --cf-warning: #D9B65C;
+  --cf-warning-soft: #40341B;
+  --cf-expiring: #E6A35A;
+  --cf-expiring-soft: #4A2F18;
   --cf-danger: #E17B8C;
+  --cf-danger-soft: #45242B;
+  --cf-info: #7CB8D7;
+  --cf-info-soft: #1D3544;
   --cf-radius: 6px;
 
   /* DESIGN.md canonical aliases. Keep legacy names above for existing product surfaces. */
@@ -310,4 +317,87 @@
 [data-company-main] [data-slot="card"] [class*="text-orange-"],
 [data-company-main] [data-slot="card"] [class*="text-purple-"] {
   color: var(--cf-text-secondary) !important;
+}
+
+
+/* DESIGN.md product-wide compatibility gate.
+   This keeps legacy routes visually coherent while individual surfaces migrate
+   from ad-hoc Tailwind palette classes to semantic ChileFlota tokens. */
+[data-cf-product] [class*="bg-gradient-to-"] {
+  background-image: none !important;
+}
+
+[data-cf-product] [class*="from-slate-"],
+[data-cf-product] [class*="via-slate-"],
+[data-cf-product] [class*="to-slate-"] {
+  --tw-gradient-from: transparent !important;
+  --tw-gradient-via: transparent !important;
+  --tw-gradient-to: transparent !important;
+}
+
+[data-cf-product] [class*="bg-slate-950"],
+[data-cf-product] [class*="bg-gray-950"] {
+  background-color: var(--cf-sidebar) !important;
+}
+
+[data-cf-product] [class*="bg-slate-900"],
+[data-cf-product] [class*="bg-gray-900"] {
+  background-color: var(--cf-canvas) !important;
+}
+
+[data-cf-product] [class*="bg-slate-800"],
+[data-cf-product] [class*="bg-gray-800"],
+[data-cf-product] [class*="bg-white"] {
+  background-color: var(--cf-surface) !important;
+}
+
+[data-cf-product] [class*="bg-slate-700"],
+[data-cf-product] [class*="bg-gray-700"] {
+  background-color: var(--cf-surface-raised) !important;
+}
+
+[data-cf-product] [class*="border-slate-"],
+[data-cf-product] [class*="border-gray-"] {
+  border-color: var(--cf-border) !important;
+}
+
+[data-cf-product] [class*="text-white"] {
+  color: var(--cf-text) !important;
+}
+
+[data-cf-product] [class*="text-slate-2"],
+[data-cf-product] [class*="text-slate-3"],
+[data-cf-product] [class*="text-gray-2"],
+[data-cf-product] [class*="text-gray-3"] {
+  color: var(--cf-text-secondary) !important;
+}
+
+[data-cf-product] [class*="text-slate-4"],
+[data-cf-product] [class*="text-slate-5"],
+[data-cf-product] [class*="text-gray-4"],
+[data-cf-product] [class*="text-gray-5"] {
+  color: var(--cf-text-muted) !important;
+}
+
+[data-cf-product] button[class*="bg-orange-"],
+[data-cf-product] a[class*="bg-orange-"],
+[data-cf-product] button[class*="bg-blue-"],
+[data-cf-product] a[class*="bg-blue-"] {
+  background-color: var(--cf-accent) !important;
+  color: var(--cf-text) !important;
+  box-shadow: none !important;
+}
+
+[data-cf-product] button[class*="bg-orange-"]:hover,
+[data-cf-product] a[class*="bg-orange-"]:hover,
+[data-cf-product] button[class*="bg-blue-"]:hover,
+[data-cf-product] a[class*="bg-blue-"]:hover {
+  background-color: var(--cf-accent-hover) !important;
+}
+
+[data-cf-product] [class*="shadow-lg"],
+[data-cf-product] [class*="shadow-xl"],
+[data-cf-product] [class*="backdrop-blur"] {
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
