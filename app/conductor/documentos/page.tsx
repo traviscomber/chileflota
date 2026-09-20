@@ -472,20 +472,10 @@ export default function ConductorDocumentosPage() {
         </Alert>
       )}
 
-      {/* Test Data Notice */}
-      {documents.some(d => d.rejection_reason === 'test') && (
-        <Alert className="bg-[var(--cf-info-soft)] border-blue-900/50">
-          <HelpCircle className="h-4 w-4 text-[var(--cf-info)]" />
-          <AlertDescription className="text-[var(--cf-info)]">
-            <strong>Nota:</strong> Algunos documentos en tu historial tienen motivo de rechazo "test". Estos son documentos de prueba del sistema y pueden ser ignorados o eliminados. No afectan tu cumplimiento real.
-          </AlertDescription>
-        </Alert>
-      )}
-
       {(documentSummary.actionRequired > 0 || documentSummary.expiringSoon > 0) && (
         <Alert className="border-[var(--cf-expiring)]/40 bg-[var(--cf-expiring-soft)]">
           <AlertCircle className="h-4 w-4 text-[var(--cf-expiring)]" />
-          <AlertDescription className="text-orange-100">
+          <AlertDescription className="text-[var(--cf-expiring)]">
             {documentSummary.actionRequired > 0 ? `${documentSummary.actionRequired} documento(s) requieren acción` : ''}
             {documentSummary.actionRequired > 0 && documentSummary.expiringSoon > 0 ? ' · ' : ''}
             {documentSummary.expiringSoon > 0 ? `${documentSummary.expiringSoon} por vencer` : ''}
