@@ -83,7 +83,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   const SidebarContent = () => (
     <>
-      <div className="border-b border-[var(--cf-line)] px-4 py-5 md:px-5">
+      <div className="border-b border-[var(--cf-border)] px-4 py-5 md:px-5">
         <p className="text-lg font-medium tracking-tight text-[var(--cf-text)]">ChileFlota</p>
         <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Transportes Labbé</p>
       </div>
@@ -102,8 +102,8 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                 className={cn(
                   'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm font-normal transition-colors',
                   isActive
-                    ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
-                    : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
+                    ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
+                    : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]'
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
@@ -114,7 +114,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         })}
       </nav>
 
-      <div className="space-y-2 border-t border-[var(--cf-line)] p-3">
+      <div className="space-y-2 border-t border-[var(--cf-border)] p-3">
         {accountItems.map(item => {
           const Icon = item.icon
           const isActive = pathname === item.href
@@ -126,8 +126,8 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                 className={cn(
                   'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-sm font-normal transition-colors',
                   isActive
-                    ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
-                    : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
+                    ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
+                    : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]'
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
@@ -140,7 +140,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-10 w-full justify-start rounded-[5px] px-3 text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]"
+          className="min-h-10 w-full justify-start rounded-[5px] px-3 text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
           onClick={handleLogout}
         >
           <LogOut className="mr-3 h-4 w-4 flex-shrink-0" />
@@ -152,14 +152,14 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   return (
     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <div className="flex h-screen flex-col bg-[var(--cf-bg)] md:flex-row">
-        <aside className="hidden w-48 flex-col border-r border-[var(--cf-line)] bg-[var(--cf-sidebar)] md:flex">
+      <div className="flex h-screen flex-col bg-[var(--cf-canvas)] md:flex-row">
+        <aside className="hidden w-48 flex-col border-r border-[var(--cf-border)] bg-[var(--cf-sidebar)] md:flex">
           <SidebarContent />
         </aside>
 
         <SheetContent
           side="left"
-          className="w-[min(82vw,288px)] border-r border-[var(--cf-line)] bg-[var(--cf-sidebar)] p-0 text-[var(--cf-text)]"
+          className="w-[min(82vw,288px)] border-r border-[var(--cf-border)] bg-[var(--cf-sidebar)] p-0 text-[var(--cf-text)]"
         >
           <div className="flex h-full flex-col">
             <SidebarContent />
@@ -172,7 +172,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           <main
             ref={mainRef}
             data-company-main
-            className="min-w-0 flex-1 overflow-auto bg-[var(--cf-bg)] p-4 sm:p-5 lg:p-5"
+            className="min-w-0 flex-1 overflow-auto bg-[var(--cf-canvas)] p-4 sm:p-5 lg:p-5"
           >
             {children}
           </main>
