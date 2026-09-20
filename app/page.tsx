@@ -76,7 +76,7 @@ function HeroWorkflowVisual() {
   ]
 
   return (
-    <div className="relative flex min-h-[620px] flex-col justify-center overflow-hidden bg-[var(--cf-sidebar)] p-5 sm:p-7 lg:min-h-[720px] lg:p-10">
+    <div className="relative flex h-full min-h-[620px] flex-col justify-center overflow-hidden bg-[var(--cf-sidebar)] p-5 sm:p-7 lg:min-h-[680px] lg:p-8 xl:p-10">
       <div className="pointer-events-none absolute inset-0 opacity-30" aria-hidden="true">
         <div className="absolute inset-0 bg-grid" />
         <div className="absolute inset-y-0 left-[33%] w-px bg-[var(--cf-border)]" />
@@ -95,7 +95,7 @@ function HeroWorkflowVisual() {
             return (
               <div
                 key={step.label}
-                className="grid gap-4 border-b border-[var(--cf-border)] px-4 py-5 last:border-b-0 sm:grid-cols-[42px_48px_150px_1fr] sm:items-center sm:px-5"
+                className="grid gap-3 border-b border-[var(--cf-border)] px-4 py-4 last:border-b-0 sm:grid-cols-[36px_44px_132px_1fr] sm:items-center sm:px-5 lg:gap-4"
               >
                 <span className="font-mono text-xs text-[var(--cf-accent)]">0{index + 1}</span>
                 <span className="flex h-10 w-10 items-center justify-center border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
@@ -372,20 +372,20 @@ export default async function LandingPage() {
       </header>
 
       <section id="solucion" className="relative border-b border-[var(--cf-border)] pt-16">
-        <div className="mx-auto grid max-w-[1480px] lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="flex min-h-[690px] items-center px-4 py-16 sm:px-6 lg:px-8 lg:pr-14">
-            <div className="max-w-[590px]">
+        <div className="mx-auto grid max-w-7xl lg:grid-cols-[0.88fr_1.12fr]">
+          <div className="flex min-h-[680px] items-center px-4 py-14 sm:px-6 lg:px-8 lg:py-16 lg:pr-12">
+            <div className="max-w-[560px]">
               <div className="flex items-center gap-4">
                 <SectionLabel>Control documental de flota</SectionLabel>
                 <AccentRule />
               </div>
 
-              <h1 className="mt-6 max-w-[680px] text-5xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-[72px]">
+              <h1 className="mt-6 max-w-[620px] text-[clamp(3rem,5.2vw,4.25rem)] font-semibold leading-[0.98] tracking-[-0.045em]">
                 El subcontratista carga. La ejecutiva valida.{" "}
                 <span className="text-[var(--cf-accent)]">La operación sigue.</span>
               </h1>
 
-              <p className="mt-7 max-w-[620px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
+              <p className="mt-7 max-w-[560px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
                 ChileFlota reemplaza el intercambio disperso de correos, planillas y mensajes por un flujo único de carga, revisión y evidencia trazable.
               </p>
 
@@ -404,7 +404,7 @@ export default async function LandingPage() {
                   Ver cómo funciona
                 </a>
               </div>
-              <div className="mt-14 flex items-center gap-4 text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">
+              <div className="mt-10 flex items-center gap-4 text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">
                 <span className="h-px w-8 bg-[var(--cf-text-secondary)]" aria-hidden="true" />
                 <span>Operaciones más simples. Flotas más seguras.</span>
               </div>
@@ -416,7 +416,7 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        <div className="mx-auto grid max-w-7xl border-x border-[var(--cf-border)] bg-[var(--cf-sidebar)] sm:grid-cols-3">
+        <div className="mx-auto grid max-w-7xl border-x border-[var(--cf-border)] bg-[var(--cf-sidebar)] md:grid-cols-3">
           <div className="flex gap-4 p-5 sm:p-6">
             <FileText className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
             <div>
@@ -428,7 +428,7 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="flex gap-4 border-t border-[var(--cf-border)] p-5 sm:border-l sm:border-t-0 sm:p-6">
+          <div className="flex gap-4 border-t border-[var(--cf-border)] p-5 md:border-l md:border-t-0 md:p-6">
             <Building2 className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
             <div>
               <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Implementación activa</p>
@@ -437,7 +437,7 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="flex gap-4 border-t border-[var(--cf-border)] p-5 sm:border-l sm:border-t-0 sm:p-6">
+          <div className="flex gap-4 border-t border-[var(--cf-border)] p-5 md:border-l md:border-t-0 md:p-6">
             <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
             <div>
               <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Sin exponer datos</p>
