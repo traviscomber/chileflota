@@ -283,7 +283,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
               aria-label="Buscar o consultar ChileFlota"
               aria-autocomplete="list"
               aria-expanded={searchOpen}
-              placeholder="Buscar documentos, RUT, empresa, conductor o preguntar..."
+              placeholder="Buscar empresa, conductor, documento o consultar..."
               value={searchValue}
               onFocus={() => searchValue.trim().length >= 2 && setSearchOpen(true)}
               onChange={(e) => setSearchValue(e.target.value)}
@@ -291,7 +291,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
               className="h-9 rounded-[5px] border-[var(--cf-line)] bg-[var(--cf-surface-2)] pl-9 pr-16 text-sm text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)] focus-visible:border-[var(--cf-burgundy)] focus-visible:ring-[var(--cf-focus-ring)]/30"
             />
             <span
-              aria-label="Nueva funcionalidad"
+              aria-label="Consulta operacional con IA"
               className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-[4px] border border-[var(--cf-burgundy)] bg-[var(--cf-sidebar)] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--cf-burgundy-hover)]"
             >
               Nuevo
