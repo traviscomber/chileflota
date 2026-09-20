@@ -256,6 +256,12 @@ export default function SubcontractorDashboardPage() {
   const getDocumentTypeLabel = (documentTypeId: string) =>
     documentTypes.find((type) => type.id === documentTypeId)?.nombre || 'Documento'
 
+  const getDisplayFileName = (fileName?: string) => {
+    if (!fileName) return null
+    if (/^inbound\d+\.[a-z0-9]+$/i.test(fileName.trim())) return null
+    return fileName.trim()
+  }
+
   const getAdvancedBadge = (doc: Document) => {
     if (!doc.verification?.advanced) return null
 
@@ -357,6 +363,9 @@ export default function SubcontractorDashboardPage() {
                   <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600">
                     <div className="flex-1">
                       <p className="text-white font-medium">{getDocumentTypeLabel(doc.document_type_id)}</p>
+                      {getDisplayFileName(doc.file_name) && (
+                        <p className="mt-0.5 text-xs text-slate-500">{getDisplayFileName(doc.file_name)}</p>
+                      )}
                       {getAdvancedBadge(doc)}
                       <p className="text-xs text-slate-400 mt-1">Periodo: {getDocumentPeriodLabel(doc)}</p>
                       <p className="text-xs text-slate-500">Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}</p>
