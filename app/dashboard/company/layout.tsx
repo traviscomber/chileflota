@@ -123,7 +123,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                     onClick={() => setSidebarOpen(false)}
                     aria-current={isActive ? 'page' : undefined}
                     className={cn(
-                      'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm font-normal transition-colors',
+                      'flex min-h-11 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm font-normal transition-colors md:min-h-10',
                       isActive
                         ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
                         : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
@@ -151,7 +151,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
               onClick={() => setSidebarOpen(false)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-sm font-normal transition-colors',
+                'flex min-h-11 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-sm font-normal transition-colors md:min-h-10',
                 isActive
                   ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
                   : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
@@ -166,7 +166,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-10 w-full justify-start rounded-[5px] px-3 text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]"
+          className="min-h-11 w-full justify-start rounded-[5px] px-3 text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)] md:min-h-10"
           onClick={handleLogout}
         >
           <LogOut className="mr-3 h-4 w-4 flex-shrink-0" />
