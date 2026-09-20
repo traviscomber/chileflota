@@ -292,9 +292,9 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
             />
             <span
               aria-label="Consulta operacional con IA"
-              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-[4px] border border-[var(--cf-burgundy)] bg-[var(--cf-sidebar)] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--cf-burgundy-hover)]"
+              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-[4px] border border-[var(--cf-burgundy)] bg-[var(--cf-sidebar)] px-2 py-0.5 text-xs font-medium uppercase tracking-[0.08em] text-[var(--cf-burgundy-hover)]"
             >
-              Nuevo
+              IA
             </span>
 
             {searchOpen && searchValue.trim().length >= 2 && (
