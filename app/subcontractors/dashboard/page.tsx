@@ -255,22 +255,22 @@ export default function SubcontractorDashboardPage() {
     if (status === 'approved' && expiresAt) {
       const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000)
       if (days >= 0 && days <= 30) {
-        return <div className="flex items-center gap-1 text-orange-300"><Clock className="w-4 h-4" /> Por vencer</div>
+        return <div className="flex items-center gap-1 text-[var(--cf-expiring)]"><Clock className="w-4 h-4" /> Por vencer</div>
       }
     }
 
     switch (status) {
       case 'approved':
-        return <div className="flex items-center gap-1 text-green-400"><CheckCircle className="w-4 h-4" /> Aprobado</div>
+        return <div className="flex items-center gap-1 text-[var(--cf-success)]"><CheckCircle className="w-4 h-4" /> Aprobado</div>
       case 'uploaded':
       case 'pending':
-        return <div className="flex items-center gap-1 text-amber-300"><Clock className="w-4 h-4" /> En revisión</div>
+        return <div className="flex items-center gap-1 text-[var(--cf-warning)]"><Clock className="w-4 h-4" /> En revisión</div>
       case 'expired':
-        return <div className="flex items-center gap-1 text-red-400"><AlertCircle className="w-4 h-4" /> Vencido</div>
+        return <div className="flex items-center gap-1 text-[var(--cf-danger)]"><AlertCircle className="w-4 h-4" /> Vencido</div>
       case 'rejected':
-        return <div className="flex items-center gap-1 text-red-500"><AlertCircle className="w-4 h-4" /> Rechazado</div>
+        return <div className="flex items-center gap-1 text-[var(--cf-danger)]"><AlertCircle className="w-4 h-4" /> Rechazado</div>
       default:
-        return <span className="text-slate-400">{status}</span>
+        return <span className="text-[var(--cf-text-muted)]">{status}</span>
     }
   }
 
@@ -308,8 +308,8 @@ export default function SubcontractorDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <p className="text-slate-400">Cargando...</p>
+      <div className="min-h-screen bg-[var(--cf-canvas)] flex items-center justify-center">
+        <p className="text-[var(--cf-text-muted)]">Cargando...</p>
       </div>
     )
   }
@@ -317,26 +317,26 @@ export default function SubcontractorDashboardPage() {
   if (!transportista) return null
 
   return (
-    <div className="min-h-screen bg-slate-900 p-4 md:p-6">
+    <div className="min-h-screen bg-[var(--cf-canvas)] p-4 md:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">{transportista.nombre}</h1>
-            <p className="text-slate-400">RUT: {transportista.rut}</p>
+            <h1 className="text-3xl font-bold text-[var(--cf-text)]">{transportista.nombre}</h1>
+            <p className="text-[var(--cf-text-muted)]">RUT: {transportista.rut}</p>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800">
+          <Button variant="outline" onClick={handleLogout} className="gap-2 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface)]">
             <LogOut className="w-4 h-4" />
             Cerrar sesión
           </Button>
         </div>
 
-        <div className="rounded-lg border border-slate-700 bg-slate-800/30 p-4">
+        <div className="rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <div className="text-sm font-medium text-slate-300 sm:pb-2">Período</div>
+              <div className="text-sm font-medium text-[var(--cf-text-secondary)] sm:pb-2">Período</div>
               <div className="flex flex-1 gap-2 items-end">
                 <div className="flex-1">
-                  <label className="text-xs font-semibold text-slate-400 mb-1 block">Mes</label>
-                  <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white">
+                  <label className="text-xs font-semibold text-[var(--cf-text-muted)] mb-1 block">Mes</label>
+                  <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-full rounded-md border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] px-3 py-2 text-sm text-[var(--cf-text)]">
                     <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
                     <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
                     <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
@@ -344,8 +344,8 @@ export default function SubcontractorDashboardPage() {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs font-semibold text-slate-400 mb-1 block">Año</label>
-                  <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white">
+                  <label className="text-xs font-semibold text-[var(--cf-text-muted)] mb-1 block">Año</label>
+                  <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="w-full rounded-md border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] px-3 py-2 text-sm text-[var(--cf-text)]">
                     <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
                   </select>
                 </div>
@@ -356,9 +356,9 @@ export default function SubcontractorDashboardPage() {
         
 
         {(statusSummary.actionRequired > 0 || statusSummary.expiringSoon > 0) && (
-          <div className="rounded-lg border border-orange-900/50 bg-orange-950/30 p-4 text-sm text-orange-100">
+          <div className="rounded-lg border border-[var(--cf-expiring)]/40 bg-[var(--cf-expiring-soft)] p-4 text-sm text-orange-100">
             <div className="flex items-start gap-2">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-300" />
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--cf-expiring)]" />
               <p>
                 <span className="font-medium">Necesita atención.</span>{' '}
                 {statusSummary.actionRequired > 0 ? `${statusSummary.actionRequired} documento(s)` : ''}
@@ -369,49 +369,49 @@ export default function SubcontractorDashboardPage() {
           </div>
         )}
 
-        <Card className="border-slate-700 bg-slate-800/50">
+        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Estado de documentos</CardTitle>
             <CardDescription className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-sm">
-              <span className="font-medium text-green-300">{statusSummary.approved} aprobados</span>
-              <span className="text-amber-300">{statusSummary.inReview} en revisión</span>
-              <span className={statusSummary.expiringSoon > 0 ? 'font-medium text-orange-300' : 'text-slate-400'}>{statusSummary.expiringSoon} por vencer</span>
-              <span className={statusSummary.actionRequired > 0 ? 'font-medium text-red-300' : 'text-slate-400'}>{statusSummary.actionRequired} requieren acción</span>
+              <span className="font-medium text-[var(--cf-success)]">{statusSummary.approved} aprobados</span>
+              <span className="text-[var(--cf-warning)]">{statusSummary.inReview} en revisión</span>
+              <span className={statusSummary.expiringSoon > 0 ? 'font-medium text-[var(--cf-expiring)]' : 'text-[var(--cf-text-muted)]'}>{statusSummary.expiringSoon} por vencer</span>
+              <span className={statusSummary.actionRequired > 0 ? 'font-medium text-[var(--cf-danger)]' : 'text-[var(--cf-text-muted)]'}>{statusSummary.actionRequired} requieren acción</span>
             </CardDescription>
           </CardHeader>
           <CardContent>
             {filteredDocuments.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">{documents.length === 0 ? 'Aún no has subido documentos' : 'No hay documentos en este período'}</p>
+              <p className="text-[var(--cf-text-muted)] text-center py-8">{documents.length === 0 ? 'Aún no has subido documentos' : 'No hay documentos en este período'}</p>
             ) : (
               <div className="space-y-2">
                 {sortedFilteredDocuments.map((doc) => (
-                  <div key={doc.id} className="flex flex-col gap-3 rounded-lg border border-slate-600 bg-slate-700/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div key={doc.id} className="flex flex-col gap-3 rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex-1">
-                      <p className="text-white font-medium">{getDocumentTypeLabel(doc.document_type_id)}</p>
+                      <p className="text-[var(--cf-text)] font-medium">{getDocumentTypeLabel(doc.document_type_id)}</p>
                       {getDisplayFileName(doc.file_name) && (
-                        <p className="mt-0.5 text-xs text-slate-500">{getDisplayFileName(doc.file_name)}</p>
+                        <p className="mt-0.5 text-xs text-[var(--cf-text-muted)]">{getDisplayFileName(doc.file_name)}</p>
                       )}
                       {getAdvancedBadge(doc)}
-                      <p className="text-xs text-slate-400 mt-1">Periodo: {getDocumentPeriodLabel(doc)}</p>
-                      <p className="text-xs text-slate-500">Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}</p>
-                      {isExpiringSoon(doc) && <p className="mt-1 text-xs font-medium text-orange-300">Próximo a vencer. Conviene renovarlo antes de que afecte tu cumplimiento.</p>}
-                      {['uploaded', 'pending'].includes(doc.status) && <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>}
-                      {doc.status === 'rejected' && doc.rejection_reason && <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2"><p className="text-xs font-medium text-red-300">Requiere acción</p><p className="mt-1 text-xs text-red-200">Motivo: {doc.rejection_reason}</p><p className="mt-1 text-xs text-red-300">Corrige el documento y vuelve a subirlo.</p></div>}
-                      {doc.status === 'expired' && <p className="mt-1 text-xs font-medium text-red-300">Documento vencido. Debes renovarlo.</p>}
+                      <p className="text-xs text-[var(--cf-text-muted)] mt-1">Periodo: {getDocumentPeriodLabel(doc)}</p>
+                      <p className="text-xs text-[var(--cf-text-muted)]">Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}</p>
+                      {isExpiringSoon(doc) && <p className="mt-1 text-xs font-medium text-[var(--cf-expiring)]">Próximo a vencer. Conviene renovarlo antes de que afecte tu cumplimiento.</p>}
+                      {['uploaded', 'pending'].includes(doc.status) && <p className="mt-1 text-xs text-[var(--cf-warning)]">Recibido correctamente. No necesitas volver a subirlo.</p>}
+                      {doc.status === 'rejected' && doc.rejection_reason && <div className="mt-2 rounded-md border border-[var(--cf-danger)]/40 bg-[var(--cf-danger-soft)] px-3 py-2"><p className="text-xs font-medium text-[var(--cf-danger)]">Requiere acción</p><p className="mt-1 text-xs text-[var(--cf-danger)]">Motivo: {doc.rejection_reason}</p><p className="mt-1 text-xs text-[var(--cf-danger)]">Corrige el documento y vuelve a subirlo.</p></div>}
+                      {doc.status === 'expired' && <p className="mt-1 text-xs font-medium text-[var(--cf-danger)]">Documento vencido. Debes renovarlo.</p>}
                     </div>
                     <div className="ml-4 flex shrink-0 flex-col items-end gap-2 text-right">
                       {(['rejected', 'expired'].includes(doc.status) || isExpiringSoon(doc)) && (
                         <Button
                           type="button"
                           size="sm"
-                          className="bg-orange-500 text-slate-950 hover:bg-orange-400"
+                          className="bg-[var(--cf-accent)] text-slate-950 hover:bg-[var(--cf-accent-hover)]"
                           onClick={() => focusUploadFor(doc.document_type_id)}
                         >
                           Reemplazar
                         </Button>
                       )}
                       {getStatusBadge(doc.status, doc.expires_at)}
-                      {doc.expires_at && <p className="text-xs text-slate-400">Vence: {new Date(doc.expires_at).toLocaleDateString('es-CL')}</p>}
+                      {doc.expires_at && <p className="text-xs text-[var(--cf-text-muted)]">Vence: {new Date(doc.expires_at).toLocaleDateString('es-CL')}</p>}
                     </div>
                   </div>
                 ))}
@@ -420,39 +420,39 @@ export default function SubcontractorDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card id="upload-document" className="scroll-mt-6 border-slate-700 bg-slate-800/50">
+        <Card id="upload-document" className="scroll-mt-6 border-[var(--cf-border)] bg-[var(--cf-surface)]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5" /> Subir Documento</CardTitle>
             <CardDescription>Sube o reemplaza documentos. Si eliges una fecha anterior, confirmaremos el período antes de guardar.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpload} className="space-y-4">
-              {uploadError && <div className="flex gap-3 rounded-lg bg-red-500/10 border border-red-500/30 p-3"><AlertCircle className="h-5 w-5 text-red-400" /><p className="text-sm text-red-300">{uploadError}</p></div>}
-              {uploadSuccess && <div className="flex gap-3 rounded-lg bg-green-500/10 border border-green-500/30 p-3"><CheckCircle className="h-5 w-5 text-green-400" /><p className="text-sm text-green-300">{uploadSuccess}</p></div>}
+              {uploadError && <div className="flex gap-3 rounded-lg bg-[var(--cf-danger-soft)] border border-[var(--cf-danger)]/40 p-3"><AlertCircle className="h-5 w-5 text-[var(--cf-danger)]" /><p className="text-sm text-[var(--cf-danger)]">{uploadError}</p></div>}
+              {uploadSuccess && <div className="flex gap-3 rounded-lg bg-[var(--cf-success-soft)] border border-[var(--cf-success)]/40 p-3"><CheckCircle className="h-5 w-5 text-[var(--cf-success)]" /><p className="text-sm text-[var(--cf-success)]">{uploadSuccess}</p></div>}
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="doctype" className="text-slate-200">Tipo de Documento</Label>
+                  <Label htmlFor="doctype" className="text-[var(--cf-text-secondary)]">Tipo de Documento</Label>
                   <Select value={selectedDocType} onValueChange={setSelectedDocType}>
-                    <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white"><SelectValue placeholder="Selecciona un documento" /></SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      {documentTypes.map((dt) => <SelectItem key={dt.id} value={dt.id} className="text-white">{dt.nombre}</SelectItem>)}
+                    <SelectTrigger className="bg-[var(--cf-surface-raised)] border-[var(--cf-border)] text-[var(--cf-text)]"><SelectValue placeholder="Selecciona un documento" /></SelectTrigger>
+                    <SelectContent className="bg-[var(--cf-surface)] border-[var(--cf-border)]">
+                      {documentTypes.map((dt) => <SelectItem key={dt.id} value={dt.id} className="text-[var(--cf-text)]">{dt.nombre}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="docdate" className="text-slate-200">Fecha del Documento</Label>
-                  <Input id="docdate" type="date" value={documentDate} onChange={(e) => handleDocumentDateChange(e.target.value)} min={minDateString} max={new Date().toISOString().split('T')[0]} className="bg-slate-700/50 border-slate-600 text-slate-300" />
-                  <p className="text-xs text-slate-400">Esta fecha define el periodo mensual de cumplimiento</p>
+                  <Label htmlFor="docdate" className="text-[var(--cf-text-secondary)]">Fecha del Documento</Label>
+                  <Input id="docdate" type="date" value={documentDate} onChange={(e) => handleDocumentDateChange(e.target.value)} min={minDateString} max={new Date().toISOString().split('T')[0]} className="bg-[var(--cf-surface-raised)] border-[var(--cf-border)] text-[var(--cf-text-secondary)]" />
+                  <p className="text-xs text-[var(--cf-text-muted)]">Esta fecha define el periodo mensual de cumplimiento</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="file" className="text-slate-200">Archivo</Label>
-                  <Input id="file" type="file" onChange={handleFileSelect} disabled={uploading} className="bg-slate-700/50 border-slate-600 text-slate-300 cursor-pointer" accept=".pdf,.jpg,.jpeg,.png" />
-                  <p className="text-xs text-slate-400">{selectedFile ? `✓ ${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)}MB)` : 'PDF, JPG, PNG máximo 50MB'}</p>
+                  <Label htmlFor="file" className="text-[var(--cf-text-secondary)]">Archivo</Label>
+                  <Input id="file" type="file" onChange={handleFileSelect} disabled={uploading} className="bg-[var(--cf-surface-raised)] border-[var(--cf-border)] text-[var(--cf-text-secondary)] cursor-pointer" accept=".pdf,.jpg,.jpeg,.png" />
+                  <p className="text-xs text-[var(--cf-text-muted)]">{selectedFile ? `✓ ${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)}MB)` : 'PDF, JPG, PNG máximo 50MB'}</p>
                 </div>
               </div>
 
-              <Button type="submit" disabled={uploading || !selectedFile || !selectedDocType} className="w-full bg-orange-500 hover:bg-orange-600">
+              <Button type="submit" disabled={uploading || !selectedFile || !selectedDocType} className="w-full bg-[var(--cf-accent)] hover:bg-[var(--cf-accent-hover)]">
                 {uploading ? 'Subiendo...' : 'Subir Documento'}
               </Button>
             </form>
