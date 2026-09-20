@@ -8,10 +8,10 @@ import { Clock, ArrowLeft, FileText, Check, X, Loader2, Download, Sparkles, Chev
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { formatToChileTime } from '@/lib/timezone-utils'
-import { getDocTypeIcon } from '@/lib/document-type-icons'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
@@ -85,6 +85,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [analysisResult, setAnalysisResult] = useState<any>(null)
   const [analysisDocId, setAnalysisDocId] = useState<string | null>(null)
   const [analysisDocType, setAnalysisDocType] = useState<'conductor' | 'subcontractor'>('conductor')
+  const [showCorrectionFields, setShowCorrectionFields] = useState(false)
+  const [correctedType, setCorrectedType] = useState('')
+  const [correctedDate, setCorrectedDate] = useState('')
   const [filters, setFilters] = useState<DocumentFilters>({
     searchQuery: '',
     month: ALL_VALUE,
@@ -345,6 +348,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       setAnalysisResult(result)
       setAnalysisDocId(docId)
       setAnalysisDocType(type)
+      setCorrectedType(result.analysis?.documentType || '')
+      setCorrectedDate(result.analysis?.expirationDate || '')
+      setShowCorrectionFields(false)
       setShowAnalysisModal(true)
     } catch (error) {
       const msg = document.createElement('div')
@@ -974,31 +980,60 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               )}
 
               <div className="border-t border-[var(--cf-border)] pt-3">
-                <p className="text-xs text-[var(--cf-text-muted)] mb-2">
-                  Feedback opcional — ayuda a entrenar el modelo
-                </p>
-                <div className="flex gap-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-[var(--cf-text-secondary)]">Corrección humana</p>
+                    <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+                      Ajusta el resultado sólo si la evidencia muestra otra información.
+                    </p>
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] text-xs"
-                    onClick={() => {
-                      const correctedType = window.prompt(
-                        'Ingrese el tipo de documento correcto:',
-                        analysisResult?.analysis?.documentType || ''
-                      )
-                      if (correctedType) {
-                        const correctedDate = window.prompt(
-                          'Ingrese la fecha de vencimiento correcta (DD/MM/YYYY) o deje vacío:',
-                          analysisResult?.analysis?.expirationDate || ''
-                        )
-                        handleProvideFeedback(correctedType, correctedDate || undefined)
-                      }
-                    }}
+                    className="border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)]"
+                    onClick={() => setShowCorrectionFields((value) => !value)}
+                    aria-expanded={showCorrectionFields}
                   >
-                    Corregir tipo / fecha
+                    {showCorrectionFields ? 'Ocultar' : 'Corregir'}
                   </Button>
                 </div>
+
+                {showCorrectionFields && (
+                  <div className="mt-4 space-y-4 border-l-2 border-[var(--cf-accent)] pl-4">
+                    <div>
+                      <label htmlFor="corrected-document-type" className="text-xs font-medium text-[var(--cf-text)]">
+                        Tipo de documento
+                      </label>
+                      <Input
+                        id="corrected-document-type"
+                        value={correctedType}
+                        onChange={(event) => setCorrectedType(event.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="corrected-expiration-date" className="text-xs font-medium text-[var(--cf-text)]">
+                        Fecha de vencimiento
+                      </label>
+                      <Input
+                        id="corrected-expiration-date"
+                        value={correctedDate}
+                        onChange={(event) => setCorrectedDate(event.target.value)}
+                        placeholder="DD/MM/AAAA"
+                        className="mt-2"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!correctedType.trim()}
+                      onClick={() => handleProvideFeedback(correctedType.trim(), correctedDate.trim() || undefined)}
+                    >
+                      Aplicar corrección y aprobar
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end pt-2 gap-2">
