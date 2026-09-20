@@ -321,7 +321,7 @@ export default function SubcontractorDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">{transportista.nombre}</h1>
             <p className="text-slate-400">RUT: {transportista.rut}</p>
@@ -360,6 +360,20 @@ export default function SubcontractorDashboardPage() {
 
         
 
+        {(statusSummary.actionRequired > 0 || statusSummary.expiringSoon > 0) && (
+          <div className="rounded-lg border border-orange-900/50 bg-orange-950/30 p-4 text-sm text-orange-100">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-300" />
+              <p>
+                <span className="font-medium">Necesita atención.</span>{' '}
+                {statusSummary.actionRequired} documento(s) requieren acción
+                {statusSummary.expiringSoon > 0 ? ` y ${statusSummary.expiringSoon} están próximos a vencer` : ''}.
+                Se muestran primero.
+              </p>
+            </div>
+          </div>
+        )}
+
         <Card className="border-slate-700 bg-slate-800/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Estado de documentos</CardTitle>
@@ -376,7 +390,7 @@ export default function SubcontractorDashboardPage() {
             ) : (
               <div className="space-y-2">
                 {sortedFilteredDocuments.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600">
+                  <div key={doc.id} className="flex flex-col gap-3 rounded-lg border border-slate-600 bg-slate-700/30 p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex-1">
                       <p className="text-white font-medium">{getDocumentTypeLabel(doc.document_type_id)}</p>
                       {getDisplayFileName(doc.file_name) && (
