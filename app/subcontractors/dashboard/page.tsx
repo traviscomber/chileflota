@@ -58,27 +58,8 @@ export default function SubcontractorDashboardPage() {
   const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
   const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
 
-  const syncDocumentDateToPeriod = (month: string, year: string) => {
-    setDocumentDate(`${year}-${month.padStart(2, '0')}-01`)
-  }
-
-  const handleSelectedMonthChange = (month: string) => {
-    setSelectedMonth(month)
-    syncDocumentDateToPeriod(month, selectedYear)
-  }
-
-  const handleSelectedYearChange = (year: string) => {
-    setSelectedYear(year)
-    syncDocumentDateToPeriod(selectedMonth, year)
-  }
-
   const handleDocumentDateChange = (value: string) => {
     setDocumentDate(value)
-    const match = /^(\d{4})-(\d{2})-\d{2}$/.exec(value)
-    if (match) {
-      setSelectedYear(match[1])
-      setSelectedMonth(match[2])
-    }
   }
 
   useEffect(() => {
@@ -174,9 +155,13 @@ export default function SubcontractorDashboardPage() {
       formData.append('file', selectedFile)
       formData.append('documentTypeId', selectedDocType)
       formData.append('subcontractorRut', transportista.rut)
+      const dateMatch = /^(\d{4})-(\d{2})-\d{2}$/.exec(documentDate)
+      const uploadYear = dateMatch?.[1] || String(today.getFullYear())
+      const uploadMonth = dateMatch?.[2] || String(today.getMonth() + 1).padStart(2, '0')
+
       formData.append('documentDate', documentDate)
-      formData.append('documentPeriodMonth', selectedMonth)
-      formData.append('documentPeriodYear', selectedYear)
+      formData.append('documentPeriodMonth', uploadMonth)
+      formData.append('documentPeriodYear', uploadYear)
 
       const response = await fetch(`/api/subcontractors/${transportista.id}/documents`, {
         method: 'POST',
@@ -340,7 +325,7 @@ export default function SubcontractorDashboardPage() {
               <div className="flex gap-2 items-end">
                 <div className="flex-1">
                   <label className="text-xs font-semibold text-slate-400 mb-1 block">Mes</label>
-                  <select value={selectedMonth} onChange={(e) => handleSelectedMonthChange(e.target.value)} className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white">
+                  <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white">
                     <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
                     <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
                     <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
@@ -349,7 +334,7 @@ export default function SubcontractorDashboardPage() {
                 </div>
                 <div className="flex-1">
                   <label className="text-xs font-semibold text-slate-400 mb-1 block">Año</label>
-                  <select value={selectedYear} onChange={(e) => handleSelectedYearChange(e.target.value)} className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white">
+                  <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white">
                     <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
                   </select>
                 </div>
