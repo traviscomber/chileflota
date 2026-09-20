@@ -76,7 +76,7 @@ function HeroWorkflowVisual() {
   ]
 
   return (
-    <div className="relative flex h-full min-h-[620px] flex-col justify-center overflow-hidden bg-[var(--cf-sidebar)] p-5 sm:p-7 lg:min-h-[680px] lg:p-8 xl:p-10">
+    <div className="relative flex h-full min-h-[560px] flex-col justify-center overflow-hidden bg-[var(--cf-sidebar)] p-5 sm:p-7 lg:p-8 xl:min-h-[680px] xl:p-10">
       <div className="pointer-events-none absolute inset-0 opacity-30" aria-hidden="true">
         <div className="absolute inset-0 bg-grid" />
         <div className="absolute inset-y-0 left-[33%] w-px bg-[var(--cf-border)]" />
@@ -372,15 +372,15 @@ export default async function LandingPage() {
       </header>
 
       <section id="solucion" className="relative border-b border-[var(--cf-border)] pt-16">
-        <div className="mx-auto grid max-w-7xl lg:grid-cols-[0.88fr_1.12fr]">
-          <div className="flex min-h-[680px] items-center px-4 py-14 sm:px-6 lg:px-8 lg:py-16 lg:pr-12">
+        <div className="mx-auto grid max-w-7xl xl:grid-cols-[0.88fr_1.12fr]">
+          <div className="flex items-center px-4 py-14 sm:px-6 lg:px-8 lg:py-16 xl:min-h-[680px] xl:pr-12">
             <div className="max-w-[560px]">
               <div className="flex items-center gap-4">
                 <SectionLabel>Control documental de flota</SectionLabel>
                 <AccentRule />
               </div>
 
-              <h1 className="mt-6 max-w-[620px] text-[clamp(3rem,5.2vw,4.25rem)] font-semibold leading-[0.98] tracking-[-0.045em]">
+              <h1 className="mt-6 max-w-[620px] text-[clamp(3rem,4.8vw,4rem)] font-semibold leading-[0.98] tracking-[-0.045em]">
                 El subcontratista carga. La ejecutiva valida.{" "}
                 <span className="text-[var(--cf-accent)]">La operación sigue.</span>
               </h1>
@@ -411,7 +411,7 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="border-t border-[var(--cf-border)] lg:border-l lg:border-t-0">
+          <div className="border-t border-[var(--cf-border)] xl:border-l xl:border-t-0">
             <HeroWorkflowVisual />
           </div>
         </div>
