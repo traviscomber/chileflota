@@ -127,66 +127,123 @@ function HeroWorkflowVisual() {
 }
 
 function AIProcessingVisual() {
+  const extractedFields = [
+    ["Tipo documental", "Detectado"],
+    ["Periodo", "Extraído"],
+    ["RUT empresa", "Coincide"],
+    ["Advertencias", "Para revisión"],
+  ]
+
   return (
     <div className="relative overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
-      <div className="absolute inset-0 bg-grid opacity-25" aria-hidden="true" />
+      <div className="absolute inset-0 bg-grid opacity-20" aria-hidden="true" />
+
       <div className="relative z-10 p-5 sm:p-6">
         <div className="flex items-center justify-between border-b border-[var(--cf-border)] pb-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Ejemplo de análisis</p>
-            <p className="mt-2 text-sm font-semibold">Documento laboral · periodo detectado</p>
-          </div>
-          <span className="flex items-center gap-2 text-xs text-[var(--cf-text-secondary)]">
-            <span className="h-2 w-2 rounded-full bg-[var(--cf-accent)]" />
-            IA asistiendo
-          </span>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">
+            Flujo de revisión asistida
+          </p>
+          <span className="font-mono text-[10px] text-[var(--cf-accent)]">03 ETAPAS</span>
         </div>
 
-        <div className="grid gap-4 py-5 md:grid-cols-[1fr_0.9fr]">
-          <div className="border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
-            <div className="flex items-center justify-between">
-              <FileText className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
-              <span className="font-mono text-[10px] text-[var(--cf-text-muted)]">PDF</span>
+        <div className="relative mt-6">
+          <span
+            className="absolute bottom-14 left-[19px] top-10 w-px bg-[var(--cf-border)] sm:left-[21px]"
+            aria-hidden="true"
+          />
+
+          <div className="relative grid gap-4 pl-14">
+            <span className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--cf-accent)] bg-[var(--cf-canvas)] font-mono text-xs text-[var(--cf-text)]">
+              01
+            </span>
+            <div>
+              <p className="text-sm font-semibold">Documento recibido</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">
+                El subcontratista carga la evidencia original.
+              </p>
             </div>
-            <div className="mt-8 space-y-3">
-              <div className="h-2 w-4/5 bg-[var(--cf-border)]" />
-              <div className="h-2 w-3/5 bg-[var(--cf-border)]" />
-              <div className="h-2 w-11/12 bg-[var(--cf-border)]" />
-              <div className="h-2 w-2/3 bg-[var(--cf-border)]" />
-            </div>
-            <div className="mt-8 grid gap-2 sm:grid-cols-2">
-              <div className="border border-[var(--cf-border)] p-3">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">RUT</p>
-                <p className="mt-2 text-xs font-semibold">Detectado</p>
-              </div>
-              <div className="border border-[var(--cf-border)] p-3">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Periodo</p>
-                <p className="mt-2 text-xs font-semibold">Coincide</p>
+            <div className="grid gap-4 border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4 sm:grid-cols-[54px_1fr] sm:items-center">
+              <span className="flex h-12 w-12 items-center justify-center border border-[var(--cf-border)] bg-[var(--cf-accent-soft)]">
+                <FileText className="h-6 w-6 text-[var(--cf-accent)]" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Documento laboral</p>
+                <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+                  Archivo original · periodo y metadatos por detectar
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            {[
-              ["Tipo documental", "Detectado", "IA"],
-              ["Periodo", "Extraído", "IA"],
-              ["RUT empresa", "Coincide", "REGLA"],
-              ["Advertencias", "Para revisión", "IA"],
-            ].map(([label, value, status]) => (
-              <div key={label} className="grid grid-cols-[1fr_auto] items-center gap-3 border border-[var(--cf-border)] bg-[var(--cf-surface)] p-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">{label}</p>
-                  <p className="mt-1 text-xs font-semibold">{value}</p>
+          <div className="relative mt-6 grid gap-4 pl-14">
+            <span className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--cf-accent)] bg-[var(--cf-canvas)] font-mono text-xs text-[var(--cf-text)]">
+              02
+            </span>
+            <div>
+              <p className="text-sm font-semibold">ChileFlota + IA</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">
+                Lee, clasifica y estructura información para revisión.
+              </p>
+            </div>
+            <div className="border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+              <div className="flex items-center justify-between border-b border-[var(--cf-border)] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <ScanLine className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
+                  <span className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">
+                    Datos estructurados
+                  </span>
                 </div>
-                <span className="font-mono text-[10px] text-[var(--cf-accent)]">{status}</span>
+                <span className="font-mono text-[10px] text-[var(--cf-accent)]">IA ASISTE</span>
               </div>
-            ))}
+              <div className="divide-y divide-[var(--cf-border)]">
+                {extractedFields.map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-[1fr_auto] items-center gap-4 px-4 py-3">
+                    <span className="text-xs text-[var(--cf-text-secondary)]">{label}</span>
+                    <span className="text-xs font-medium">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="relative mt-6 grid gap-4 pl-14">
+            <span className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--cf-accent)] bg-[var(--cf-canvas)] font-mono text-xs text-[var(--cf-text)]">
+              03
+            </span>
+            <div>
+              <p className="text-sm font-semibold">Validación ejecutiva</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">
+                La ejecutiva compara el análisis con la evidencia y toma la decisión.
+              </p>
+            </div>
+            <div className="grid gap-4 border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4 sm:grid-cols-[44px_1fr_auto] sm:items-center">
+              <span className="flex h-10 w-10 items-center justify-center border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+                <UserCheck className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Listo para revisión</p>
+                <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+                  Evidencia original + datos estructurados + advertencias
+                </p>
+              </div>
+              <span className="inline-flex min-h-10 items-center justify-center bg-[var(--cf-accent)] px-4 text-xs font-medium">
+                Revisar
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-[var(--cf-border)] pt-4">
-          <p className="text-xs text-[var(--cf-text-muted)]">La IA prepara evidencia y contexto.</p>
-          <p className="text-xs font-semibold">La ejecutiva decide.</p>
+        <div className="mt-6 grid gap-0 border-t border-[var(--cf-border)] pt-5 sm:grid-cols-2">
+          <div className="pr-0 sm:pr-5">
+            <p className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">IA</p>
+            <p className="mt-2 text-xs leading-5 text-[var(--cf-text-secondary)]">
+              Prepara evidencia y contexto.
+            </p>
+          </div>
+          <div className="mt-4 border-l-2 border-[var(--cf-accent)] pl-4 sm:mt-0 sm:pl-5">
+            <p className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">Control humano</p>
+            <p className="mt-2 text-xs font-semibold leading-5">La ejecutiva decide.</p>
+          </div>
         </div>
       </div>
     </div>
