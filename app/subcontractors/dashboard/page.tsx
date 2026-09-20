@@ -146,6 +146,23 @@ export default function SubcontractorDashboardPage() {
       return
     }
 
+    const dateMatch = /^(\d{4})-(\d{2})-\d{2}$/.exec(documentDate)
+    const uploadYear = dateMatch?.[1] || String(today.getFullYear())
+    const uploadMonth = dateMatch?.[2] || String(today.getMonth() + 1).padStart(2, '0')
+    const currentMonth = String(today.getMonth() + 1).padStart(2, '0')
+    const currentYear = String(today.getFullYear())
+
+    if (uploadMonth !== currentMonth || uploadYear !== currentYear) {
+      const periodLabel = new Date(Number(uploadYear), Number(uploadMonth) - 1, 1).toLocaleDateString('es-CL', {
+        month: 'long',
+        year: 'numeric',
+      })
+      const confirmed = window.confirm(
+        `Estás subiendo este documento para ${periodLabel}. Quedará asociado a ese período histórico. ¿Confirmas?`
+      )
+      if (!confirmed) return
+    }
+
     setUploading(true)
     setUploadError('')
     setUploadSuccess('')
@@ -155,10 +172,6 @@ export default function SubcontractorDashboardPage() {
       formData.append('file', selectedFile)
       formData.append('documentTypeId', selectedDocType)
       formData.append('subcontractorRut', transportista.rut)
-      const dateMatch = /^(\d{4})-(\d{2})-\d{2}$/.exec(documentDate)
-      const uploadYear = dateMatch?.[1] || String(today.getFullYear())
-      const uploadMonth = dateMatch?.[2] || String(today.getMonth() + 1).padStart(2, '0')
-
       formData.append('documentDate', documentDate)
       formData.append('documentPeriodMonth', uploadMonth)
       formData.append('documentPeriodYear', uploadYear)
@@ -414,7 +427,7 @@ export default function SubcontractorDashboardPage() {
         <Card id="upload-document" className="scroll-mt-6 border-slate-700 bg-slate-800/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5" /> Subir Documento</CardTitle>
-            <CardDescription>Úsalo cuando falte un documento o necesites reemplazar uno rechazado, vencido o próximo a vencer.</CardDescription>
+            <CardDescription>Úsalo cuando falte un documento o necesites reemplazar uno rechazado, vencido o próximo a vencer. También puedes cargar documentos de períodos anteriores; te pediremos confirmación antes de guardarlos.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpload} className="space-y-4">
