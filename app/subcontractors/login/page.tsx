@@ -45,34 +45,30 @@ export default function SubcontratistasLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-slate-700 bg-slate-800/50">
-        <CardHeader className="space-y-2 text-center">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/20 text-orange-400">
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-          </div>
-          <CardTitle className="text-2xl">Portal Subcontratistas</CardTitle>
-          <CardDescription>Accede para gestionar tus documentos</CardDescription>
-        </CardHeader>
+    <main className="flex min-h-screen items-center justify-center bg-[var(--cf-canvas)] px-4 py-10">
+      <section className="w-full max-w-[420px]">
+        <div className="mb-8">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">ChileFlota</p>
+          <h1 className="mt-3 text-[26px] font-semibold tracking-[-0.03em] text-[var(--cf-text)]">Portal Subcontratistas</h1>
+          <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">Transportes Labbé</p>
+        </div>
+        <Card className="w-full rounded-[8px] border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Iniciar sesión</CardTitle>
+            <CardDescription className="text-[var(--cf-text-secondary)]">Gestiona documentos y estados de cumplimiento.</CardDescription>
+          </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="flex gap-3 rounded-lg bg-red-500/10 border border-red-500/30 p-3">
-                <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-300">{error}</p>
+              <div className="flex gap-3 rounded-[6px] border border-[var(--cf-danger)]/40 bg-[var(--cf-danger-soft)] p-3">
+                <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--cf-danger)]" />
+                <p className="text-sm text-[var(--cf-danger)]">{error}</p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="rut" className="text-sm font-medium text-slate-200">
+              <Label htmlFor="rut" className="text-sm font-medium text-[var(--cf-text-secondary)]">
                 RUT de la Empresa
               </Label>
               <Input
@@ -81,9 +77,9 @@ export default function SubcontratistasLoginPage() {
                 value={rut}
                 onChange={(e) => setRut(e.target.value)}
                 disabled={loading}
-                className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400"
+                className="border-[var(--cf-border)] bg-[var(--cf-surface-raised)] text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)] focus-visible:border-[var(--cf-focus-ring)] focus-visible:ring-[var(--cf-focus-ring)]"
               />
-              <p className="text-xs text-slate-400">Ingresa el RUT sin puntos, solo con guion.</p>
+              <p className="text-xs text-[var(--cf-text-muted)]">Ingresa el RUT sin puntos, solo con guion.</p>
             </div>
 
             <div className="space-y-2">
@@ -98,24 +94,24 @@ export default function SubcontratistasLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 pr-10"
+                  className="border-[var(--cf-border)] bg-[var(--cf-surface-raised)] pr-10 text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)] focus-visible:border-[var(--cf-focus-ring)] focus-visible:ring-[var(--cf-focus-ring)]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--cf-text-muted)] transition-colors hover:text-[var(--cf-text-secondary)]"
                   title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              <p className="text-xs text-slate-400">La contrasena se genera segun la regla entregada por la plataforma.</p>
+              <p className="text-xs text-[var(--cf-text-muted)]">La contrasena se genera segun la regla entregada por la plataforma.</p>
             </div>
 
             <Button
               type="submit"
               disabled={loading || !rut || !password}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+              className="w-full bg-[var(--cf-accent)] text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]"
             >
               {loading ? (
                 <>
@@ -128,7 +124,9 @@ export default function SubcontratistasLoginPage() {
             </Button>
           </form>
         </CardContent>
-      </Card>
-    </div>
+        </Card>
+        <p className="mt-5 text-center text-xs text-[var(--cf-text-muted)]">Tecnología provista por N3uralia</p>
+      </section>
+    </main>
   )
 }
