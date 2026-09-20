@@ -312,22 +312,22 @@ export default function ConductorDocumentosPage() {
       const daysUntilExpiry = Math.ceil((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       
       if (daysUntilExpiry < 0) {
-        return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Vencido</Badge>
+        return <Badge className="bg-red-900/30 text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Vencido</Badge>
       } else if (daysUntilExpiry < 7) {
-        return <Badge className="bg-orange-900/30 text-orange-300 border border-orange-900/50">Vence en {daysUntilExpiry} días</Badge>
+        return <Badge className="bg-orange-900/30 text-[var(--cf-expiring)] border border-[var(--cf-expiring)]/40">Vence en {daysUntilExpiry} días</Badge>
       }
     }
 
     switch (status) {
       case 'approved':
       case 'validated':
-        return <Badge className="bg-green-900/30 text-green-300 border border-green-900/50">Aprobado</Badge>
+        return <Badge className="bg-green-900/30 text-[var(--cf-success)] border border-[var(--cf-success)]/40">Aprobado</Badge>
       case 'rejected':
-        return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Rechazado</Badge>
+        return <Badge className="bg-red-900/30 text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Rechazado</Badge>
       case 'expired':
-        return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Vencido</Badge>
+        return <Badge className="bg-red-900/30 text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Vencido</Badge>
       default:
-        return <Badge className="bg-slate-700/50 text-slate-300 border border-slate-600">En revisión</Badge>
+        return <Badge className="bg-[var(--cf-surface-raised)] text-[var(--cf-text-secondary)] border border-[var(--cf-border)]">En revisión</Badge>
     }
   }
 
@@ -335,12 +335,12 @@ export default function ConductorDocumentosPage() {
     switch (status) {
       case 'approved':
       case 'validated':
-        return <CheckCircle2 className="h-5 w-5 text-green-500" />
+        return <CheckCircle2 className="h-5 w-5 text-[var(--cf-success)]" />
       case 'rejected':
       case 'expired':
-        return <AlertCircle className="h-5 w-5 text-red-500" />
+        return <AlertCircle className="h-5 w-5 text-[var(--cf-danger)]" />
       default:
-        return <Clock className="h-5 w-5 text-amber-400" />
+        return <Clock className="h-5 w-5 text-[var(--cf-warning)]" />
     }
   }
 
@@ -443,48 +443,48 @@ export default function ConductorDocumentosPage() {
 
   return (
       <div className="space-y-8">
-        <div className="rounded-lg border border-slate-700 bg-slate-800/40 px-4 py-3">
+        <div className="rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] px-4 py-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <span className="font-medium text-green-300">{documentSummary.approved} al día</span>
-            <span className="text-slate-300">{documentSummary.inReview} en revisión</span>
+            <span className="font-medium text-[var(--cf-success)]">{documentSummary.approved} al día</span>
+            <span className="text-[var(--cf-text-secondary)]">{documentSummary.inReview} en revisión</span>
             {documentSummary.expiringSoon > 0 && (
-              <span className="font-medium text-orange-300">{documentSummary.expiringSoon} por vencer</span>
+              <span className="font-medium text-[var(--cf-expiring)]">{documentSummary.expiringSoon} por vencer</span>
             )}
             {documentSummary.actionRequired > 0 && (
-              <span className="font-medium text-red-300">{documentSummary.actionRequired} requiere acción</span>
+              <span className="font-medium text-[var(--cf-danger)]">{documentSummary.actionRequired} requiere acción</span>
             )}
-            <span className="ml-auto text-xs text-slate-500">{compliancePercentage}% aprobado</span>
+            <span className="ml-auto text-xs text-[var(--cf-text-muted)]">{compliancePercentage}% aprobado</span>
           </div>
         </div>
 
       {/* Alerts */}
       {error && (
-        <Alert className="bg-red-950/30 border-red-900/50">
-          <AlertCircle className="h-4 w-4 text-red-400" />
-          <AlertDescription className="text-red-300">{error}</AlertDescription>
+        <Alert className="bg-[var(--cf-danger-soft)] border-[var(--cf-danger)]/40">
+          <AlertCircle className="h-4 w-4 text-[var(--cf-danger)]" />
+          <AlertDescription className="text-[var(--cf-danger)]">{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert className="bg-green-950/30 border-green-900/50">
-          <CheckCircle2 className="h-4 w-4 text-green-400" />
-          <AlertDescription className="text-green-300">{success}</AlertDescription>
+        <Alert className="bg-[var(--cf-success-soft)] border-[var(--cf-success)]/40">
+          <CheckCircle2 className="h-4 w-4 text-[var(--cf-success)]" />
+          <AlertDescription className="text-[var(--cf-success)]">{success}</AlertDescription>
         </Alert>
       )}
 
       {/* Test Data Notice */}
       {documents.some(d => d.rejection_reason === 'test') && (
-        <Alert className="bg-blue-950/30 border-blue-900/50">
-          <HelpCircle className="h-4 w-4 text-blue-400" />
-          <AlertDescription className="text-blue-300">
+        <Alert className="bg-[var(--cf-info-soft)] border-blue-900/50">
+          <HelpCircle className="h-4 w-4 text-[var(--cf-info)]" />
+          <AlertDescription className="text-[var(--cf-info)]">
             <strong>Nota:</strong> Algunos documentos en tu historial tienen motivo de rechazo "test". Estos son documentos de prueba del sistema y pueden ser ignorados o eliminados. No afectan tu cumplimiento real.
           </AlertDescription>
         </Alert>
       )}
 
       {(documentSummary.actionRequired > 0 || documentSummary.expiringSoon > 0) && (
-        <Alert className="border-orange-900/50 bg-orange-950/30">
-          <AlertCircle className="h-4 w-4 text-orange-300" />
+        <Alert className="border-[var(--cf-expiring)]/40 bg-[var(--cf-expiring-soft)]">
+          <AlertCircle className="h-4 w-4 text-[var(--cf-expiring)]" />
           <AlertDescription className="text-orange-100">
             {documentSummary.actionRequired > 0 ? `${documentSummary.actionRequired} documento(s) requieren acción` : ''}
             {documentSummary.actionRequired > 0 && documentSummary.expiringSoon > 0 ? ' · ' : ''}
@@ -494,10 +494,10 @@ export default function ConductorDocumentosPage() {
       )}
 
       {/* Documents Required */}
-      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
+      <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-lg">
         <CardHeader>
-          <CardTitle className="text-white">Documentos requeridos</CardTitle>
-          <CardDescription className="text-slate-400">Lo que está pendiente aparece primero.</CardDescription>
+          <CardTitle className="text-[var(--cf-text)]">Documentos requeridos</CardTitle>
+          <CardDescription className="text-[var(--cf-text-muted)]">Lo que está pendiente aparece primero.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -511,33 +511,33 @@ export default function ConductorDocumentosPage() {
                 return (
                   <div
                     key={reqDoc.type}
-                    className="flex flex-col gap-3 rounded-lg border border-slate-700 bg-slate-800/20 p-4 transition-all hover:bg-slate-800/50 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4 transition-all hover:bg-[var(--cf-surface)] sm:flex-row sm:items-center sm:justify-between"
                   >
                   <div className="flex items-center gap-4 flex-1">
                     <div className="flex-shrink-0">
                       {uploadedDoc ? (
                         getStatusIcon(uploadedDoc.validation_status)
                       ) : (
-                        <div className="h-5 w-5 rounded-full border-2 border-slate-600" />
+                        <div className="h-5 w-5 rounded-full border-2 border-[var(--cf-border)]" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-white">{reqDoc.label}</p>
-                      <p className="text-sm text-slate-300">{reqDoc.description}</p>
+                      <p className="font-medium text-[var(--cf-text)]">{reqDoc.label}</p>
+                      <p className="text-sm text-[var(--cf-text-secondary)]">{reqDoc.description}</p>
                       {getDisplayFileName(uploadedDoc?.file_name) && (
-                        <p className="mt-1 text-xs text-slate-500">{getDisplayFileName(uploadedDoc?.file_name)}</p>
+                        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{getDisplayFileName(uploadedDoc?.file_name)}</p>
                       )}
                       {uploadedDoc?.validation_status === 'pending' && (
-                        <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>
+                        <p className="mt-1 text-xs text-[var(--cf-warning)]">Recibido correctamente. No necesitas volver a subirlo.</p>
                       )}
                       {isExpiringSoon(uploadedDoc) && (
-                        <p className="mt-1 text-xs font-medium text-orange-300">Próximo a vencer. Conviene renovarlo antes de que afecte tu habilitación.</p>
+                        <p className="mt-1 text-xs font-medium text-[var(--cf-expiring)]">Próximo a vencer. Conviene renovarlo antes de que afecte tu habilitación.</p>
                       )}
                         {uploadedDoc?.rejection_reason && (
-                          <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2">
-                            <p className="text-xs font-medium uppercase tracking-wide text-red-300">Requiere acción</p>
-                            <p className="mt-1 text-sm text-red-200">Motivo: {uploadedDoc.rejection_reason}</p>
-                            <p className="mt-1 text-xs text-red-300">Sube una nueva versión de este documento.</p>
+                          <div className="mt-2 rounded-md border border-[var(--cf-danger)]/40 bg-[var(--cf-danger-soft)] px-3 py-2">
+                            <p className="text-xs font-medium uppercase tracking-wide text-[var(--cf-danger)]">Requiere acción</p>
+                            <p className="mt-1 text-sm text-[var(--cf-danger)]">Motivo: {uploadedDoc.rejection_reason}</p>
+                            <p className="mt-1 text-xs text-[var(--cf-danger)]">Sube una nueva versión de este documento.</p>
                           </div>
                         )}
                       </div>
@@ -547,7 +547,7 @@ export default function ConductorDocumentosPage() {
                         <Button
                           type="button"
                           size="sm"
-                          className="bg-orange-500 text-slate-950 hover:bg-orange-400"
+                          className="bg-[var(--cf-accent)] text-slate-950 hover:bg-[var(--cf-accent-hover)]"
                           onClick={() => focusUploadFor(reqDoc.type)}
                         >
                           {uploadedDoc ? 'Reemplazar' : 'Subir'}
@@ -559,7 +559,7 @@ export default function ConductorDocumentosPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-slate-400 hover:text-white"
+                            className="text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]"
                             asChild
                           >
                             <a href={buildDocumentAccessUrl(uploadedDoc.file_url, 'download')} target="_blank" rel="noopener noreferrer">
@@ -569,7 +569,7 @@ export default function ConductorDocumentosPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-slate-400 hover:text-red-400"
+                            className="text-[var(--cf-text-muted)] hover:text-[var(--cf-danger)]"
                             onClick={() => handleDeleteDocument(uploadedDoc.id, uploadedDoc.file_name || 'Documento')}
                             disabled={isUploading}
                           >
@@ -577,7 +577,7 @@ export default function ConductorDocumentosPage() {
                           </Button>
                         </>
                       ) : (
-                        <Badge variant="outline" className="border-slate-600 text-slate-400">No subido</Badge>
+                        <Badge variant="outline" className="border-[var(--cf-border)] text-[var(--cf-text-muted)]">No subido</Badge>
                       )}
                     </div>
                   </div>
@@ -589,23 +589,23 @@ export default function ConductorDocumentosPage() {
       </Card>
 
       {/* Upload Section */}
-      <Card id="upload-document" className="scroll-mt-6 border-slate-700 bg-slate-800/30 shadow-lg">
+      <Card id="upload-document" className="scroll-mt-6 border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-lg">
         <CardHeader>
-          <CardTitle className="text-white">Subir documento</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-[var(--cf-text)]">Subir documento</CardTitle>
+          <CardDescription className="text-[var(--cf-text-muted)]">
             Sube un documento nuevo o reemplaza uno observado. Puedes usar una fecha anterior; el sistema confirmará el período antes de guardar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">
                 Tipo de documento
               </label>
             <select
               value={selectedDocumentType}
               onChange={(e) => setSelectedDocumentType(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-white transition-colors focus:border-orange-500 focus:outline-none"
+              className="w-full rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] px-4 py-2 text-[var(--cf-text)] transition-colors focus:border-orange-500 focus:outline-none"
             >
               {DOCUMENT_TYPES.map((doc) => (
                 <option key={doc.id} value={doc.code}>
@@ -615,7 +615,7 @@ export default function ConductorDocumentosPage() {
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
+              <label className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">
                 Fecha del documento
               </label>
               <input
@@ -623,9 +623,9 @@ export default function ConductorDocumentosPage() {
                 value={documentDate}
                 onChange={(e) => setDocumentDate(e.target.value)}
                 max={new Date().toISOString().split('T')[0]}
-                className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-white transition-colors focus:border-orange-500 focus:outline-none"
+                className="w-full rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] px-4 py-2 text-[var(--cf-text)] transition-colors focus:border-orange-500 focus:outline-none"
               />
-              <p className="mt-1 text-xs text-slate-500">Esta fecha define el período histórico del documento.</p>
+              <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Esta fecha define el período histórico del documento.</p>
             </div>
           </div>
 
@@ -635,15 +635,15 @@ export default function ConductorDocumentosPage() {
             onDrop={handleDrop}
             className={`flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all ${
               isDragging
-                ? 'border-orange-500/50 bg-orange-500/10'
-                : 'border-slate-600 bg-slate-800/30 hover:bg-slate-800/50'
+                ? 'border-orange-500/50 bg-[var(--cf-accent)]/10'
+                : 'border-[var(--cf-border)] bg-[var(--cf-surface)] hover:bg-[var(--cf-surface)]'
             }`}
           >
-            <Upload className={`mb-2 h-8 w-8 ${isDragging ? 'text-orange-400' : 'text-slate-500'}`} />
-            <p className="text-sm font-semibold text-slate-300">
+            <Upload className={`mb-2 h-8 w-8 ${isDragging ? 'text-[var(--cf-expiring)]' : 'text-[var(--cf-text-muted)]'}`} />
+            <p className="text-sm font-semibold text-[var(--cf-text-secondary)]">
               {isDragging ? 'Suelta el archivo aquí' : 'Arrastra un archivo o haz clic'}
             </p>
-            <p className="mt-1 text-xs text-slate-500">PDF, JPG o PNG · máximo 10 MB</p>
+            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">PDF, JPG o PNG · máximo 10 MB</p>
             <input
               type="file"
               className="hidden"
@@ -656,16 +656,16 @@ export default function ConductorDocumentosPage() {
           {isUploading && (
             <div className="flex items-center justify-center gap-2">
               <Loader className="h-4 w-4 animate-spin text-orange-500" />
-              <span className="text-sm text-slate-300">Subiendo documento...</span>
+              <span className="text-sm text-[var(--cf-text-secondary)]">Subiendo documento...</span>
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
+      <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-lg">
         <CardHeader>
-          <CardTitle className="text-white">Historial documental</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-[var(--cf-text)]">Historial documental</CardTitle>
+          <CardDescription className="text-[var(--cf-text-muted)]">
             Consulta documentos por período
           </CardDescription>
         </CardHeader>
@@ -677,28 +677,28 @@ export default function ConductorDocumentosPage() {
           />
 
           {historicalDocuments.length === 0 ? (
-            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6 text-center text-slate-400">
+            <div className="rounded-lg border border-[var(--cf-border)] bg-[var(--cf-canvas)]/60 p-6 text-center text-[var(--cf-text-muted)]">
               No hay documentos en el período seleccionado.
             </div>
           ) : (
             <div className="grid gap-3">
               {historicalDocuments.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between gap-4 rounded-lg border border-slate-700 bg-slate-900/50 p-4">
+                <div key={doc.id} className="flex items-center justify-between gap-4 rounded-lg border border-[var(--cf-border)] bg-[var(--cf-canvas)]/50 p-4">
                   <div className="min-w-0">
-                    <p className="font-medium text-white truncate">
+                    <p className="font-medium text-[var(--cf-text)] truncate">
                       {getDocumentLabel(doc)}
                     </p>
                     {getDisplayFileName(doc.file_name) && (
-                      <p className="mt-0.5 truncate text-xs text-slate-500">{getDisplayFileName(doc.file_name)}</p>
+                      <p className="mt-0.5 truncate text-xs text-[var(--cf-text-muted)]">{getDisplayFileName(doc.file_name)}</p>
                     )}
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-[var(--cf-text-muted)]">
                       Período: {getDocumentPeriodLabel(doc)} · Subido: {new Date(doc.created_at).toLocaleDateString('es-CL')}
                       {doc.expiration_date ? ` • Vence: ${new Date(doc.expiration_date).toLocaleDateString('es-CL')}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {getStatusBadge(doc.validation_status, doc.expiration_date)}
-                    <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" asChild>
+                    <Button variant="ghost" size="sm" className="text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]" asChild>
                       <a href={buildDocumentAccessUrl(doc.file_url, 'download')} target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4" />
                       </a>
