@@ -53,10 +53,45 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const documentType = formData.get('documentType') as string
+    const documentDate = String(formData.get('documentDate') || '').trim()
+    const documentPeriodMonth = Number(formData.get('documentPeriodMonth'))
+    const documentPeriodYear = Number(formData.get('documentPeriodYear'))
 
     if (!file || !documentType) {
       return NextResponse.json(
         { message: 'Missing file or documentType' },
+        { status: 400 }
+      )
+    }
+
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(documentDate) ||
+      !Number.isInteger(documentPeriodMonth) ||
+      documentPeriodMonth < 1 ||
+      documentPeriodMonth > 12 ||
+      !Number.isInteger(documentPeriodYear) ||
+      documentPeriodYear < 2020 ||
+      documentPeriodYear > 2100
+    ) {
+      return NextResponse.json(
+        { message: 'Invalid document period' },
+        { status: 400 }
+      )
+    }
+
+    const selectedDate = new Date(`${documentDate}T12:00:00Z`)
+    if (Number.isNaN(selectedDate.getTime()) || selectedDate.getTime() > Date.now()) {
+      return NextResponse.json(
+        { message: 'Document date cannot be in the future' },
+        { status: 400 }
+      )
+    }
+
+    const derivedMonth = selectedDate.getUTCMonth() + 1
+    const derivedYear = selectedDate.getUTCFullYear()
+    if (derivedMonth !== documentPeriodMonth || derivedYear !== documentPeriodYear) {
+      return NextResponse.json(
+        { message: 'Document period does not match document date' },
         { status: 400 }
       )
     }
@@ -236,6 +271,10 @@ export async function POST(request: NextRequest) {
       original_filename: file.name,
       file_url: publicUrl,
       validation_status: validationStatus,
+      document_period_month: documentPeriodMonth,
+      document_period_year: documentPeriodYear,
+      document_period_start: `${documentPeriodYear}-${String(documentPeriodMonth).padStart(2, '0')}-01`,
+      document_period_source: 'manual_document_date',
     }
 
     console.log('[v0] Insert payload - conductor.id:', conductor.id, 'conductor.rut:', conductor.rut, 'conductor.nombre_completo:', conductor.nombre_completo)
