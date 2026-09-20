@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Montserrat, JetBrains_Mono } from "next/font/google"
+import { Inter } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
 import { RoleProvider } from "./providers"
@@ -12,15 +12,10 @@ const siteUrl = "https://chileflota.app"
 const canonicalDescription =
   "ChileFlota es una plataforma de compliance operacional para flotas, transportistas y contratistas que conecta documentación, vigencias, evidencia y alertas para priorizar decisiones operativas."
 
-const montserrat = Montserrat({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-montserrat",
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
+  weight: ["400", "500", "600"],
+  variable: "--font-inter",
 })
 
 export const metadata: Metadata = {
@@ -83,7 +78,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark bg-background">
-      <body className={`font-sans ${montserrat.variable} ${jetbrainsMono.variable} antialiased text-foreground`}>
+      <body data-cf-product className={`font-sans ${inter.variable} antialiased text-foreground`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
