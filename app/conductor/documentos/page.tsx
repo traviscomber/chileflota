@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock, HelpCircle, Trash2 } from 'lucide-react'
-import Link from 'next/link'
+import { Upload, CheckCircle2, AlertCircle, Loader, Download, Clock, Trash2 } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, filterByMonthYear, type DateFilterValue } from '@/lib/date-filters'
@@ -444,25 +443,17 @@ export default function ConductorDocumentosPage() {
 
   return (
       <div className="space-y-8">
-        {/* Header with Compliance */}
-        <div className="flex flex-col gap-4 border-b border-slate-700 pb-6 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white sm:text-5xl">Mis Documentos</h1>
-            <p className="text-slate-300 mt-2">Sube y gestiona tus documentos requeridos para trabajar con Labbe</p>
-          </div>
-          <div className="min-w-max rounded-lg border border-slate-700 bg-slate-800 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Estado documental</p>
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <span className="font-medium text-green-300">{documentSummary.approved} al día</span>
-              <span className="text-slate-300">{documentSummary.inReview} en revisión</span>
-              <span className={documentSummary.expiringSoon > 0 ? 'font-medium text-orange-300' : 'text-slate-400'}>
-                {documentSummary.expiringSoon} por vencer
-              </span>
-              <span className={documentSummary.actionRequired > 0 ? 'font-medium text-red-300' : 'text-slate-400'}>
-                {documentSummary.actionRequired} requiere acción
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-slate-500">{compliancePercentage}% de requisitos aprobados</p>
+        <div className="rounded-lg border border-slate-700 bg-slate-800/40 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <span className="font-medium text-green-300">{documentSummary.approved} al día</span>
+            <span className="text-slate-300">{documentSummary.inReview} en revisión</span>
+            {documentSummary.expiringSoon > 0 && (
+              <span className="font-medium text-orange-300">{documentSummary.expiringSoon} por vencer</span>
+            )}
+            {documentSummary.actionRequired > 0 && (
+              <span className="font-medium text-red-300">{documentSummary.actionRequired} requiere acción</span>
+            )}
+            <span className="ml-auto text-xs text-slate-500">{compliancePercentage}% aprobado</span>
           </div>
         </div>
 
@@ -495,9 +486,9 @@ export default function ConductorDocumentosPage() {
         <Alert className="border-orange-900/50 bg-orange-950/30">
           <AlertCircle className="h-4 w-4 text-orange-300" />
           <AlertDescription className="text-orange-100">
-            Necesita atención: {documentSummary.actionRequired} documento(s) requieren acción
-            {documentSummary.expiringSoon > 0 ? ` y ${documentSummary.expiringSoon} están próximos a vencer` : ''}.
-            Los mostramos primero.
+            {documentSummary.actionRequired > 0 ? `${documentSummary.actionRequired} documento(s) requieren acción` : ''}
+            {documentSummary.actionRequired > 0 && documentSummary.expiringSoon > 0 ? ' · ' : ''}
+            {documentSummary.expiringSoon > 0 ? `${documentSummary.expiringSoon} por vencer` : ''}
           </AlertDescription>
         </Alert>
       )}
@@ -505,10 +496,8 @@ export default function ConductorDocumentosPage() {
       {/* Documents Required */}
       <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-white">Documentos Requeridos</CardTitle>
-          <CardDescription className="text-slate-400">
-            Estado de cada documento requerido para tu aprobación
-          </CardDescription>
+          <CardTitle className="text-white">Documentos requeridos</CardTitle>
+          <CardDescription className="text-slate-400">Lo que está pendiente aparece primero.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -537,9 +526,6 @@ export default function ConductorDocumentosPage() {
                       <p className="text-sm text-slate-300">{reqDoc.description}</p>
                       {getDisplayFileName(uploadedDoc?.file_name) && (
                         <p className="mt-1 text-xs text-slate-500">{getDisplayFileName(uploadedDoc?.file_name)}</p>
-                      )}
-                      {uploadedDoc && ['approved', 'validated'].includes(uploadedDoc.validation_status) && (
-                        <p className="mt-1 text-xs text-green-300">Documento validado. No requiere acción.</p>
                       )}
                       {uploadedDoc?.validation_status === 'pending' && (
                         <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>
@@ -607,7 +593,7 @@ export default function ConductorDocumentosPage() {
         <CardHeader>
           <CardTitle className="text-white">Subir documento</CardTitle>
           <CardDescription className="text-slate-400">
-            Úsalo cuando falte un documento o necesites reemplazar uno rechazado o vencido. También puedes cargar documentos de períodos anteriores; te pediremos confirmación antes de guardarlos.
+            Sube un documento nuevo o reemplaza uno observado. Puedes usar una fecha anterior; el sistema confirmará el período antes de guardar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -676,17 +662,11 @@ export default function ConductorDocumentosPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-700 bg-slate-800/30">
-        <CardContent className="pt-6 text-sm text-slate-300">
-          Si un documento está en revisión, no necesitas volver a subirlo. Si está rechazado o vencido, revisa el motivo y reemplázalo.
-        </CardContent>
-      </Card>
-
       <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
         <CardHeader>
           <CardTitle className="text-white">Historial documental</CardTitle>
           <CardDescription className="text-slate-400">
-            Archivo histórico filtrado por mes y año de subida
+            Consulta documentos por período
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
