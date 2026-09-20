@@ -253,6 +253,9 @@ export default function SubcontractorDashboardPage() {
     }
   }
 
+  const getDocumentTypeLabel = (documentTypeId: string) =>
+    documentTypes.find((type) => type.id === documentTypeId)?.nombre || 'Documento'
+
   const getAdvancedBadge = (doc: Document) => {
     if (!doc.verification?.advanced) return null
 
@@ -334,6 +337,46 @@ export default function SubcontractorDashboardPage() {
           </CardContent>
         </Card>
 
+        
+
+        <Card className="border-slate-700 bg-slate-800/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Estado de documentos</CardTitle>
+            <CardDescription className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-sm">
+              <span className="font-medium text-green-300">{statusSummary.approved} aprobados</span>
+              <span className="text-amber-300">{statusSummary.inReview} en revisión</span>
+              <span className={statusSummary.actionRequired > 0 ? 'font-medium text-red-300' : 'text-slate-400'}>{statusSummary.actionRequired} requieren acción</span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredDocuments.length === 0 ? (
+              <p className="text-slate-400 text-center py-8">{documents.length === 0 ? 'Aún no has subido documentos' : 'No hay documentos en este período'}</p>
+            ) : (
+              <div className="space-y-2">
+                {filteredDocuments.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600">
+                    <div className="flex-1">
+                      <p className="text-white font-medium">{getDocumentTypeLabel(doc.document_type_id)}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{doc.file_name}</p>
+                      {getAdvancedBadge(doc)}
+                      <p className="text-xs text-slate-400 mt-1">Periodo: {getDocumentPeriodLabel(doc)}</p>
+                      <p className="text-xs text-slate-500">Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}</p>
+                      {doc.status === 'approved' && <p className="mt-1 text-xs text-green-300">Documento validado. No requiere acción.</p>}
+                      {['uploaded', 'pending'].includes(doc.status) && <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>}
+                      {doc.status === 'rejected' && doc.rejection_reason && <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2"><p className="text-xs font-medium text-red-300">Requiere acción</p><p className="mt-1 text-xs text-red-200">Motivo: {doc.rejection_reason}</p><p className="mt-1 text-xs text-red-300">Corrige el documento y vuelve a subirlo.</p></div>}
+                      {doc.status === 'expired' && <p className="mt-1 text-xs font-medium text-red-300">Documento vencido. Debes renovarlo.</p>}
+                    </div>
+                    <div className="text-right">
+                      {getStatusBadge(doc.status)}
+                      {doc.expires_at && <p className="text-xs text-slate-400 mt-1">Vence: {new Date(doc.expires_at).toLocaleDateString('es-CL')}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="border-slate-700 bg-slate-800/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5" /> Subir Documento</CardTitle>
@@ -371,43 +414,6 @@ export default function SubcontractorDashboardPage() {
                 {uploading ? 'Subiendo...' : 'Subir Documento'}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-700 bg-slate-800/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" /> Estado de documentos</CardTitle>
-            <CardDescription className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-sm">
-              <span className="font-medium text-green-300">{statusSummary.approved} aprobados</span>
-              <span className="text-amber-300">{statusSummary.inReview} en revisión</span>
-              <span className={statusSummary.actionRequired > 0 ? 'font-medium text-red-300' : 'text-slate-400'}>{statusSummary.actionRequired} requieren acción</span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredDocuments.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">{documents.length === 0 ? 'Aún no has subido documentos' : 'No hay documentos en este período'}</p>
-            ) : (
-              <div className="space-y-2">
-                {filteredDocuments.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600">
-                    <div className="flex-1">
-                      <p className="text-white font-medium">{doc.file_name}</p>
-                      {getAdvancedBadge(doc)}
-                      <p className="text-xs text-slate-400 mt-1">Periodo: {getDocumentPeriodLabel(doc)}</p>
-                      <p className="text-xs text-slate-500">Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}</p>
-                      {doc.status === 'approved' && <p className="mt-1 text-xs text-green-300">Documento validado. No requiere acción.</p>}
-                      {['uploaded', 'pending'].includes(doc.status) && <p className="mt-1 text-xs text-amber-200">Recibido correctamente. No necesitas volver a subirlo.</p>}
-                      {doc.status === 'rejected' && doc.rejection_reason && <div className="mt-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2"><p className="text-xs font-medium text-red-300">Requiere acción</p><p className="mt-1 text-xs text-red-200">Motivo: {doc.rejection_reason}</p><p className="mt-1 text-xs text-red-300">Corrige el documento y vuelve a subirlo.</p></div>}
-                      {doc.status === 'expired' && <p className="mt-1 text-xs font-medium text-red-300">Documento vencido. Debes renovarlo.</p>}
-                    </div>
-                    <div className="text-right">
-                      {getStatusBadge(doc.status)}
-                      {doc.expires_at && <p className="text-xs text-slate-400 mt-1">Vence: {new Date(doc.expires_at).toLocaleDateString('es-CL')}</p>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
