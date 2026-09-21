@@ -13,26 +13,33 @@ describe('simple subcontractor review submissions', () => {
     expect(source).toContain('Every upload is an independent review submission')
   })
 
-  test('pending tray follows the submission status instead of legacy current flags', () => {
+  test('pending tray follows only submission status and no legacy canonicalizers', () => {
     const source = read('app/api/dashboard/pending-documents/route.ts')
     expect(source).toContain('const subDocs = rawSubDocs')
     expect(source).toContain('every subcontractor upload whose own status is pending requires review')
+    expect(source).not.toContain('selectCanonicalPendingF301')
+    expect(source).not.toContain('selectCanonicalPendingMutualRates')
+    expect(source).not.toContain('approvedCoveragePromise')
+    expect(source).toContain("reviewSemantics: 'submission_status'")
   })
 
-  test('approved subcontractor tray does not require is_current', () => {
+  test('approved subcontractor tray follows approved status without hidden classification filters', () => {
     const source = read('app/api/company/documents/aprobados/route.ts')
     expect(source).toContain("if (table === 'uploaded_documents') query = query.eq('is_current', true)")
-    expect(source).toContain("subcontractor_documents")
+    expect(source).toContain("const canonicalSubDocs = subDocs")
+    expect(source).not.toContain('isClearlyMisclassifiedSubcontractorDocument')
     expect(source).toContain("reviewed_submissions")
   })
 
-  test('rejected subcontractor tray does not require is_current', () => {
+  test('rejected subcontractor tray follows rejected status without hidden classification filters', () => {
     const source = read('app/api/company/documents/rechazados/route.ts')
     const rejectedHelper = source.slice(
       source.indexOf('async function fetchAllRejectedSubcontractorDocuments'),
       source.indexOf('async function fetchAllApprovedConductorDocuments'),
     )
     expect(rejectedHelper).not.toContain(".eq('is_current', true)")
+    expect(source).toContain("const canonicalSubDocs = subDocs")
+    expect(source).not.toContain('isClearlyMisclassifiedSubcontractorDocument')
     expect(source).toContain("reviewed_submissions")
   })
 
