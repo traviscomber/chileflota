@@ -99,4 +99,22 @@ describe('simple subcontractor review submissions', () => {
     expect(detail).not.toContain('summary.approvedDocuments / summary.totalRequirements')
   })
 
+
+  test('conductor counters exclude rows that are not valid document records', () => {
+    const stats = read('app/api/company/documents/stats/route.ts')
+    expect(stats).toContain("query.not('document_type_id', 'is', null).not('original_filename', 'is', null)")
+    expect(stats).toContain(".not('document_type_id', 'is', null)")
+    expect(stats).toContain(".not('original_filename', 'is', null)")
+  })
+
+  test('document manager exposes a single reconciled accounting identity', () => {
+    const hub = read('components/document-manager-hub.tsx')
+    expect(hub).toContain('const totalRevisados = totalAprobados + totalRechazados')
+    expect(hub).toContain('revisados y ${totalPendientes.toLocaleString')
+    expect(hub).toContain('label="Revisados"')
+    expect(hub).toContain('Aprobados + rechazados')
+    expect(hub).not.toContain('Procesados cartera')
+    expect(hub).not.toContain('totalChileFlota')
+  })
+
 })
