@@ -60,11 +60,17 @@ async function fetchDashboardSnapshot() {
     fetch(`/api/company/documents/rechazados?_t=${timestamp}`, requestOptions),
   ])
 
+  if (!statsRes.ok || !pendingRes.ok || !approvedRes.ok || !rejectedRes.ok) {
+    throw new Error(
+      `Dashboard sources failed: stats=${statsRes.status} pending=${pendingRes.status} approved=${approvedRes.status} rejected=${rejectedRes.status}`,
+    )
+  }
+
   const alertsData = alertsRes.ok ? await alertsRes.json() : []
-  const statsData = statsRes.ok ? await statsRes.json() : {}
-  const pendingData = pendingRes.ok ? await pendingRes.json() : {}
-  const approvedData = approvedRes.ok ? await approvedRes.json() : {}
-  const rejectedData = rejectedRes.ok ? await rejectedRes.json() : {}
+  const statsData = await statsRes.json()
+  const pendingData = await pendingRes.json()
+  const approvedData = await approvedRes.json()
+  const rejectedData = await rejectedRes.json()
 
   const pendingConductor = pendingData.conductorDocs?.length || 0
   const pendingSubcontractor = pendingData.subDocs?.length || 0
@@ -229,7 +235,7 @@ export function DashboardOverview() {
     }
 
     load()
-    const interval = setInterval(load, 30000)
+    const interval = setInterval(load, 60000)
 
     return () => {
       cancelled = true
