@@ -178,7 +178,7 @@ export async function generateDocumentStatusChangeAlert(
 
     // Fetch conductor's transportista to find ejecutiva
     let transportistaName = 'Transportista Desconocido'
-    let transportistaId: string | null = null
+    let transportistaId: string | null = options?.transportistaId || null
     let ejecutivaAsignada: string | null = null
     
     const normalizedConductorId = isUuid(conductorId) ? conductorId : null
@@ -190,17 +190,20 @@ export async function generateDocumentStatusChangeAlert(
           .maybeSingle()
       : { data: null }
 
-    if (conductor?.transportista_id) {
+    if (conductor?.transportista_id && !transportistaId) {
       transportistaId = conductor.transportista_id
+    }
+
+    if (transportistaId) {
       const { data: transportista } = await supabase
         .from('transportistas')
-        .select('razon_social, nombre_fantasia, ejecutivo_nombre, ejecutiva')
-        .eq('id', conductor.transportista_id)
+        .select('razon_social,nombre_fantasia,ejecutivo_nombre,ejecutiva,is_active')
+        .eq('id', transportistaId)
         .maybeSingle()
-      
-      if (transportista) {
-        transportistaName = transportista.nombre_fantasia || transportista.razon_social || 'Transportista Desconocido'
-        ejecutivaAsignada = transportista.ejecutivo_nombre || transportista.ejecutiva || null
+
+      if (transportista?.is_active !== false) {
+        transportistaName = transportista?.nombre_fantasia || transportista?.razon_social || 'Transportista Desconocido'
+        ejecutivaAsignada = transportista?.ejecutivo_nombre || transportista?.ejecutiva || null
       }
     }
 
