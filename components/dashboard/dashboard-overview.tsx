@@ -77,6 +77,72 @@ async function fetchDashboardSnapshot() {
   const rejectedConductor = rejectedData.conductorDocs?.length || 0
   const rejectedSubcontractor = rejectedData.subDocs?.length || 0
 
+  const pendingCandidates = [
+    ...(pendingData.conductorDocs || []).map((doc: any) => ({
+      id: `pending_conductor_${doc.id}`,
+      type: 'document_pending',
+      title: doc.empresa_nombre || 'Empresa sin nombre',
+      message: doc.docType?.nombre || 'Documento',
+      priority: 'high',
+      is_read: false,
+      is_dismissed: false,
+      created_at: doc.uploaded_at || doc.created_at,
+      source: 'pending_review',
+      document_type: doc.docType?.nombre || undefined,
+      metadata: {
+        document_id: doc.id,
+        company_id: doc.company_id,
+        company_name: doc.empresa_nombre,
+        document_source: 'conductor',
+        review_state: 'pending',
+      },
+    })),
+    ...(pendingData.subDocs || []).map((doc: any) => ({
+      id: `pending_subcontractor_${doc.id}`,
+      type: 'document_pending',
+      title: doc.empresa_nombre || 'Empresa sin nombre',
+      message: doc.docType?.nombre || 'Documento',
+      priority: 'high',
+      is_read: false,
+      is_dismissed: false,
+      created_at: doc.uploaded_at || doc.created_at,
+      source: 'pending_review',
+      document_type: doc.docType?.nombre || undefined,
+      metadata: {
+        document_id: doc.id,
+        company_id: doc.company_id,
+        company_name: doc.empresa_nombre,
+        document_source: 'subcontractor',
+        review_state: 'pending',
+      },
+    })),
+  ].filter((alert) => Boolean(alert.created_at))
+
+  const pendingByCompany = new Map<string, typeof pendingCandidates[number] & { count: number }>()
+  for (const alert of pendingCandidates) {
+    const key = String(alert.metadata.company_id || alert.metadata.company_name || alert.title)
+    const existing = pendingByCompany.get(key)
+    if (!existing) {
+      pendingByCompany.set(key, { ...alert, count: 1 })
+      continue
+    }
+    existing.count += 1
+    if (new Date(alert.created_at).getTime() > new Date(existing.created_at).getTime()) {
+      pendingByCompany.set(key, { ...alert, count: existing.count })
+    }
+  }
+
+  const pendingAlerts = Array.from(pendingByCompany.values())
+    .map((alert) => ({
+      ...alert,
+      message: alert.count === 1
+        ? `1 documento por revisar · ${alert.document_type || 'Documento'}`
+        : `${alert.count} documentos por revisar`,
+      metadata: { ...alert.metadata, grouped_count: alert.count },
+    }))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 6)
+
   const reviewResults = [
     ...(approvedData.allDocs || approvedData.documents || []).map((doc: any) => ({
       id: `review_approved_${doc.id}`,
@@ -92,7 +158,6 @@ async function fetchDashboardSnapshot() {
       metadata: {
         document_id: doc.id,
         company_id: doc.company_id,
-        conductor_nombre: [doc.conductores?.nombres, doc.conductores?.apellido_paterno].filter(Boolean).join(' '),
         document_source: doc.document_source,
         review_result: 'approved',
       },
@@ -111,7 +176,6 @@ async function fetchDashboardSnapshot() {
       metadata: {
         document_id: doc.id,
         company_id: doc.company_id,
-        conductor_nombre: [doc.conductores?.nombres, doc.conductores?.apellido_paterno].filter(Boolean).join(' '),
         document_source: doc.document_source,
         review_result: 'rejected',
         rejection_reason: doc.rejection_reason || undefined,
@@ -120,10 +184,12 @@ async function fetchDashboardSnapshot() {
   ]
     .filter((alert) => Boolean(alert.created_at))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 10)
+    .slice(0, 4)
+
+  const reviewFeed = [...pendingAlerts, ...reviewResults]
 
   return {
-    alerts: reviewResults,
+    alerts: reviewFeed,
     lifetime: statsData.stats?.lifetime || {},
     canonical: {
       conductor: {
@@ -417,9 +483,9 @@ export function DashboardOverview() {
           <CardHeader className="pb-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Revisiones recientes</CardTitle>
+                <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Revisión documental</CardTitle>
                 <CardDescription className="mt-1 text-[var(--cf-text-muted)]">
-                  Últimos documentos revisados
+                  Pendientes primero · cambios recientes después
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -427,7 +493,7 @@ export function DashboardOverview() {
                   variant="outline"
                   size="sm"
                   className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
-                  onClick={() => router.push('/dashboard/company/alertas')}
+                  onClick={() => router.push('/dashboard/company/documentos/pendientes')}
                 >
                   Ver todas
                 </Button>
@@ -446,7 +512,13 @@ export function DashboardOverview() {
                   created_at={alert.created_at}
                   source={alert.source}
                   metadata={alert.metadata}
-                  onNavigate={() => router.push('/dashboard/company/alertas')}
+                  onNavigate={() => router.push(
+                    alert.type === 'document_pending'
+                      ? '/dashboard/company/documentos/pendientes'
+                      : alert.type === 'document_rejected'
+                        ? '/dashboard/company/documentos/rechazados'
+                        : '/dashboard/company/documentos/aprobados'
+                  )}
                 />
               ))}
             </div>
