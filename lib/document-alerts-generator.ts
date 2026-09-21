@@ -44,7 +44,7 @@ async function lookupEjecutiva(params: {
     const driverId = params.driverId || params.conductorId
     if (driverId) {
       // Try drivers table first
-      let transportistaId: string | null = options?.transportistaId || null
+      let transportistaId: string | null = null
       const { data: driver } = await supabase
         .from('drivers')
         .select('transportista_id')
