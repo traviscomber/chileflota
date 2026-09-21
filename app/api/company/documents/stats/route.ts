@@ -163,14 +163,17 @@ export async function GET(request: NextRequest) {
         : query.eq(statusColumn, 'pending'),
     )
 
-    const countCanonicalProcessed = async () => {
+    const countCanonicalProcessed = async (applyScope = true) => {
       let query: any = supabase
         .from('subcontractor_documents')
         .select('id', { count: 'exact', head: true })
         .or('status.eq.approved,status.eq.rejected,ai_analyzed_at.not.is.null,reviewed_at.not.is.null,f30_validated_at.not.is.null')
 
-      query = scopeQuery(query, 'subcontractor')
-      if (!query) return 0
+      if (applyScope) {
+        query = scopeQuery(query, 'subcontractor')
+        if (!query) return 0
+      }
+
       const { count, error } = await query
       if (error) throw error
       return count || 0
@@ -180,6 +183,10 @@ export async function GET(request: NextRequest) {
       .from('uploaded_documents')
       .select('original_filename,validation_status,processed_at,ai_processed_at,ai_analyzed_at,vision_processed_at')
     legacyDocumentsQuery = scopeQuery(legacyDocumentsQuery, 'conductor')
+
+    const globalLegacyDocumentsQuery = supabase
+      .from('uploaded_documents')
+      .select('original_filename,validation_status,processed_at,ai_processed_at,ai_analyzed_at,vision_processed_at')
 
     let transportistasQuery: any = supabase
       .from('transportistas')
@@ -203,7 +210,9 @@ export async function GET(request: NextRequest) {
       subcontractorPending,
       actionablePendingGlobal,
       canonicalProcessed,
+      globalCanonicalProcessed,
       legacyDocumentsResult,
+      globalLegacyDocumentsResult,
       transportistasResult,
     ] = await Promise.all([
       runCount('uploaded_documents', 'conductor'),
@@ -218,11 +227,14 @@ export async function GET(request: NextRequest) {
       countPending('subcontractor_documents', 'subcontractor', 'status'),
       executiveScope ? Promise.resolve(null) : countActionableSubcontractorPending(supabase),
       countCanonicalProcessed(),
+      countCanonicalProcessed(false),
       legacyDocumentsQuery || Promise.resolve({ data: [], error: null }),
+      globalLegacyDocumentsQuery,
       transportistasQuery || Promise.resolve({ data: [], error: null }),
     ])
 
     if (legacyDocumentsResult.error) throw legacyDocumentsResult.error
+    if (globalLegacyDocumentsResult.error) throw globalLegacyDocumentsResult.error
     if (transportistasResult.error) throw transportistasResult.error
 
     const legacyDocuments = (legacyDocumentsResult.data || []) as LegacyDocumentRow[]
@@ -255,9 +267,36 @@ export async function GET(request: NextRequest) {
     })
     const uniqueLegacyProcessed = uniqueLegacyDocuments.filter(legacyWasProcessed).length
 
+    const globalLegacyDocuments = (globalLegacyDocumentsResult.data || []) as LegacyDocumentRow[]
+    const globalLegacyFilenames = Array.from(
+      new Set(globalLegacyDocuments.map((doc) => doc.original_filename).filter((name): name is string => Boolean(name))),
+    )
+
+    let globalCanonicalLegacyFilenameKeys = new Set<string>()
+    if (globalLegacyFilenames.length > 0) {
+      const { data: globalCanonicalMatches, error: globalCanonicalMatchesError } = await supabase
+        .from('subcontractor_documents')
+        .select('file_name')
+        .in('file_name', globalLegacyFilenames)
+
+      if (globalCanonicalMatchesError) throw globalCanonicalMatchesError
+      globalCanonicalLegacyFilenameKeys = new Set(
+        (globalCanonicalMatches || [])
+          .map((row: any) => normalizeFilename(row.file_name))
+          .filter(Boolean),
+      )
+    }
+
+    const globalUniqueLegacyDocuments = globalLegacyDocuments.filter((doc) => {
+      const key = normalizeFilename(doc.original_filename)
+      return !key || !globalCanonicalLegacyFilenameKeys.has(key)
+    })
+    const globalUniqueLegacyProcessed = globalUniqueLegacyDocuments.filter(legacyWasProcessed).length
+
     const lifetimeRegistered = subcontractorManaged + uniqueLegacyDocuments.length
     const lifetimeProcessed = canonicalProcessed + uniqueLegacyProcessed
     const lifetimeAwaitingProcessing = Math.max(lifetimeRegistered - lifetimeProcessed, 0)
+    const globalLifetimeProcessed = globalCanonicalProcessed + globalUniqueLegacyProcessed
 
     const certificationFlags = (transportistasResult.data || []) as TransportistaCertificationFlags[]
     const totalCertifications = certificationFlags.reduce((total, transportista) => {
@@ -288,6 +327,7 @@ export async function GET(request: NextRequest) {
         awaitingProcessing: lifetimeAwaitingProcessing,
         legacyUnique: uniqueLegacyDocuments.length,
         legacyMigrationDuplicatesExcluded: legacyDocuments.length - uniqueLegacyDocuments.length,
+        globalProcessed: globalLifetimeProcessed,
       },
       certificaciones: {
         total: totalCertifications,
