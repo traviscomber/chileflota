@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 import { canonicalizeApprovedConductorDocuments, canonicalizeApprovedSubcontractorDocuments } from '@/lib/document-review-canonical'
+import { selectCanonicalF301ByStatus } from '@/lib/f301-canonical'
 import { getExecutiveScope, type ExecutiveScopeMode } from '@/lib/executive-coverage-scope'
 
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
@@ -90,6 +91,28 @@ async function fetchAllApproved(supabase: ReturnType<typeof createAdminClient>, 
   return documents
 }
 
+
+async function fetchAllF301SubcontractorDocuments(supabase: ReturnType<typeof createAdminClient>) {
+  const documents: any[] = []
+  const pageSize = 1000
+
+  for (let page = 0; ; page += 1) {
+    const { data, error } = await supabase
+      .from('subcontractor_documents')
+      .select(`id,file_name,document_type_id,status,file_url,approved_at,reviewed_by_ejecutiva,reviewed_at,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current,ai_document_type,ai_extracted_text,document_type:subcontractor_document_types!inner(code)`)
+      .eq('document_type.code', 'F30-1_CLIENTE')
+      .order('uploaded_at', { ascending: false })
+      .range(page * pageSize, page * pageSize + pageSize - 1)
+
+    if (error) throw error
+    if (!data?.length) break
+    documents.push(...data)
+    if (data.length < pageSize) break
+  }
+
+  return documents
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await verifyAuth(request as any)
@@ -154,9 +177,10 @@ export async function GET(request: Request) {
       }
     }
 
-    const [conductorDocs, subDocs, conductorTypesResult, subcontractorTypesResult, executivesResult] = await Promise.all([
+    const [conductorDocs, subDocs, f301History, conductorTypesResult, subcontractorTypesResult, executivesResult] = await Promise.all([
       fetchAllApproved(supabase, 'uploaded_documents'),
       fetchAllApproved(supabase, 'subcontractor_documents'),
+      fetchAllF301SubcontractorDocuments(supabase),
       supabase.from('document_types').select('id, code, name'),
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
       supabase.from('executive_staff').select('id, full_name, email, is_active'),
@@ -170,8 +194,20 @@ export async function GET(request: Request) {
     const deprecatedCodes = new Set(['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL'])
     const subcontractorTypeMap = new Map((subcontractorTypesResult.data || []).filter((type: any) => !deprecatedCodes.has(type.code)).map((type: any) => [type.id, { code: type.code, nombre: type.nombre }]))
 
+    const f301TypeIds = new Set(
+      (subcontractorTypesResult.data || [])
+        .filter((type: any) => type.code === 'F30-1_CLIENTE')
+        .map((type: any) => type.id),
+    )
+
     const canonicalConductorDocs = canonicalizeApprovedConductorDocuments(conductorDocs)
-    const canonicalSubDocs = canonicalizeApprovedSubcontractorDocuments(subDocs, subcontractorTypeMap)
+    const canonicalOrdinarySubDocs = canonicalizeApprovedSubcontractorDocuments(
+      subDocs.filter((doc: any) => !f301TypeIds.has(doc.document_type_id)),
+      subcontractorTypeMap,
+    )
+    const { documents: canonicalApprovedF301, diagnostics: f301Diagnostics } =
+      selectCanonicalF301ByStatus(f301History, 'approved')
+    const canonicalSubDocs = [...canonicalOrdinarySubDocs, ...canonicalApprovedF301]
 
     const conductorIds = [...new Set(canonicalConductorDocs.map((doc: any) => doc.conductor_id).filter(Boolean))]
     const subcontractorIds = [...new Set(canonicalSubDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
@@ -305,6 +341,7 @@ export async function GET(request: Request) {
           }
         : { mode: 'all', canCover: false, availableExecutives: [] },
       historyEndpoint: '/api/company/documents/history',
+      diagnostics: { f301: f301Diagnostics },
       timestamp: new Date().toISOString(),
     })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
