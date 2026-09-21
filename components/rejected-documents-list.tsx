@@ -61,7 +61,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       if (event.type === 'document_status_changed') {
         const refetch = async () => {
           try {
-            const response = await fetch('/api/company/documents/rechazados')
+            const response = await fetch('/api/company/documents/rechazados?compact=1')
             if (response.ok) {
               const data = await response.json()
               setConductorDocs(data.conductorDocs || [])

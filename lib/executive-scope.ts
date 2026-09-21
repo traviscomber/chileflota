@@ -54,16 +54,22 @@ export async function resolveExecutiveScope(
   const companyIds = (companies || []).map((row) => row.id).filter(Boolean)
   const companyRuts = (companies || []).map((row) => row.rut).filter(Boolean) as string[]
 
-  let conductorIds: string[] = []
-  if (companyRuts.length > 0) {
-    const { data: conductores, error: conductoresError } = await supabase
-      .from('conductores')
-      .select('id')
-      .in('rut_proveedor', companyRuts)
+  const [conductorsByCompanyId, conductorsByProviderRut] = await Promise.all([
+    companyIds.length > 0
+      ? supabase.from('conductores').select('id').in('transportista_id', companyIds)
+      : Promise.resolve({ data: [], error: null }),
+    companyRuts.length > 0
+      ? supabase.from('conductores').select('id').in('rut_proveedor', companyRuts)
+      : Promise.resolve({ data: [], error: null }),
+  ])
 
-    if (conductoresError) throw conductoresError
-    conductorIds = (conductores || []).map((row) => row.id).filter(Boolean)
-  }
+  if (conductorsByCompanyId.error) throw conductorsByCompanyId.error
+  if (conductorsByProviderRut.error) throw conductorsByProviderRut.error
+
+  const conductorIds = [...new Set([
+    ...(conductorsByCompanyId.data || []).map((row) => row.id).filter(Boolean),
+    ...(conductorsByProviderRut.data || []).map((row) => row.id).filter(Boolean),
+  ])]
 
   return { executiveStaffId, companyIds, companyRuts, conductorIds }
 }

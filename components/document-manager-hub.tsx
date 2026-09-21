@@ -55,6 +55,7 @@ interface DocumentManagerHubProps {
 export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubProps) {
   const [stats, setStats] = useState(initialStats)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isPortfolioReady, setIsPortfolioReady] = useState(false)
   const { onSync } = useDocumentSync()
 
   const refreshStats = async () => {
@@ -102,6 +103,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
         total: pendingSubcontractor + approvedSubcontractor + rejectedSubcontractor,
       },
     })
+    setIsPortfolioReady(true)
   }
 
   const handleManualRefresh = async () => {
@@ -144,9 +146,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   const totalAprobados = stats.conductores.aprobados + stats.subcontratistas.aprobados
   const totalRechazados = stats.conductores.rechazados + stats.subcontratistas.rechazados
   const totalActuales = stats.conductores.total + stats.subcontratistas.total
-  const totalGestionados = stats.lifetime?.processed ?? (stats.conductores.processed + stats.subcontratistas.processed)
-  const totalChileFlota = stats.lifetime?.globalProcessed ?? totalGestionados
-  const totalVersionesAnteriores = Math.max(0, totalGestionados - totalActuales)
+  const totalRevisados = totalAprobados + totalRechazados
 
   const modules = [
     {
@@ -156,12 +156,12 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       icon: Users,
       href: '/dashboard/company/documentos/aprobados',
       current: stats.conductores.total,
-      processed: stats.conductores.processed,
+      processed: stats.conductores.aprobados + stats.conductores.rechazados,
       statItems: [
-        { label: 'Pendientes actuales', value: stats.conductores.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
-        { label: 'Aprobados actuales', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
-        { label: 'Rechazados actuales', value: stats.conductores.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
-        { label: 'Versiones anteriores', value: stats.conductores.processed - stats.conductores.total, icon: FileStack, color: 'text-[#A9ADB3]' },
+        { label: 'Pendientes', value: stats.conductores.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
+        { label: 'Aprobados', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
+        { label: 'Rechazados', value: stats.conductores.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
+        { label: 'Revisados', value: stats.conductores.aprobados + stats.conductores.rechazados, icon: FileStack, color: 'text-[#A9ADB3]' },
       ],
     },
     {
@@ -171,12 +171,12 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       icon: Truck,
       href: '/dashboard/company/documentos/aprobados',
       current: stats.subcontratistas.total,
-      processed: stats.subcontratistas.processed,
+      processed: stats.subcontratistas.aprobados + stats.subcontratistas.rechazados,
       statItems: [
-        { label: 'Pendientes actuales', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
-        { label: 'Aprobados actuales', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
-        { label: 'Rechazados actuales', value: stats.subcontratistas.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
-        { label: 'Versiones anteriores', value: stats.subcontratistas.processed - stats.subcontratistas.total, icon: FileStack, color: 'text-[#A9ADB3]' },
+        { label: 'Pendientes', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
+        { label: 'Aprobados', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
+        { label: 'Rechazados', value: stats.subcontratistas.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
+        { label: 'Revisados', value: stats.subcontratistas.aprobados + stats.subcontratistas.rechazados, icon: FileStack, color: 'text-[#A9ADB3]' },
       ],
     },
     {
@@ -207,14 +207,16 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
             Gestor de Documentos
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">
-            {totalGestionados.toLocaleString('es-CL')} documentos procesados en tu cartera. {totalActuales.toLocaleString('es-CL')} corresponden al estado operacional actual.
+            {isPortfolioReady
+              ? `${totalActuales.toLocaleString('es-CL')} registros en tu cartera: ${totalRevisados.toLocaleString('es-CL')} revisados y ${totalPendientes.toLocaleString('es-CL')} pendientes.`
+              : 'Sincronizando tu cartera de documentos...'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="h-8 rounded-[5px] border-[#303238] px-2.5 text-xs font-normal text-[#C6C8CC]">
             <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
-            {totalChileFlota.toLocaleString('es-CL')} procesados ChileFlota
+            {isPortfolioReady ? `${totalActuales.toLocaleString('es-CL')} registros cartera` : 'Sincronizando...'}
           </Badge>
           <Button
             variant="outline"
@@ -230,21 +232,23 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       </header>
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-5">
-        <MetricCard label="Procesados cartera" value={totalGestionados} detail={`ChileFlota total: ${totalChileFlota.toLocaleString('es-CL')}`} icon={FileStack} tone="neutral" />
-        <MetricCard label="Actuales" value={totalActuales} detail="Una versión activa por requisito" icon={FileText} tone="neutral" />
+        <MetricCard label="Revisados" value={isPortfolioReady ? totalRevisados : null} detail={isPortfolioReady ? 'Aprobados + rechazados' : 'Sincronizando cartera'} icon={FileStack} tone="neutral" />
+        <MetricCard label="Registros" value={isPortfolioReady ? totalActuales : null} detail="Estados de revisión de la cartera documental" icon={FileText} tone="neutral" />
         <Link href="/dashboard/company/documentos/pendientes" className="contents">
-          <MetricCard label="Pendientes" value={totalPendientes} icon={Clock} tone="warning" />
+          <MetricCard label="Pendientes" value={isPortfolioReady ? totalPendientes : null} icon={Clock} tone="warning" />
         </Link>
         <Link href="/dashboard/company/documentos/aprobados" className="contents">
-          <MetricCard label="Aprobados" value={totalAprobados} icon={CheckCircle} tone="success" />
+          <MetricCard label="Aprobados" value={isPortfolioReady ? totalAprobados : null} icon={CheckCircle} tone="success" />
         </Link>
         <Link href="/dashboard/company/documentos/rechazados" className="contents">
-          <MetricCard label="Rechazados" value={totalRechazados} icon={XCircle} tone="danger" />
+          <MetricCard label="Rechazados" value={isPortfolioReady ? totalRechazados : null} icon={XCircle} tone="danger" />
         </Link>
       </div>
 
       <p className="text-xs leading-5 text-[#777C84]">
-        Los estados Pendientes, Aprobados y Rechazados usan exactamente la misma fuente canónica que sus bandejas. Las {totalVersionesAnteriores.toLocaleString('es-CL')} versiones históricas de la cartera se conservan como trazabilidad.
+        {isPortfolioReady
+          ? 'En subcontratistas, cada carga conserva su propio estado de revisión. La vigencia operacional se calcula por separado en Compliance.'
+          : 'Los estados se muestran sólo después de resolver la cartera autenticada.'}
       </p>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -260,11 +264,11 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
                   <div className="flex flex-col items-end gap-1 text-right">
                     {module.processed !== null ? (
                       <>
-                        <span className="text-xs tabular-nums text-[#C6C8CC]">{module.processed.toLocaleString('es-CL')} gestionados</span>
-                        <span className="text-[11px] tabular-nums text-[#777C84]">{module.current.toLocaleString('es-CL')} actuales</span>
+                        <span className="text-xs tabular-nums text-[#C6C8CC]">{isPortfolioReady ? `${module.processed.toLocaleString('es-CL')} revisados` : '—'}</span>
+                        <span className="text-[11px] tabular-nums text-[#777C84]">{isPortfolioReady ? `${module.current.toLocaleString('es-CL')} registros` : 'Sincronizando'}</span>
                       </>
                     ) : (
-                      <span className="text-xs tabular-nums text-[#C6C8CC]">{module.current.toLocaleString('es-CL')} asignadas</span>
+                      <span className="text-xs tabular-nums text-[#C6C8CC]">{isPortfolioReady ? `${module.current.toLocaleString('es-CL')} asignadas` : '—'}</span>
                     )}
                   </div>
                 </div>
@@ -281,7 +285,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
                           <StatIcon className={`h-3.5 w-3.5 flex-shrink-0 ${stat.color}`} />
                           <span className="truncate text-[#A9ADB3]">{stat.label}</span>
                         </div>
-                        <span className={`font-medium tabular-nums ${stat.color}`}>{stat.value.toLocaleString('es-CL')}</span>
+                        <span className={`font-medium tabular-nums ${stat.color}`}>{isPortfolioReady ? stat.value.toLocaleString('es-CL') : '—'}</span>
                       </div>
                     )
                   })}
@@ -314,7 +318,7 @@ const metricToneClasses: Record<MetricTone, { label: string; value: string; icon
   danger: { label: 'text-[#C98B96]', value: 'text-[#D8A0AA]', icon: 'text-[#994550]' },
 }
 
-function MetricCard({ label, value, detail, icon: Icon, tone }: { label: string; value: number; detail?: string; icon: typeof FileText; tone: MetricTone }) {
+function MetricCard({ label, value, detail, icon: Icon, tone }: { label: string; value: number | null; detail?: string; icon: typeof FileText; tone: MetricTone }) {
   const classes = metricToneClasses[tone]
   return (
     <div className="min-h-[118px] bg-[#181A1D] p-4 transition-colors hover:bg-[#202226]">
@@ -323,7 +327,7 @@ function MetricCard({ label, value, detail, icon: Icon, tone }: { label: string;
           <p className={`text-xs ${classes.label}`}>{label}</p>
           <Icon className={`h-4 w-4 ${classes.icon}`} />
         </div>
-        <p className={`mt-2 text-2xl font-medium tabular-nums ${classes.value}`}>{value.toLocaleString('es-CL')}</p>
+        <p className={`mt-2 text-2xl font-medium tabular-nums ${classes.value}`}>{value === null ? '—' : value.toLocaleString('es-CL')}</p>
         {detail && <p className="mt-auto pt-2 text-[11px] leading-4 text-[#777C84]">{detail}</p>}
       </div>
     </div>

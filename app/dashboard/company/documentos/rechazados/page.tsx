@@ -1,12 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { RejectedDocumentsList } from '@/components/rejected-documents-list'
+import { ExecutiveCoverageControl } from '@/components/executive-coverage-control'
 
 export default function RechazadosPage() {
+  const searchParams = useSearchParams()
+  const requestParams = new URLSearchParams(searchParams.toString())
+  requestParams.set('compact', '1')
+  const requestQuery = requestParams.toString()
+  const requestUrl = `/api/company/documents/rechazados?${requestQuery}`
   const [allData, setAllData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -14,7 +21,7 @@ export default function RechazadosPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/company/documents/rechazados', {
+        const response = await fetch(requestUrl, {
           cache: 'no-store',
         })
         const data = await response.json()
@@ -29,12 +36,12 @@ export default function RechazadosPage() {
     fetchData()
 
     return () => {}
-  }, [])
+  }, [requestUrl])
 
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      const response = await fetch('/api/company/documents/rechazados', {
+      const response = await fetch(requestUrl, {
         cache: 'no-store',
       })
       const data = await response.json()
@@ -87,6 +94,8 @@ export default function RechazadosPage() {
           Actualizar
         </Button>
       </div>
+
+      <ExecutiveCoverageControl reviewScope={allData?.reviewScope} />
 
       <div className="rounded-[6px] border border-red-500/20 bg-red-500/5 p-4 text-sm text-[var(--cf-text-secondary)]">
         Filtra por ejecutiva, empresa, tipo de documento y período desde el listado.

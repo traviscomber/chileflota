@@ -60,9 +60,13 @@ export function SubcontractorDetailTabs({
   const [summary, setSummary] = useState({
     totalDocumentsUploaded: 0,
     totalRequirements: 0,
+    requirementsCovered: 0,
+    requirementsMissing: 0,
+    approvedRequirements: 0,
     approvedDocuments: 0,
     pendingDocuments: 0,
     expiredDocuments: 0,
+    rejectedDocuments: 0,
   })
 
   const completion = (() => {
@@ -310,7 +314,7 @@ export function SubcontractorDetailTabs({
                 Resumen
               </TabsTrigger>
               <TabsTrigger value="documentos" className="rounded-xl px-4 py-2 data-[state=active]:bg-slate-800 data-[state=active]:text-white">
-                Documentos ({summary.totalDocumentsUploaded}/{summary.totalRequirements})
+                Documentos ({summary.totalDocumentsUploaded})
               </TabsTrigger>
               <TabsTrigger value="certificaciones" className="rounded-xl px-4 py-2 data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                 Certificaciones
@@ -391,7 +395,7 @@ export function SubcontractorDetailTabs({
                   <div className="border-t border-slate-700 pt-4 space-y-3">
                     <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                       <CheckSquare className="w-4 h-4 text-purple-400" />
-                      Estado de Cumplimiento
+                      Estado documental
                     </h3>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                       <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-3 text-center">
@@ -399,8 +403,8 @@ export function SubcontractorDetailTabs({
                         <p className="text-xs text-slate-400">Requeridos</p>
                       </div>
                       <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-3 text-center">
-                        <p className="text-lg font-bold text-blue-300">{summary.totalDocumentsUploaded}</p>
-                        <p className="text-xs text-blue-400">Subidos</p>
+                        <p className="text-lg font-bold text-blue-300">{summary.requirementsCovered}</p>
+                        <p className="text-xs text-blue-400">Requisitos con evidencia</p>
                       </div>
                       <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-center">
                         <p className="text-lg font-bold text-green-300">{summary.approvedDocuments}</p>
@@ -419,17 +423,17 @@ export function SubcontractorDetailTabs({
                     {/* Compliance Bar */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-400">Progreso General</span>
+                        <span className="text-xs text-slate-400">Cobertura de requisitos</span>
                         <span className="text-sm font-bold text-white">
                           {summary.totalRequirements > 0 
-                            ? Math.round((summary.approvedDocuments / summary.totalRequirements) * 100)
+                            ? Math.round((summary.requirementsCovered / summary.totalRequirements) * 100)
                             : 0}%
                         </span>
                       </div>
                       <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
                         <div 
                           className="bg-gradient-to-r from-green-500 to-green-400 h-full rounded-full transition-all"
-                          style={{ width: `${summary.totalRequirements > 0 ? (summary.approvedDocuments / summary.totalRequirements) * 100 : 0}%` }}
+                          style={{ width: `${summary.totalRequirements > 0 ? Math.min((summary.requirementsCovered / summary.totalRequirements) * 100, 100) : 0}%` }}
                         />
                       </div>
                     </div>
@@ -453,8 +457,8 @@ export function SubcontractorDetailTabs({
                             <p className="text-xs text-slate-400">Documentos Subidos</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-slate-400">{requirements.length - summary.totalDocumentsUploaded}</p>
-                            <p className="text-xs text-slate-400">Por Subir</p>
+                            <p className="text-2xl font-bold text-slate-400">{summary.requirementsMissing}</p>
+                            <p className="text-xs text-slate-400">Requisitos sin evidencia</p>
                           </div>
                         </div>
                       )}
@@ -519,8 +523,12 @@ export function SubcontractorDetailTabs({
                                         {isExpanded && (
                                           <div className="space-y-3 border-t border-slate-700 bg-slate-900/30 px-4 py-3">
                                             {monthGroup.docs.map((doc) => {
-                                              const req = requirements.find(r => r.id === doc.document_type_id)
-                                              if (!req) return null
+                                              const requirement = requirements.find(r => r.id === doc.document_type_id)
+                                              const docType = requirement || doc.document_type || {
+                                                id: doc.document_type_id,
+                                                code: 'DOCUMENTO',
+                                                nombre: 'Documento adicional',
+                                              }
                                               
                                               const docStatus = doc.status || 'not_uploaded'
                                               const statusColor = statusColors[docStatus] || 'bg-slate-800 text-slate-400'
@@ -541,8 +549,8 @@ export function SubcontractorDetailTabs({
                                                     </div>
                                                     
                                                     <div className="flex-1">
-                                                      <p className="font-mono text-xs font-bold">{req.code}</p>
-                                                      <p className="text-sm">{req.nombre || 'Documento'}</p>
+                                                      <p className="font-mono text-xs font-bold">{docType.code}</p>
+                                                      <p className="text-sm">{docType.nombre || 'Documento'}</p>
                                                       {doc.file_name && (
                                                         <p className="text-xs text-slate-300 mt-1">
                                                           📄 {doc.file_name}

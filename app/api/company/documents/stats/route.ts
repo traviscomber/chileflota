@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
     ) => {
       let query: any = supabase.from(table).select('id', { count: 'exact', head: true })
       if (currentOnly) query = query.eq('is_current', true)
+      if (kind === 'conductor') {
+        query = query.not('document_type_id', 'is', null).not('original_filename', 'is', null)
+      }
       if (configure) query = configure(query)
       query = scopeQuery(query, kind)
       if (!query) return 0
@@ -82,7 +85,12 @@ export async function GET(request: NextRequest) {
       kind: 'conductor' | 'subcontractor',
       statusColumn: string,
       status: string,
-    ) => runCount(table, kind, (query) => query.eq(statusColumn, status))
+    ) => runCount(
+      table,
+      kind,
+      (query) => query.eq(statusColumn, status),
+      kind === 'conductor',
+    )
 
     const countPending = (
       table: string,
@@ -94,6 +102,7 @@ export async function GET(request: NextRequest) {
       (query) => kind === 'conductor'
         ? query.or(`${statusColumn}.eq.pending,${statusColumn}.is.null`)
         : query.eq(statusColumn, 'pending'),
+      kind === 'conductor',
     )
 
     const countCanonicalProcessed = async (applyScope = true) => {
@@ -115,11 +124,15 @@ export async function GET(request: NextRequest) {
     let legacyDocumentsQuery: any = supabase
       .from('uploaded_documents')
       .select('original_filename,validation_status,processed_at,ai_processed_at,ai_analyzed_at,vision_processed_at')
+      .not('document_type_id', 'is', null)
+      .not('original_filename', 'is', null)
     legacyDocumentsQuery = scopeQuery(legacyDocumentsQuery, 'conductor')
 
     const globalLegacyDocumentsQuery = supabase
       .from('uploaded_documents')
       .select('original_filename,validation_status,processed_at,ai_processed_at,ai_analyzed_at,vision_processed_at')
+      .not('document_type_id', 'is', null)
+      .not('original_filename', 'is', null)
 
     let transportistasQuery: any = supabase
       .from('transportistas')
@@ -153,7 +166,7 @@ export async function GET(request: NextRequest) {
       countByStatus('uploaded_documents', 'conductor', 'validation_status', 'approved'),
       countByStatus('uploaded_documents', 'conductor', 'validation_status', 'rejected'),
       countPending('uploaded_documents', 'conductor', 'validation_status'),
-      runCount('subcontractor_documents', 'subcontractor'),
+      runCount('subcontractor_documents', 'subcontractor', undefined, false),
       runCount('subcontractor_documents', 'subcontractor', undefined, false),
       countByStatus('subcontractor_documents', 'subcontractor', 'status', 'approved'),
       countByStatus('subcontractor_documents', 'subcontractor', 'status', 'rejected'),
