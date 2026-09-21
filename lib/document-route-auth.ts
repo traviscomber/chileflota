@@ -6,6 +6,7 @@ import {
   verifyEmailSession,
   type EmailSession,
 } from '@/lib/email-session'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const DOCUMENT_READ_ROLES = new Set([
   'super_admin',
@@ -48,8 +49,20 @@ export async function authorizeInternalDocumentRequest(
   allowedRoles: Set<string>,
 ): Promise<EmailSession | null> {
   const session = await getSignedAppSession(request)
-  if (!session || !isAllowedDocumentRole(session.role, allowedRoles)) return null
-  return session
+  if (!session) return null
+
+  const admin = createAdminClient()
+  const { data: profile, error } = await admin
+    .from('profiles')
+    .select('role,is_active')
+    .ilike('email', session.email)
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !profile || profile.is_active === false) return null
+  if (!isAllowedDocumentRole(profile.role, allowedRoles)) return null
+
+  return { ...session, role: profile.role }
 }
 
 export function hasOwnTransportistaAccess(
