@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
+import { isSuperAdmin, verifyAuth, type UserRole } from '@/lib/auth-middleware'
+
+const READ_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
+const WRITE_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva'])
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!READ_ROLES.has(user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
     const { id } = params
     const supabase = createAdminClient()
 
@@ -43,6 +50,10 @@ export async function PATCH(
     const { user, error: authError } = await verifyAuth(request)
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!WRITE_ROLES.has(user.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { id } = params
