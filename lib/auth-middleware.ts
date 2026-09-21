@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
 import { getEmailSessionSecret, verifyEmailSession } from "@/lib/email-session"
+import { resolveExecutiveAssignment } from "@/lib/executive-login-resolution"
 
 export type UserRole =
   | 'super_admin'
@@ -47,12 +48,28 @@ async function resolvePersistedProfile(email: string) {
   const adminClient = createAdminClient()
   const { data: profile, error } = await adminClient
     .from('profiles')
-    .select('id,email,role,is_active')
+    .select('id,email,full_name,role,is_active')
     .ilike('email', email)
     .limit(1)
     .maybeSingle()
 
   return { profile, error }
+}
+
+async function resolveCurrentExecutiveOrganization(email: string, fullName: string): Promise<string | null> {
+  const adminClient = createAdminClient()
+  const { data: staff, error } = await adminClient
+    .from('executive_staff')
+    .select('email,full_name,transportista_id,is_active')
+    .eq('is_active', true)
+
+  if (error) {
+    console.error('[v0] verifyAuth: Executive assignment lookup failed:', error.message)
+    return null
+  }
+
+  const executive = resolveExecutiveAssignment(email, fullName, staff ?? [])
+  return executive?.transportista_id ? String(executive.transportista_id) : null
 }
 
 // Middleware para verificar autenticacion
@@ -80,11 +97,24 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
       }
 
       const effectiveRole = (profile?.role || signedSession.role) as UserRole
+      let effectiveOrganizationId = signedSession.organizationId || undefined
+
+      if (effectiveRole === 'ejecutiva') {
+        const currentOrganizationId = await resolveCurrentExecutiveOrganization(
+          signedSession.email,
+          profile?.full_name || signedSession.fullName || '',
+        )
+        if (!currentOrganizationId) {
+          return { user: null, error: 'La ejecutiva no tiene una empresa activa asignada' }
+        }
+        effectiveOrganizationId = currentOrganizationId
+      }
+
       const authUser: AuthUser = {
         id: profile?.id || signedSession.email,
         email: signedSession.email,
         role: effectiveRole,
-        organization_id: signedSession.organizationId || undefined,
+        organization_id: effectiveOrganizationId,
       }
 
       return { user: authUser }
