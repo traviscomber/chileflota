@@ -146,8 +146,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   const totalAprobados = stats.conductores.aprobados + stats.subcontratistas.aprobados
   const totalRechazados = stats.conductores.rechazados + stats.subcontratistas.rechazados
   const totalActuales = stats.conductores.total + stats.subcontratistas.total
-  const totalGestionados = stats.lifetime?.processed ?? (stats.conductores.processed + stats.subcontratistas.processed)
-  const totalChileFlota = stats.lifetime?.globalProcessed ?? totalGestionados
+  const totalRevisados = totalAprobados + totalRechazados
 
   const modules = [
     {
@@ -157,7 +156,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       icon: Users,
       href: '/dashboard/company/documentos/aprobados',
       current: stats.conductores.total,
-      processed: stats.conductores.processed,
+      processed: stats.conductores.aprobados + stats.conductores.rechazados,
       statItems: [
         { label: 'Pendientes', value: stats.conductores.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
         { label: 'Aprobados', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
@@ -172,7 +171,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       icon: Truck,
       href: '/dashboard/company/documentos/aprobados',
       current: stats.subcontratistas.total,
-      processed: stats.subcontratistas.processed,
+      processed: stats.subcontratistas.aprobados + stats.subcontratistas.rechazados,
       statItems: [
         { label: 'Pendientes', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
         { label: 'Aprobados', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
@@ -209,7 +208,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">
             {isPortfolioReady
-              ? `${totalGestionados.toLocaleString('es-CL')} documentos procesados en tu cartera. ${totalActuales.toLocaleString('es-CL')} registros están clasificados por estado de revisión.`
+              ? `${totalActuales.toLocaleString('es-CL')} registros en tu cartera: ${totalRevisados.toLocaleString('es-CL')} revisados y ${totalPendientes.toLocaleString('es-CL')} pendientes.`
               : 'Sincronizando tu cartera de documentos...'}
           </p>
         </div>
@@ -217,7 +216,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="h-8 rounded-[5px] border-[#303238] px-2.5 text-xs font-normal text-[#C6C8CC]">
             <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
-            {isPortfolioReady ? `${totalChileFlota.toLocaleString('es-CL')} procesados ChileFlota` : 'Sincronizando...'}
+            {isPortfolioReady ? `${totalActuales.toLocaleString('es-CL')} registros cartera` : 'Sincronizando...'}
           </Badge>
           <Button
             variant="outline"
@@ -233,7 +232,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       </header>
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-5">
-        <MetricCard label="Procesados cartera" value={isPortfolioReady ? totalGestionados : null} detail={isPortfolioReady ? `ChileFlota total: ${totalChileFlota.toLocaleString('es-CL')}` : 'Sincronizando cartera'} icon={FileStack} tone="neutral" />
+        <MetricCard label="Revisados" value={isPortfolioReady ? totalRevisados : null} detail={isPortfolioReady ? 'Aprobados + rechazados' : 'Sincronizando cartera'} icon={FileStack} tone="neutral" />
         <MetricCard label="Registros" value={isPortfolioReady ? totalActuales : null} detail="Estados de revisión de la cartera documental" icon={FileText} tone="neutral" />
         <Link href="/dashboard/company/documentos/pendientes" className="contents">
           <MetricCard label="Pendientes" value={isPortfolioReady ? totalPendientes : null} icon={Clock} tone="warning" />
@@ -265,7 +264,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
                   <div className="flex flex-col items-end gap-1 text-right">
                     {module.processed !== null ? (
                       <>
-                        <span className="text-xs tabular-nums text-[#C6C8CC]">{isPortfolioReady ? `${module.processed.toLocaleString('es-CL')} gestionados` : '—'}</span>
+                        <span className="text-xs tabular-nums text-[#C6C8CC]">{isPortfolioReady ? `${module.processed.toLocaleString('es-CL')} revisados` : '—'}</span>
                         <span className="text-[11px] tabular-nums text-[#777C84]">{isPortfolioReady ? `${module.current.toLocaleString('es-CL')} registros` : 'Sincronizando'}</span>
                       </>
                     ) : (
