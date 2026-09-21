@@ -1,59 +1,42 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useEffect, useState } from 'react'
+import { AlertCircle, CheckCircle2, Loader, MessageCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle2, AlertCircle, Loader, MessageCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 
 export default function ConductorPerfilPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
   const [formData, setFormData] = useState({
     name: '',
     rut: '',
     email: '',
     phone: '+56977764753',
     whatsapp_phone: '',
-    whatsapp_enabled: false
+    whatsapp_enabled: false,
   })
 
   useEffect(() => {
-    // Load conductor data from cookies and preferences
     loadConductorData()
     loadPreferences()
   }, [])
 
   const loadConductorData = () => {
     try {
-      // Get conductor data from localStorage (set by login form after successful login)
       const conductorDataStr = localStorage.getItem('conductor_data')
-      console.log('[v0] Retrieved from localStorage (raw):', conductorDataStr)
-      
-      if (conductorDataStr) {
-        const parsed = JSON.parse(conductorDataStr)
-        console.log('[v0] Loaded conductor data from localStorage:', parsed)
-        console.log('[v0] nombre_completo:', parsed.nombre_completo)
-        console.log('[v0] rut:', parsed.rut)
-        console.log('[v0] email:', parsed.email)
-        
-        setFormData(prev => {
-          const updated = {
-            ...prev,
-            name: parsed.nombre_completo || '',
-            rut: parsed.rut || '',
-            email: parsed.email || ''
-          }
-          console.log('[v0] Updated formData:', updated)
-          return updated
-        })
-      } else {
-        console.log('[v0] No conductor data found in localStorage')
-      }
+      if (!conductorDataStr) return
+      const parsed = JSON.parse(conductorDataStr)
+      setFormData((prev) => ({
+        ...prev,
+        name: parsed.nombre_completo || '',
+        rut: parsed.rut || '',
+        email: parsed.email || '',
+      }))
     } catch (err) {
       console.error('[v0] Error loading conductor data:', err)
     }
@@ -63,14 +46,13 @@ export default function ConductorPerfilPage() {
     try {
       setIsLoading(true)
       const response = await fetch('/api/conductor/whatsapp-preferences')
-      if (response.ok) {
-        const data = await response.json()
-        setFormData(prev => ({
-          ...prev,
-          whatsapp_phone: data.whatsapp_phone || '',
-          whatsapp_enabled: data.notifications_enabled || false
-        }))
-      }
+      if (!response.ok) return
+      const data = await response.json()
+      setFormData((prev) => ({
+        ...prev,
+        whatsapp_phone: data.whatsapp_phone || '',
+        whatsapp_enabled: data.notifications_enabled || false,
+      }))
     } catch (err) {
       console.error('[v0] Error loading preferences:', err)
     } finally {
@@ -80,36 +62,29 @@ export default function ConductorPerfilPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
+    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
   const handleSave = async () => {
     setError('')
     setSuccess('')
     setIsSaving(true)
-
     try {
-      // Save WhatsApp preferences
       if (formData.whatsapp_phone) {
         const response = await fetch('/api/conductor/whatsapp-preferences', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             whatsapp_phone: formData.whatsapp_phone,
-            whatsapp_enabled: formData.whatsapp_enabled
-          })
+            whatsapp_enabled: formData.whatsapp_enabled,
+          }),
         })
-
         if (!response.ok) {
           const data = await response.json()
           throw new Error(data.error || 'Error al guardar')
         }
       }
-
-      setSuccess('Perfil actualizado correctamente')
+      setSuccess('Preferencias actualizadas.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar cambios')
     } finally {
@@ -118,167 +93,91 @@ export default function ConductorPerfilPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-3xl">
-      {/* Header */}
-      <div className="border-b border-slate-700 pb-6">
-        <h1 className="text-5xl font-bold text-white">Mi Perfil</h1>
-        <p className="text-slate-300 mt-2">
-          Gestiona tu información personal y preferencias de notificación
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <section className="border-b border-[var(--cf-border)] pb-5">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Cuenta</p>
+        <h2 className="mt-2 text-[26px] font-semibold tracking-[-0.03em] text-[var(--cf-text)]">Mi perfil</h2>
+        <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">Datos de identificación y preferencias de notificación.</p>
+      </section>
 
-      {/* Alerts */}
       {error && (
-        <Alert className="bg-red-950/30 border-red-900/50">
-          <AlertCircle className="h-4 w-4 text-red-400" />
-          <AlertDescription className="text-red-300">{error}</AlertDescription>
+        <Alert className="border-[var(--cf-danger)]/40 bg-[var(--cf-danger-soft)]">
+          <AlertCircle className="h-4 w-4 text-[var(--cf-danger)]" />
+          <AlertDescription className="text-[var(--cf-danger)]">{error}</AlertDescription>
         </Alert>
       )}
-
       {success && (
-        <Alert className="bg-green-950/30 border-green-900/50">
-          <CheckCircle2 className="h-4 w-4 text-green-400" />
-          <AlertDescription className="text-green-300">{success}</AlertDescription>
+        <Alert className="border-[var(--cf-success)]/40 bg-[var(--cf-success-soft)]">
+          <CheckCircle2 className="h-4 w-4 text-[var(--cf-success)]" />
+          <AlertDescription className="text-[var(--cf-success)]">{success}</AlertDescription>
         </Alert>
       )}
 
-      {/* Personal Information */}
-      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-white">Información Personal</CardTitle>
-          <CardDescription className="text-slate-400">
-            Tus datos registrados en el sistema
-          </CardDescription>
+          <CardTitle>Información personal</CardTitle>
+          <CardDescription>Estos datos provienen del registro de Transportes Labbé.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Nombre Completo
-            </label>
-            <Input
-              value={formData.name}
-              disabled
-              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 disabled:opacity-75"
-            />
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <Field label="Nombre completo" value={formData.name} />
+          <Field label="RUT" value={formData.rut} />
+          <Field label="Email" value={formData.email} />
+          <Field label="Teléfono" value={formData.phone} />
+          <div className="sm:col-span-2 rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] px-3 py-2.5 text-xs text-[var(--cf-text-muted)]">
+            Para modificar estos datos, contacta a <span className="font-medium text-[var(--cf-text-secondary)]">soporte@labbe.cl</span>.
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              RUT
-            </label>
-            <Input
-              value={formData.rut}
-              disabled
-              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 disabled:opacity-75"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Email
-            </label>
-            <Input
-              value={formData.email}
-              disabled
-              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 disabled:opacity-75"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Teléfono
-            </label>
-            <Input
-              value={formData.phone}
-              disabled
-              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 disabled:opacity-75"
-            />
-          </div>
-
-          <p className="text-sm text-slate-400 bg-slate-800/50 border border-slate-700 rounded-lg p-3">
-            Para cambiar estos datos, contacta con <span className="text-orange-400 font-semibold">soporte@labbe.cl</span>
-          </p>
         </CardContent>
       </Card>
 
-      {/* WhatsApp Notifications */}
-      <Card className="border-slate-700 bg-gradient-to-r from-slate-800/40 to-slate-800/20 shadow-lg">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-green-400" />
-            Notificaciones por WhatsApp
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            Recibe alertas sobre tus documentos y vencimientos en tiempo real
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-[var(--cf-text-secondary)]" />Notificaciones por WhatsApp</CardTitle>
+          <CardDescription>Recibe avisos sobre estados documentales y vencimientos.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Número de WhatsApp
-            </label>
+            <label className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">Número de WhatsApp</label>
             <Input
               type="tel"
               name="whatsapp_phone"
               placeholder="+56912345678"
               value={formData.whatsapp_phone}
               onChange={handleInputChange}
-              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 text-base"
+              disabled={isLoading}
             />
-            <p className="text-xs text-slate-400 mt-2">
-              Formato: +56 seguido de tu número (9 dígitos sin el 2)
-            </p>
+            <p className="mt-1.5 text-xs text-[var(--cf-text-muted)]">Formato: +56 seguido de tu número.</p>
           </div>
 
-          <div className="flex items-start gap-3 p-4 bg-green-950/30 border border-green-900/50 rounded-lg">
+          <label className="flex min-h-11 items-start gap-3 rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] px-3 py-3">
             <input
               type="checkbox"
               name="whatsapp_enabled"
               checked={formData.whatsapp_enabled}
               onChange={handleInputChange}
-              className="rounded mt-1 bg-slate-700 border-slate-600"
+              className="mt-0.5 h-4 w-4 accent-[var(--cf-accent)]"
             />
-            <label className="text-sm font-medium text-green-300">
-              Activar notificaciones por WhatsApp
-            </label>
-          </div>
+            <span>
+              <span className="block text-sm font-medium text-[var(--cf-text)]">Activar notificaciones</span>
+              <span className="mt-0.5 block text-xs text-[var(--cf-text-muted)]">Estados de documentos, vencimientos y avisos de soporte.</span>
+            </span>
+          </label>
 
-          <div className="bg-gradient-to-r from-orange-950/30 to-orange-900/20 border border-orange-900/50 rounded-lg p-4">
-            <p className="text-sm font-semibold text-orange-300">
-              Tipos de notificaciones:
-            </p>
-            <ul className="text-sm text-orange-200/80 mt-3 space-y-2 ml-4">
-              <li className="flex items-center gap-2">
-                <span className="text-orange-400">✓</span> Documento aprobado o rechazado
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-orange-400">✓</span> Alerta de vencimiento (7 días antes)
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-orange-400">✓</span> Mensajes de soporte
-              </li>
-            </ul>
+          <div className="flex justify-end border-t border-[var(--cf-border)] pt-4">
+            <Button onClick={handleSave} disabled={isSaving || isLoading} className="min-w-36">
+              {isSaving ? <><Loader className="h-4 w-4 animate-spin" />Guardando…</> : 'Guardar cambios'}
+            </Button>
           </div>
         </CardContent>
       </Card>
+    </div>
+  )
+}
 
-      {/* Save Button */}
-      <div className="flex gap-4 pt-4">
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-md transition-all"
-        >
-          {isSaving ? (
-            <>
-              <Loader className="h-4 w-4 mr-2 animate-spin" />
-              Guardando...
-            </>
-          ) : (
-            'Guardar Cambios'
-          )}
-        </Button>
-      </div>
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">{label}</label>
+      <Input value={value} disabled className="disabled:opacity-75" />
     </div>
   )
 }
