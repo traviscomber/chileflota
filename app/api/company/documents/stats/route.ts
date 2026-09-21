@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth } from '@/lib/auth-middleware'
 import { countActionableSubcontractorPending } from '@/lib/pending-document-semantics'
+import { resolveExecutiveScope } from '@/lib/executive-scope'
 
 type TransportistaCertificationFlags = {
   ariztia: boolean | null
@@ -20,13 +21,6 @@ type LegacyDocumentRow = {
   ai_processed_at: string | null
   ai_analyzed_at: string | null
   vision_processed_at: string | null
-}
-
-type ExecutiveScope = {
-  executiveStaffId: string
-  companyIds: string[]
-  companyRuts: string[]
-  conductorIds: string[]
 }
 
 function normalizeFilename(value: string | null | undefined) {
