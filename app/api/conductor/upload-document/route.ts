@@ -57,8 +57,17 @@ export async function POST(request: NextRequest) {
     const rawDocumentPeriodMonth = String(formData.get('documentPeriodMonth') || '').trim()
     const rawDocumentPeriodYear = String(formData.get('documentPeriodYear') || '').trim()
 
-    const fallbackDate = new Date()
-    const documentDate = rawDocumentDate || fallbackDate.toISOString().slice(0, 10)
+    const now = new Date()
+    const chileDateParts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Santiago',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(now)
+    const getChileDatePart = (type: 'year' | 'month' | 'day') =>
+      chileDateParts.find((part) => part.type === type)?.value || ''
+    const currentChileDate = `${getChileDatePart('year')}-${getChileDatePart('month')}-${getChileDatePart('day')}`
+    const documentDate = rawDocumentDate || currentChileDate
     const documentPeriodMonth = rawDocumentPeriodMonth
       ? Number(rawDocumentPeriodMonth)
       : Number(documentDate.slice(5, 7))
@@ -88,16 +97,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const selectedDate = new Date(`${documentDate}T12:00:00Z`)
-    if (Number.isNaN(selectedDate.getTime()) || selectedDate.getTime() > Date.now()) {
+    const selectedDate = new Date(`${documentDate}T00:00:00Z`)
+    if (Number.isNaN(selectedDate.getTime()) || documentDate > currentChileDate) {
       return NextResponse.json(
         { message: 'Document date cannot be in the future' },
         { status: 400 }
       )
     }
 
-    const derivedMonth = selectedDate.getUTCMonth() + 1
-    const derivedYear = selectedDate.getUTCFullYear()
+    const derivedMonth = Number(documentDate.slice(5, 7))
+    const derivedYear = Number(documentDate.slice(0, 4))
     if (derivedMonth !== documentPeriodMonth || derivedYear !== documentPeriodYear) {
       return NextResponse.json(
         { message: 'Document period does not match document date' },
