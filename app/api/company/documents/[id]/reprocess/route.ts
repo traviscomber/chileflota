@@ -8,6 +8,7 @@ import {
 import { extractText } from 'unpdf'
 import { generateAIAnalysisAlerts } from '@/lib/document-alerts-generator'
 import { parseF30Document } from '@/lib/f30-parser'
+import { authorizeDocumentReprocess } from '@/lib/document-route-auth'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -57,6 +58,10 @@ export async function POST(
 ) {
   try {
     const documentId = params.id
+    if (!(await authorizeDocumentReprocess(request, documentId))) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
     const requestBody = await request.json().catch(() => ({}))
     const source = typeof requestBody?.source === 'string' ? requestBody.source : null
     const isF30Backfill = source === 'f30_backfill'
