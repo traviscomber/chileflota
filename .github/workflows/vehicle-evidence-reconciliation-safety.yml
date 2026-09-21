@@ -1,0 +1,25 @@
+name: Vehicle Evidence Reconciliation Safety
+
+on:
+  pull_request:
+    paths:
+      - 'lib/vehicle-evidence-reconciliation.ts'
+      - 'lib/vehicle-evidence-authorization.ts'
+      - 'app/api/company/vehicle-evidence-reconciliation/**'
+      - '__tests__/vehicle-evidence-reconciliation.test.ts'
+      - '.github/workflows/vehicle-evidence-reconciliation-safety.yml'
+
+jobs:
+  vehicle-evidence-reconciliation-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/vehicle-evidence-reconciliation.test.ts --runInBand
