@@ -1,77 +1,67 @@
 'use client'
 
 import { useState } from 'react'
+import { ArrowLeft, CheckCircle2, ChevronRight, FileText, HelpCircle, MessageCircle, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CheckCircle2, ChevronRight, FileText, Clock, CheckCheck, MessageCircle, HelpCircle, ArrowLeft } from 'lucide-react'
 
 const ONBOARDING_STEPS = [
   {
     id: 1,
-    title: 'Documentos Requeridos',
-    description: 'Conoce qué documentos necesitas subir para trabajar con Labbe',
+    title: 'Documentos requeridos',
+    description: 'Qué necesitas mantener vigente para operar.',
     icon: FileText,
-    content: `Para trabajar como conductor con Labbe, necesitas estos 4 documentos:
-
-• Licencia de Conducir: Vigente, categoría mínima B
-• Certificado de Antecedentes: Emitido por Carabineros (no más de 6 meses)
-• Póliza de Seguro: Seguro obligatorio del vehículo
-• Verificación Técnica: VTV vigente del vehículo
-
-Todos los documentos deben ser en PDF o imágenes (JPG, PNG). Máximo 10MB por archivo.`
+    content: [
+      'Licencia de conducir vigente.',
+      'Certificado de antecedentes vigente.',
+      'Hoja de vida del conductor.',
+      'Cédula de identidad vigente.',
+      'Documentos adicionales solicitados por Transportes Labbé.',
+    ],
   },
   {
     id: 2,
-    title: 'Timeline de Validación',
-    description: 'Cuánto tarda nuestro equipo en validar tus documentos',
-    icon: Clock,
-    content: `Aquí está el proceso de validación:
-
-1. Carga: Subes tus documentos (5-10 minutos)
-2. Validación Automática: Sistema revisa formato y legibilidad (2-5 minutos)
-3. Revisión Manual: Nuestro equipo verifica datos (24-48 horas)
-4. Aprobación: Recibes confirmación por email y WhatsApp
-
-Una vez aprobados, puedes comenzar a trabajar inmediatamente.`
+    title: 'Estados documentales',
+    description: 'Cómo leer cada estado sin duplicar cargas.',
+    icon: ShieldCheck,
+    content: [
+      'Aprobado: validado y sin acción requerida.',
+      'En revisión: recibido correctamente; no vuelvas a subirlo.',
+      'Por vencer: conviene renovarlo antes de que afecte tu habilitación.',
+      'Rechazado o vencido: revisa el motivo y reemplázalo.',
+    ],
   },
   {
     id: 3,
-    title: 'Cómo Funciona la Validación',
-    description: 'Entiende cómo validamos tus documentos automáticamente',
-    icon: CheckCheck,
-    content: `Nuestro sistema utiliza inteligencia artificial para:
-
-• Extraer información: Lee automáticamente tus documentos
-• Verificar datos: Comprueba que la información esté completa
-• Detectar vencimientos: Alerta si tus documentos vencen pronto
-• Validar formato: Asegura que los archivos sean legítimos
-
-Si algo no está bien, te lo comunicamos y puedes volver a subir.`
+    title: 'Carga de documentos',
+    description: 'Cómo asociar correctamente cada archivo.',
+    icon: CheckCircle2,
+    content: [
+      'Selecciona el tipo documental correcto.',
+      'Usa la fecha real del documento.',
+      'Puedes cargar documentos de períodos anteriores.',
+      'Si eliges un período histórico, ChileFlota te pedirá confirmación antes de guardar.',
+    ],
   },
   {
     id: 4,
-    title: 'Preguntas Frecuentes',
-    description: 'Respuestas a las preguntas más comunes',
+    title: 'Ayuda',
+    description: 'Qué hacer si algo no coincide.',
     icon: HelpCircle,
-    content: `¿Qué pasa si me rechazan un documento?
-No te preocupes, puedes subir una foto mejor. Te explicamos exactamente qué corregir.
-
-¿Cuánto tiempo duran los documentos?
-La licencia dura 5 años, antecedentes 6 meses, seguro 1 año, VTV 1 año.
-
-¿Recibo alertas de vencimiento?
-Sí, te notificamos por email y WhatsApp 7 días antes de que venza.
-
-¿Puedo editar mis documentos?
-Puedes subir nuevas versiones en cualquier momento.`
+    content: [
+      'Si un documento fue rechazado, revisa el motivo antes de reemplazarlo.',
+      'Si ves información incorrecta en tu perfil, contacta a tu ejecutiva.',
+      'No necesitas volver a cargar un documento que está en revisión.',
+      'Soporte: soporte@labbe.cl.',
+    ],
   },
   {
     id: 5,
-    title: 'Activa Notificaciones WhatsApp',
-    description: 'Recibe alertas en tiempo real sobre tus documentos',
+    title: 'WhatsApp',
+    description: 'Activa avisos operacionales si quieres recibirlos.',
     icon: MessageCircle,
-    content: null
-  }
+    content: [],
+  },
 ]
 
 interface OnboardingGuideProps {
@@ -79,7 +69,7 @@ interface OnboardingGuideProps {
   onSkip?: () => void
 }
 
-export function OnboardingGuide({ onComplete, onSkip }: OnboardingGuideProps) {
+export function OnboardingGuide({ onComplete }: OnboardingGuideProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [whatsappPhone, setWhatsappPhone] = useState('')
   const [whatsappSaved, setWhatsappSaved] = useState(false)
@@ -88,217 +78,110 @@ export function OnboardingGuide({ onComplete, onSkip }: OnboardingGuideProps) {
   const step = ONBOARDING_STEPS[currentStep]
   const Icon = step.icon
 
-  const handleNext = () => {
-    if (currentStep < ONBOARDING_STEPS.length - 1) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
-
   const handleWhatsappSave = async () => {
     if (!whatsappPhone || whatsappPhone.length < 12) {
       alert('Ingresa un número de WhatsApp válido (+56XXXXXXXXX)')
       return
     }
-
     setIsLoading(true)
     try {
       const response = await fetch('/api/conductor/whatsapp-preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ whatsapp_phone: whatsappPhone })
+        body: JSON.stringify({ whatsapp_phone: whatsappPhone }),
       })
-
       if (!response.ok) throw new Error('Error saving WhatsApp')
-
       setWhatsappSaved(true)
-      setTimeout(() => {
-        onComplete?.()
-      }, 1500)
     } catch (error) {
       console.error('[v0] Error saving WhatsApp:', error)
-      alert('Error al guardar el número. Intenta de nuevo.')
+      alert('No fue posible guardar el número. Intenta nuevamente.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSkip = () => {
-    if (currentStep === ONBOARDING_STEPS.length - 1) {
-      onComplete?.()
-    } else {
-      setCurrentStep(ONBOARDING_STEPS.length - 1)
-    }
-  }
-
-  const handleCompleteOnboarding = () => {
-    onComplete?.()
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
-            Bienvenido a Labbe
-          </h1>
-          <p className="text-lg text-slate-300">
-            Te guiaremos en 5 pasos simples para comenzar a trabajar
-          </p>
-        </div>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <section className="border-b border-[var(--cf-border)] pb-5">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Guía de inicio</p>
+        <h2 className="mt-2 text-[26px] font-semibold tracking-[-0.03em] text-[var(--cf-text)]">Cómo usar ChileFlota</h2>
+        <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">Cinco pasos breves para revisar, cargar y mantener tus documentos.</p>
+      </section>
 
-        {/* Progress Steps */}
-        <div className="mb-12">
-          <div className="flex justify-between items-center gap-2 mb-6">
-            {ONBOARDING_STEPS.map((s, i) => (
-              <div key={s.id} className="flex flex-col items-center flex-1">
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border-2 ${
-                    i < currentStep
-                      ? 'bg-emerald-500 border-emerald-500 text-white'
-                      : i === currentStep
-                      ? 'bg-orange-500 border-orange-500 text-white ring-4 ring-orange-300'
-                      : 'bg-slate-700 border-slate-600 text-slate-300'
-                  }`}
-                >
-                  {i < currentStep ? <CheckCircle2 className="w-6 h-6" /> : i + 1}
-                </div>
-                <span className="text-xs text-slate-400 mt-2 text-center hidden sm:block font-medium">
-                  {s.title.split(' ')[0]}
-                </span>
-              </div>
-            ))}
+      <div className="rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+        <div className="border-b border-[var(--cf-border)] px-5 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-xs font-medium text-[var(--cf-text-muted)]">Paso {currentStep + 1} de {ONBOARDING_STEPS.length}</p>
+            <p className="text-xs text-[var(--cf-text-muted)]">{Math.round(((currentStep + 1) / ONBOARDING_STEPS.length) * 100)}%</p>
           </div>
-          
-          {/* Progress Bar */}
-          <div className="w-full bg-slate-700 rounded-full h-1.5">
-            <div
-              className="bg-gradient-to-r from-orange-500 to-cyan-500 h-1.5 rounded-full transition-all duration-300"
-              style={{ width: `${((currentStep + 1) / ONBOARDING_STEPS.length) * 100}%` }}
-            />
+          <div className="mt-3 h-1 overflow-hidden rounded-[2px] bg-[var(--cf-surface-raised)]">
+            <div className="h-full bg-[var(--cf-accent)] transition-[width]" style={{ width: `${((currentStep + 1) / ONBOARDING_STEPS.length) * 100}%` }} />
           </div>
         </div>
 
-        {/* Content Card */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-orange-600 to-orange-500 px-8 py-6">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="bg-white/20 p-3 rounded-lg">
-                <Icon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-white text-2xl font-bold">{step.title}</h2>
-              </div>
+        <div className="p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] bg-[var(--cf-accent-soft)] text-[var(--cf-text-secondary)]">
+              <Icon className="h-4 w-4" />
             </div>
-            <p className="text-orange-100">
-              Paso {currentStep + 1} de {ONBOARDING_STEPS.length} — {step.description}
-            </p>
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--cf-text)]">{step.title}</h3>
+              <p className="mt-1 text-sm text-[var(--cf-text-muted)]">{step.description}</p>
+            </div>
           </div>
 
-          {/* Content */}
-          <div className="px-8 py-10">
-            {currentStep === ONBOARDING_STEPS.length - 1 ? (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-3">
-                    Mantente conectado con WhatsApp
-                  </h3>
-                  <p className="text-slate-300 text-lg">
-                    Recibirás alertas sobre tus documentos, vencimientos y notificaciones importantes en tiempo real.
-                  </p>
+          {currentStep === ONBOARDING_STEPS.length - 1 ? (
+            <div className="mt-6 space-y-4">
+              {whatsappSaved ? (
+                <div className="rounded-[6px] border border-[var(--cf-success)]/35 bg-[var(--cf-success-soft)] px-4 py-3">
+                  <p className="text-sm font-medium text-[var(--cf-success)]">WhatsApp guardado</p>
+                  <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">{whatsappPhone}</p>
                 </div>
-
-                {whatsappSaved ? (
-                  <div className="bg-gradient-to-r from-emerald-900/30 to-emerald-800/30 border border-emerald-600 rounded-xl p-6 text-center">
-                    <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-                    <p className="text-emerald-100 font-semibold text-lg">WhatsApp guardado correctamente</p>
-                    <p className="text-emerald-300 mt-2 font-mono">{whatsappPhone}</p>
+              ) : (
+                <>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">Número de WhatsApp</label>
+                    <Input
+                      type="tel"
+                      placeholder="+56912345678"
+                      value={whatsappPhone}
+                      onChange={(e) => setWhatsappPhone(e.target.value)}
+                    />
+                    <p className="mt-1.5 text-xs text-[var(--cf-text-muted)]">Opcional. Puedes configurarlo después desde Mi perfil.</p>
                   </div>
-                ) : (
-                  <div className="space-y-4 bg-slate-700/50 p-6 rounded-xl">
-                    <div>
-                      <label className="block text-white font-semibold mb-3">
-                        Número de WhatsApp
-                      </label>
-                      <Input
-                        type="tel"
-                        placeholder="+56912345678"
-                        value={whatsappPhone}
-                        onChange={(e) => setWhatsappPhone(e.target.value)}
-                        className="bg-slate-600 border-slate-500 text-white placeholder-slate-400 text-base py-3"
-                      />
-                      <p className="text-slate-400 text-sm mt-2">
-                        Formato: +56 seguido de tu número (9 dígitos sin el 2)
-                      </p>
-                    </div>
-                    <Button
-                      onClick={handleWhatsappSave}
-                      disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold py-3 text-base"
-                    >
-                      {isLoading ? 'Guardando...' : 'Guardar Número de WhatsApp'}
-                    </Button>
-                  </div>
-                )}
-
-                <Button
-                  variant="outline"
-                  onClick={handleCompleteOnboarding}
-                  className="w-full bg-slate-700 hover:bg-slate-600 border-slate-600 text-white font-semibold py-3 text-base"
-                >
-                  Completar Onboarding
-                </Button>
-              </div>
-            ) : (
-              /* Other Steps: Content */
-              <div className="space-y-4">
-                <div className="text-slate-200 leading-relaxed text-lg whitespace-pre-line">
-                  {step.content}
-                </div>
-              </div>
-            )}
-          </div>
+                  <Button onClick={handleWhatsappSave} disabled={isLoading} className="w-full sm:w-auto">
+                    {isLoading ? 'Guardando…' : 'Guardar WhatsApp'}
+                  </Button>
+                </>
+              )}
+            </div>
+          ) : (
+            <ul className="mt-6 divide-y divide-[var(--cf-border)] border-y border-[var(--cf-border)]">
+              {step.content.map((item) => (
+                <li key={item} className="flex gap-3 py-3 text-sm text-[var(--cf-text-secondary)]">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--cf-text-muted)]" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
+      </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex gap-4 mt-10 justify-between">
-          <Button
-            onClick={handlePrevious}
-            disabled={currentStep === 0}
-            className="flex-1 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white font-semibold py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Atrás
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Button variant="outline" onClick={() => setCurrentStep((step) => Math.max(0, step - 1))} disabled={currentStep === 0}>
+          <ArrowLeft className="h-4 w-4" /> Atrás
+        </Button>
+
+        {currentStep < ONBOARDING_STEPS.length - 1 ? (
+          <Button onClick={() => setCurrentStep((step) => Math.min(ONBOARDING_STEPS.length - 1, step + 1))}>
+            Siguiente <ChevronRight className="h-4 w-4" />
           </Button>
-
-          <Button
-            onClick={handleSkip}
-            className="flex-1 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white font-semibold py-3"
-          >
-            {currentStep === ONBOARDING_STEPS.length - 1 ? 'Saltar' : 'Ir al Final'}
+        ) : (
+          <Button onClick={() => onComplete?.()}>
+            Ir a documentos <ChevronRight className="h-4 w-4" />
           </Button>
-
-          <Button
-            onClick={handleNext}
-            disabled={currentStep === ONBOARDING_STEPS.length - 1}
-            className="flex-1 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            Siguiente
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Footer Info */}
-        <div className="mt-12 text-center text-slate-400">
-          <p className="text-base">¿Preguntas? Contacta a <span className="text-cyan-400 font-semibold">soporte@labbe.cl</span></p>
-        </div>
+        )}
       </div>
     </div>
   )
