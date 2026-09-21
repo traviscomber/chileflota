@@ -6,6 +6,7 @@ const rejected = fs.readFileSync(path.join(process.cwd(), 'app/api/company/docum
 const pending = fs.readFileSync(path.join(process.cwd(), 'app/api/dashboard/pending-documents/route.ts'), 'utf8')
 const approvedPage = fs.readFileSync(path.join(process.cwd(), 'app/dashboard/company/documentos/aprobados/page.tsx'), 'utf8')
 const rejectedPage = fs.readFileSync(path.join(process.cwd(), 'app/dashboard/company/documentos/rechazados/page.tsx'), 'utf8')
+const executiveScope = fs.readFileSync(path.join(process.cwd(), 'lib/executive-scope.ts'), 'utf8')
 
 describe('executive document coverage', () => {
   for (const [name, source] of [['approved', approved], ['rejected', rejected]]) {
@@ -36,5 +37,11 @@ describe('executive document coverage', () => {
       expect(source).toContain('ExecutiveCoverageControl')
       expect(source).toContain('reviewScope={allData?.reviewScope}')
     }
+  })
+
+  test('stats scope uses canonical conductor company id with RUT fallback', () => {
+    expect(executiveScope).toContain("in('transportista_id', companyIds)")
+    expect(executiveScope).toContain("in('rut_proveedor', companyRuts)")
+    expect(executiveScope).toContain('new Set([')
   })
 })
