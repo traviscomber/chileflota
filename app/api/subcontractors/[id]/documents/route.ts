@@ -320,9 +320,24 @@ export async function GET(
       return NextResponse.json({ error: 'Error al obtener tipos de documento' }, { status: 500 })
     }
 
+    const requirementTypeIds = new Set((documentTypes || []).map((type) => type.id))
+    const coveredRequirementIds = new Set(
+      documentsWithVerification
+        .filter((document) => requirementTypeIds.has(document.document_type_id))
+        .map((document) => document.document_type_id),
+    )
+    const approvedRequirementIds = new Set(
+      documentsWithVerification
+        .filter((document) => document.status === 'approved' && requirementTypeIds.has(document.document_type_id))
+        .map((document) => document.document_type_id),
+    )
+
     const summary = {
       totalDocumentsUploaded: documentsWithVerification.length,
       totalRequirements: documentTypes?.length || 0,
+      requirementsCovered: coveredRequirementIds.size,
+      requirementsMissing: Math.max((documentTypes?.length || 0) - coveredRequirementIds.size, 0),
+      approvedRequirements: approvedRequirementIds.size,
       approvedDocuments: documentsWithVerification.filter((document) => document.status === 'approved').length,
       pendingDocuments: documentsWithVerification.filter((document) => document.status === 'pending').length,
       expiredDocuments: documentsWithVerification.filter((document) => document.status === 'expired').length,
