@@ -77,80 +77,55 @@ async function fetchDashboardSnapshot() {
   const rejectedConductor = rejectedData.conductorDocs?.length || 0
   const rejectedSubcontractor = rejectedData.subDocs?.length || 0
 
-  const reviewCandidates = [
-    ...(pendingData.conductorDocs || []).map((doc: any) => ({
-      id: `review_conductor_${doc.id}`,
-      type: 'review_required',
-      title: 'Documento nuevo para revisión',
+  const reviewResults = [
+    ...(approvedData.allDocs || approvedData.documents || []).map((doc: any) => ({
+      id: `review_approved_${doc.id}`,
+      type: 'document_approved',
+      title: 'Documento aprobado',
       message: `${doc.docType?.nombre || 'Documento'} · ${doc.empresa_nombre || 'Empresa sin nombre'}`,
-      priority: 'high',
+      priority: 'medium',
       is_read: false,
       is_dismissed: false,
-      created_at: doc.uploaded_at || doc.created_at,
-      source: 'review_queue',
+      created_at: doc.reviewed_at || doc.approved_at || doc.validated_at || doc.updated_at,
+      source: 'review_result',
       document_type: doc.docType?.nombre || undefined,
       metadata: {
         document_id: doc.id,
         company_id: doc.company_id,
         transportista_nombre: doc.empresa_nombre,
         conductor_nombre: [doc.conductores?.nombres, doc.conductores?.apellido_paterno].filter(Boolean).join(' '),
-        document_source: 'conductor',
+        document_source: doc.document_source,
+        review_result: 'approved',
       },
     })),
-    ...(pendingData.subDocs || []).map((doc: any) => ({
-      id: `review_subcontractor_${doc.id}`,
-      type: 'review_required',
-      title: 'Documento nuevo para revisión',
+    ...(rejectedData.allDocs || rejectedData.documents || []).map((doc: any) => ({
+      id: `review_rejected_${doc.id}`,
+      type: 'document_rejected',
+      title: 'Documento rechazado',
       message: `${doc.docType?.nombre || 'Documento'} · ${doc.empresa_nombre || 'Empresa sin nombre'}`,
       priority: 'high',
       is_read: false,
       is_dismissed: false,
-      created_at: doc.uploaded_at || doc.created_at,
-      source: 'review_queue',
+      created_at: doc.reviewed_at || doc.rejected_at || doc.updated_at,
+      source: 'review_result',
       document_type: doc.docType?.nombre || undefined,
       metadata: {
         document_id: doc.id,
         company_id: doc.company_id,
         transportista_nombre: doc.empresa_nombre,
-        transportista_rut: doc.subcontractor_rut,
-        document_source: 'subcontractor',
+        conductor_nombre: [doc.conductores?.nombres, doc.conductores?.apellido_paterno].filter(Boolean).join(' '),
+        document_source: doc.document_source,
+        review_result: 'rejected',
+        rejection_reason: doc.rejection_reason || undefined,
       },
     })),
-  ].filter((alert) => Boolean(alert.created_at))
-
-  const groupedReviewQueue = new Map<string, typeof reviewCandidates[number] & { count: number }>()
-  for (const alert of reviewCandidates) {
-    const key = String(alert.metadata.company_id || alert.metadata.transportista_nombre || 'sin-empresa')
-
-    const existing = groupedReviewQueue.get(key)
-    if (!existing) {
-      groupedReviewQueue.set(key, { ...alert, count: 1 })
-      continue
-    }
-
-    existing.count += 1
-    if (new Date(alert.created_at).getTime() > new Date(existing.created_at).getTime()) {
-      groupedReviewQueue.set(key, { ...alert, count: existing.count })
-    }
-  }
-
-  const reviewQueue = Array.from(groupedReviewQueue.values())
-    .map((alert) => ({
-      ...alert,
-      title: alert.count > 1 ? `${alert.count} documentos nuevos para revisión` : alert.title,
-      message: alert.count > 1
-        ? `${alert.metadata.transportista_nombre || 'Empresa sin nombre'} · revisar carga reciente`
-        : alert.message,
-      metadata: {
-        ...alert.metadata,
-        grouped_count: alert.count,
-      },
-    }))
+  ]
+    .filter((alert) => Boolean(alert.created_at))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10)
 
   return {
-    alerts: reviewQueue,
+    alerts: reviewResults,
     lifetime: statsData.stats?.lifetime || {},
     canonical: {
       conductor: {
@@ -446,18 +421,21 @@ export function DashboardOverview() {
               <div>
                 <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Alertas prioritarias</CardTitle>
                 <CardDescription className="mt-1 text-[var(--cf-text-muted)]">
-                  Documentos recién ingresados que puedes revisar ahora · {alerts.length} por atender
+                  Resultados recientes de revisión · {alerts.length} movimientos
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-[4px] bg-[#40341B] px-2 py-1 text-xs font-medium text-[#D9B65C]">
-                  {alerts.length} para revisión
+                <span className="rounded-[4px] bg-[#173B2C] px-2 py-1 text-xs font-medium text-[#67C18D]">
+                  {alerts.filter(a => a.type === 'document_approved').length} aprobados
+                </span>
+                <span className="rounded-[4px] bg-[#45242B] px-2 py-1 text-xs font-medium text-[#E17B8C]">
+                  {alerts.filter(a => a.type === 'document_rejected').length} rechazados
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
-                  onClick={() => router.push('/dashboard/company/documentos/pendientes')}
+                  onClick={() => router.push('/dashboard/company/alertas')}
                 >
                   Ver todas
                 </Button>
@@ -476,7 +454,7 @@ export function DashboardOverview() {
                   created_at={alert.created_at}
                   source={alert.source}
                   metadata={alert.metadata}
-                  onNavigate={() => router.push('/dashboard/company/documentos/pendientes')}
+                  onNavigate={() => router.push('/dashboard/company/alertas')}
                 />
               ))}
             </div>
