@@ -61,7 +61,7 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
       
       // Show success message
       const msg = document.createElement('div')
-      msg.className = 'fixed bottom-4 right-4 bg-blue-600 text-[var(--cf-text)] px-6 py-3 rounded-[6px] shadow-none z-[100]'
+      msg.className = 'fixed bottom-4 right-4 bg-[var(--cf-info-soft)] text-[var(--cf-text)] px-6 py-3 rounded-[6px] shadow-none z-[100]'
       msg.textContent = `Solicitud de renovación enviada a ${conductorEmail}`
       document.body.appendChild(msg)
       setTimeout(() => msg.remove(), 3000)
@@ -76,7 +76,7 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
 
   const getDaysColor = (days: number) => {
     if (days <= 7) return 'text-[var(--cf-danger)] bg-red-900/30'
-    if (days <= 14) return 'text-[var(--cf-expiring)] bg-orange-900/30'
+    if (days <= 14) return 'text-[var(--cf-expiring)] bg-[var(--cf-expiring-soft)]'
     return 'text-yellow-400 bg-yellow-900/30'
   }
 
