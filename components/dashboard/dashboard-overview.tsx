@@ -118,29 +118,41 @@ async function fetchDashboardSnapshot() {
     })),
   ].filter((alert) => Boolean(alert.created_at))
 
-  const pendingByCompany = new Map<string, typeof pendingCandidates[number] & { count: number }>()
+  const pendingByCompany = new Map<string, typeof pendingCandidates[number] & { count: number; oldest_at: string }>()
   for (const alert of pendingCandidates) {
     const key = String(alert.metadata.company_id || alert.metadata.company_name || alert.title)
     const existing = pendingByCompany.get(key)
     if (!existing) {
-      pendingByCompany.set(key, { ...alert, count: 1 })
+      pendingByCompany.set(key, { ...alert, count: 1, oldest_at: alert.created_at })
       continue
     }
+
     existing.count += 1
+    if (new Date(alert.created_at).getTime() < new Date(existing.oldest_at).getTime()) {
+      existing.oldest_at = alert.created_at
+    }
     if (new Date(alert.created_at).getTime() > new Date(existing.created_at).getTime()) {
-      pendingByCompany.set(key, { ...alert, count: existing.count })
+      existing.created_at = alert.created_at
+      existing.document_type = alert.document_type
+      existing.id = alert.id
+      existing.metadata = alert.metadata
     }
   }
 
   const pendingAlerts = Array.from(pendingByCompany.values())
-    .map((alert) => ({
-      ...alert,
-      message: alert.count === 1
-        ? `1 documento por revisar · ${alert.document_type || 'Documento'}`
-        : `${alert.count} documentos por revisar`,
-      metadata: { ...alert.metadata, grouped_count: alert.count },
-    }))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .map((alert) => {
+      const ageDays = Math.max(0, Math.floor((Date.now() - new Date(alert.oldest_at).getTime()) / 86400000))
+      const ageLabel = ageDays === 0 ? 'Hoy' : ageDays === 1 ? '1 día en revisión' : `${ageDays} días en revisión`
+      const countLabel = alert.count === 1 ? `1 documento · ${alert.document_type || 'Documento'}` : `${alert.count} documentos`
+
+      return {
+        ...alert,
+        created_at: alert.oldest_at,
+        message: `${ageLabel} · ${countLabel}`,
+        metadata: { ...alert.metadata, grouped_count: alert.count, age_days: ageDays },
+      }
+    })
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .slice(0, 6)
 
   const reviewResults = [
