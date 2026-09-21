@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerSubcontractorDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
+import {
+  authorizeInternalDocumentRequest,
+  createDocumentInternalAuthHeaders,
+  DOCUMENT_WRITE_ROLES,
+} from '@/lib/document-route-auth'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -26,7 +31,10 @@ async function analyzeF30Document(origin: string, documentId: string): Promise<F
   try {
     const response = await fetch(`${origin}/api/company/documents/${documentId}/reprocess`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...createDocumentInternalAuthHeaders(documentId),
+      },
       body: JSON.stringify({ documentId }),
       cache: 'no-store',
     })
@@ -82,6 +90,11 @@ function queueF30Analysis(origin: string, documentId: string): void {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await authorizeInternalDocumentRequest(request, DOCUMENT_WRITE_ROLES)
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
     const subcontractorId = formData.get('subcontractorId') as string

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
 import { isMultiInstanceDocumentCode } from '@/lib/subcontractor-document-versioning'
+import {
+  authorizeSubcontractorDocumentRead,
+  authorizeSubcontractorDocumentWrite,
+} from '@/lib/document-route-auth'
 
 export const maxDuration = 60
 
@@ -16,8 +20,12 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createAdminClient()
     const { id } = params
+    if (!(await authorizeSubcontractorDocumentWrite(request, id))) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
     const formData = await request.formData()
 
     const file = formData.get('file') as File
@@ -188,8 +196,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createAdminClient()
     const { id } = params
+    if (!(await authorizeSubcontractorDocumentRead(request, id))) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
 
     if (!id) {
       return NextResponse.json({ error: 'Subcontractor ID is required' }, { status: 400 })

@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { authorizeInternalDocumentRequest, DOCUMENT_READ_ROLES } from '@/lib/document-route-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,8 +9,11 @@ export const dynamic = 'force-dynamic'
  * Returns documents expiring soon for the renewal workflow
  * Used for preventive renewal workflow
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const session = await authorizeInternalDocumentRequest(request, DOCUMENT_READ_ROLES)
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const adminClient = await createAdminClient()
 
     console.log('[v0] Fetching documents expiring soon')

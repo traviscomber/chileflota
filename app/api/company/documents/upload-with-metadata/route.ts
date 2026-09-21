@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateCompanyFilePath } from '@/lib/utils/file-naming'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
+import { authorizeInternalDocumentRequest, DOCUMENT_WRITE_ROLES } from '@/lib/document-route-auth'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -11,6 +12,9 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await authorizeInternalDocumentRequest(request, DOCUMENT_WRITE_ROLES)
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     // Parse FormData
     let formData: FormData
     try {

@@ -1,10 +1,14 @@
 export const dynamic = 'force-dynamic'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { authorizeInternalDocumentRequest, DOCUMENT_DEBUG_ROLES } from '@/lib/document-route-auth'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const session = await authorizeInternalDocumentRequest(request, DOCUMENT_DEBUG_ROLES)
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const adminClient = createAdminClient()
     const { searchParams } = new URL(request.url)
     const rut = searchParams.get('rut')

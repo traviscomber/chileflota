@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { authorizeInternalDocumentRequest, DOCUMENT_WRITE_ROLES } from '@/lib/document-route-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,6 +9,9 @@ export async function POST(request: NextRequest) {
   console.log('[v0] Upload endpoint called at:', new Date().toISOString())
   
   try {
+    const session = await authorizeInternalDocumentRequest(request, DOCUMENT_WRITE_ROLES)
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const formData = await request.formData()
     console.log('[v0] FormData entries:', Array.from(formData.entries()).map(([k, v]) => [k, v instanceof File ? `File(${v.name})` : v]))
     

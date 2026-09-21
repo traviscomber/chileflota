@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { authorizeInternalDocumentRequest, DOCUMENT_READ_ROLES } from '@/lib/document-route-auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await authorizeInternalDocumentRequest(request, DOCUMENT_READ_ROLES)
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const searchParams = request.nextUrl.searchParams
     const driverRut = searchParams.get('driver_rut')
     const daysThreshold = parseInt(searchParams.get('days') || '30') // Por defecto alertar con anticipación estándar
