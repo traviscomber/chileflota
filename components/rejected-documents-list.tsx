@@ -303,7 +303,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                         <Badge variant="outline" className="bg-[var(--cf-warning-soft)] border-amber-500/30 text-[var(--cf-warning)]">
                           Periodo: {getDocumentPeriod(doc)}
                         </Badge>
-                        <Badge variant="outline" className="bg-slate-500/10 border-slate-500/30 text-[var(--cf-text-secondary)]">
+                        <Badge variant="outline" className="bg-[var(--cf-surface-raised)] border-[var(--cf-border)] text-[var(--cf-text-secondary)]">
                           Fecha: {getRejectionDate(doc)} {getRejectionTime(doc)}
                         </Badge>
                         {doc.docType && (
@@ -359,7 +359,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-xs gap-1 border-slate-400/50 text-[var(--cf-text-secondary)] hover:bg-slate-500/20"
+                        className="text-xs gap-1 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]"
                         title="Descargar documento"
                       >
                         <Download className="h-4 w-4" />
