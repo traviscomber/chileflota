@@ -150,7 +150,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
       case 'vencido':
         return 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
       default:
-        return 'bg-slate-600 text-[var(--cf-text)]'
+        return 'bg-[var(--cf-surface-raised)] text-[var(--cf-text)]'
     }
   }
 
