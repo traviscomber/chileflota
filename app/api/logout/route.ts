@@ -9,6 +9,7 @@ export async function POST() {
   response.cookies.delete('user_email')
   response.cookies.delete('user_name')
   response.cookies.delete('user_role')
+  response.cookies.delete('user_organization_id')
 
   return response
 }
