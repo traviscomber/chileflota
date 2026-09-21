@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth } from '@/lib/auth-middleware'
 import { countActionableSubcontractorPending } from '@/lib/pending-document-semantics'
+import { resolveExecutiveScope } from '@/lib/executive-scope'
 
 type TransportistaCertificationFlags = {
   ariztia: boolean | null
@@ -22,13 +23,6 @@ type LegacyDocumentRow = {
   vision_processed_at: string | null
 }
 
-type ExecutiveScope = {
-  executiveStaffId: string
-  companyIds: string[]
-  companyRuts: string[]
-  conductorIds: string[]
-}
-
 function normalizeFilename(value: string | null | undefined) {
   return value?.trim().toLowerCase() || ''
 }
@@ -42,67 +36,6 @@ function legacyWasProcessed(doc: LegacyDocumentRow) {
       doc.ai_analyzed_at ||
       doc.vision_processed_at,
   )
-}
-
-async function resolveExecutiveScope(
-  supabase: ReturnType<typeof createAdminClient>,
-  email: string,
-  authUserId: string,
-): Promise<ExecutiveScope | null> {
-  const { data: exact } = await supabase
-    .from('executive_staff')
-    .select('id')
-    .ilike('email', email)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
-
-  let executiveStaffId = exact?.id as string | undefined
-
-  if (!executiveStaffId) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', authUserId)
-      .maybeSingle()
-
-    if (profile?.full_name) {
-      const { data: matches } = await supabase
-        .from('executive_staff')
-        .select('id')
-        .ilike('full_name', profile.full_name)
-        .eq('is_active', true)
-        .limit(2)
-
-      if (matches?.length === 1) executiveStaffId = matches[0].id as string
-    }
-  }
-
-  if (!executiveStaffId) return null
-
-  const { data: companies, error: companiesError } = await supabase
-    .from('transportistas')
-    .select('id,rut')
-    .eq('assigned_executive_id', executiveStaffId)
-    .eq('is_active', true)
-
-  if (companiesError) throw companiesError
-
-  const companyIds = (companies || []).map((row) => row.id).filter(Boolean)
-  const companyRuts = (companies || []).map((row) => row.rut).filter(Boolean) as string[]
-
-  let conductorIds: string[] = []
-  if (companyRuts.length > 0) {
-    const { data: conductores, error: conductoresError } = await supabase
-      .from('conductores')
-      .select('id')
-      .in('rut_proveedor', companyRuts)
-
-    if (conductoresError) throw conductoresError
-    conductorIds = (conductores || []).map((row) => row.id).filter(Boolean)
-  }
-
-  return { executiveStaffId, companyIds, companyRuts, conductorIds }
 }
 
 export async function GET(request: NextRequest) {

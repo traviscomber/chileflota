@@ -2,64 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth } from '@/lib/auth-middleware'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { resolveExecutiveConductorIds } from '@/lib/executive-scope'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-
-async function resolveExecutiveConductorIds(
-  supabase: ReturnType<typeof createAdminClient>,
-  email: string,
-  authUserId: string,
-) {
-  const { data: exact } = await supabase
-    .from('executive_staff')
-    .select('id')
-    .ilike('email', email)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
-
-  let executiveStaffId = exact?.id as string | undefined
-
-  if (!executiveStaffId) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', authUserId)
-      .maybeSingle()
-
-    if (profile?.full_name) {
-      const { data: matches } = await supabase
-        .from('executive_staff')
-        .select('id')
-        .ilike('full_name', profile.full_name)
-        .eq('is_active', true)
-        .limit(2)
-
-      if (matches?.length === 1) executiveStaffId = matches[0].id as string
-    }
-  }
-
-  if (!executiveStaffId) return null
-
-  const { data: companies, error: companiesError } = await supabase
-    .from('transportistas')
-    .select('rut')
-    .eq('assigned_executive_id', executiveStaffId)
-    .eq('is_active', true)
-
-  if (companiesError) throw companiesError
-  const ruts = (companies || []).map((row) => row.rut).filter(Boolean)
-  if (ruts.length === 0) return []
-
-  const { data: conductors, error: conductorsError } = await supabase
-    .from('conductores')
-    .select('id')
-    .in('rut_proveedor', ruts)
-
-  if (conductorsError) throw conductorsError
-  return (conductors || []).map((row) => row.id).filter(Boolean)
-}
 
 /**
  * GET /api/company/documents/all
