@@ -95,7 +95,7 @@ describe('simple subcontractor review submissions', () => {
     expect(detail).toContain("const docType = requirement || doc.document_type")
     expect(detail).not.toContain('if (!req) return null')
     expect(detail).toContain('summary.requirementsMissing')
-    expect(detail).toContain('summary.approvedRequirements / summary.totalRequirements')
+    expect(detail).toContain('summary.requirementsCovered / summary.totalRequirements')
     expect(detail).not.toContain('summary.approvedDocuments / summary.totalRequirements')
   })
 
