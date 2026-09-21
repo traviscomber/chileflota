@@ -179,7 +179,6 @@ export async function canChangeDocumentStatus(
       return { allowed: true, coverageReview: false, assignedExecutiveName: transportista.ejecutivo_nombre || null }
     }
 
-    // Preserve the existing conductor-document authorization contract.
     if (isSuperAdmin(userEmail, userRole)) {
       return { allowed: true }
     }
@@ -194,12 +193,94 @@ export async function canChangeDocumentStatus(
 
     const { data: document, error: docError } = await adminClient
       .from('uploaded_documents')
-      .select('conductor_id')
+      .select('conductor_id,transportista_id')
       .eq('id', documentId)
       .single()
 
     if (docError || !document) {
       return { allowed: false, reason: 'Documento no encontrado' }
+    }
+
+    if (userRole === 'ejecutiva') {
+      if (!userEmail) {
+        return { allowed: false, reason: 'No se pudo verificar la identidad de la ejecutiva' }
+      }
+
+      const { data: actorProfile, error: actorError } = await adminClient
+        .from('profiles')
+        .select('email,full_name,role,is_active')
+        .ilike('email', userEmail)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+
+      if (actorError || !actorProfile || actorProfile.role !== 'ejecutiva') {
+        return { allowed: false, reason: 'Perfil activo de ejecutiva no encontrado' }
+      }
+
+      let companyId = (document as any).transportista_id as string | null
+      let providerRut: string | null = null
+
+      if (!companyId && (document as any).conductor_id) {
+        const { data: conductor } = await adminClient
+          .from('conductores')
+          .select('transportista_id,rut_proveedor')
+          .eq('id', (document as any).conductor_id)
+          .maybeSingle()
+
+        companyId = conductor?.transportista_id || null
+        providerRut = conductor?.rut_proveedor || null
+      }
+
+      let transportista: any = null
+      if (companyId) {
+        const { data } = await adminClient
+          .from('transportistas')
+          .select('id,rut,assigned_executive_id,ejecutivo_asignado,ejecutivo_nombre,is_active')
+          .eq('id', companyId)
+          .maybeSingle()
+        transportista = data
+      } else if (providerRut) {
+        const { data } = await adminClient
+          .from('transportistas')
+          .select('id,rut,assigned_executive_id,ejecutivo_asignado,ejecutivo_nombre,is_active')
+          .eq('rut', providerRut)
+          .maybeSingle()
+        transportista = data
+      }
+
+      if (!transportista || transportista.is_active === false) {
+        return { allowed: false, reason: 'No se pudo resolver una empresa activa para el documento del conductor' }
+      }
+
+      const assignedExecutiveId = transportista.assigned_executive_id || transportista.ejecutivo_asignado
+      if (!assignedExecutiveId) {
+        return { allowed: false, reason: 'La empresa no tiene ejecutiva asignada' }
+      }
+
+      const { data: assignedExecutive, error: assignedError } = await adminClient
+        .from('executive_staff')
+        .select('id,email,full_name,is_active')
+        .eq('id', assignedExecutiveId)
+        .maybeSingle()
+
+      if (assignedError || !assignedExecutive || assignedExecutive.is_active === false) {
+        return { allowed: false, reason: 'No se pudo validar la ejecutiva asignada a la empresa' }
+      }
+
+      const actorEmail = normalizeEmail(actorProfile.email || userEmail)
+      const assignedEmail = normalizeEmail(assignedExecutive.email)
+      const sameExecutive =
+        (actorEmail && assignedEmail && actorEmail === assignedEmail) ||
+        reviewerMatchesAssignment(actorProfile.full_name, assignedExecutive.full_name)
+
+      return {
+        allowed: true,
+        coverageReview: !sameExecutive,
+        assignedExecutiveId: assignedExecutive.id,
+        assignedExecutiveName: assignedExecutive.full_name || assignedExecutive.email || null,
+        reason: sameExecutive ? undefined : 'Cobertura temporal de otra cartera',
+      }
     }
 
     const { data: userProfile, error: profileError } = await adminClient
@@ -213,13 +294,13 @@ export async function canChangeDocumentStatus(
     }
 
     const userTransportista = userProfile?.organization_id || userCompanyId
-    const documentTransportista = (document as { conductor_id?: string | null }).conductor_id
+    const documentTransportista = (document as { transportista_id?: string | null }).transportista_id
 
     if (!userTransportista) {
       return { allowed: false, reason: 'No se encontró la empresa del usuario' }
     }
 
-    if (userTransportista !== documentTransportista) {
+    if (documentTransportista && userTransportista !== documentTransportista) {
       return { allowed: false, reason: 'No tienes permiso para cambiar documentos de otra empresa' }
     }
 
