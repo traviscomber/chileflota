@@ -1,4 +1,4 @@
-import { isDisplayRelevantAlert, isDocumentUploadAlert, isUnvalidatedAiExpirationAlert } from '@/lib/alerts/relevance'
+import { isDisplayRelevantAlert, isDocumentStatusChangeAlert, isDocumentUploadAlert, isUnvalidatedAiExpirationAlert } from '@/lib/alerts/relevance'
 
 describe('alert relevance', () => {
   it('suppresses AI-derived expiration alerts from operational queues', () => {
@@ -38,5 +38,10 @@ describe('alert relevance', () => {
   it('identifies document upload alerts that need canonical pending-state validation', () => {
     expect(isDocumentUploadAlert({ metadata: { uploader_type: 'conductor', document_id: 'doc-1' } })).toBe(true)
     expect(isDocumentUploadAlert({ metadata: { source: 'expiration_cron', document_id: 'doc-1' } })).toBe(false)
+  })
+
+  it('identifies document status alerts for canonical state validation', () => {
+    expect(isDocumentStatusChangeAlert({ metadata: { source: 'document_status_change', document_id: 'doc-1' } })).toBe(true)
+    expect(isDocumentStatusChangeAlert({ metadata: { source: 'document_upload', document_id: 'doc-1' } })).toBe(false)
   })
 })
