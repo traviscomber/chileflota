@@ -146,7 +146,6 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   const totalActuales = stats.conductores.total + stats.subcontratistas.total
   const totalGestionados = stats.lifetime?.processed ?? (stats.conductores.processed + stats.subcontratistas.processed)
   const totalChileFlota = stats.lifetime?.globalProcessed ?? totalGestionados
-  const totalVersionesAnteriores = Math.max(0, totalGestionados - totalActuales)
 
   const modules = [
     {
@@ -158,10 +157,10 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       current: stats.conductores.total,
       processed: stats.conductores.processed,
       statItems: [
-        { label: 'Pendientes actuales', value: stats.conductores.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
-        { label: 'Aprobados actuales', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
-        { label: 'Rechazados actuales', value: stats.conductores.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
-        { label: 'Versiones anteriores', value: stats.conductores.processed - stats.conductores.total, icon: FileStack, color: 'text-[#A9ADB3]' },
+        { label: 'Pendientes', value: stats.conductores.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
+        { label: 'Aprobados', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
+        { label: 'Rechazados', value: stats.conductores.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
+        { label: 'Revisados', value: stats.conductores.aprobados + stats.conductores.rechazados, icon: FileStack, color: 'text-[#A9ADB3]' },
       ],
     },
     {
@@ -173,10 +172,10 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       current: stats.subcontratistas.total,
       processed: stats.subcontratistas.processed,
       statItems: [
-        { label: 'Pendientes actuales', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
-        { label: 'Aprobados actuales', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
-        { label: 'Rechazados actuales', value: stats.subcontratistas.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
-        { label: 'Versiones anteriores', value: stats.subcontratistas.processed - stats.subcontratistas.total, icon: FileStack, color: 'text-[#A9ADB3]' },
+        { label: 'Pendientes', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
+        { label: 'Aprobados', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
+        { label: 'Rechazados', value: stats.subcontratistas.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
+        { label: 'Revisados', value: stats.subcontratistas.aprobados + stats.subcontratistas.rechazados, icon: FileStack, color: 'text-[#A9ADB3]' },
       ],
     },
     {
@@ -207,7 +206,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
             Gestor de Documentos
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">
-            {totalGestionados.toLocaleString('es-CL')} documentos procesados en tu cartera. {totalActuales.toLocaleString('es-CL')} corresponden al estado operacional actual.
+            {totalGestionados.toLocaleString('es-CL')} documentos procesados en tu cartera. {totalActuales.toLocaleString('es-CL')} registros están clasificados por estado de revisión.
           </p>
         </div>
 
@@ -231,7 +230,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-5">
         <MetricCard label="Procesados cartera" value={totalGestionados} detail={`ChileFlota total: ${totalChileFlota.toLocaleString('es-CL')}`} icon={FileStack} tone="neutral" />
-        <MetricCard label="Actuales" value={totalActuales} detail="Una versión activa por requisito" icon={FileText} tone="neutral" />
+        <MetricCard label="Registros" value={totalActuales} detail="Cada carga se revisa como evidencia independiente" icon={FileText} tone="neutral" />
         <Link href="/dashboard/company/documentos/pendientes" className="contents">
           <MetricCard label="Pendientes" value={totalPendientes} icon={Clock} tone="warning" />
         </Link>
@@ -244,7 +243,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       </div>
 
       <p className="text-xs leading-5 text-[#777C84]">
-        Los estados Pendientes, Aprobados y Rechazados usan exactamente la misma fuente canónica que sus bandejas. Las {totalVersionesAnteriores.toLocaleString('es-CL')} versiones históricas de la cartera se conservan como trazabilidad.
+        Pendientes, Aprobados y Rechazados reflejan el estado de cada carga documental. La vigencia operacional se calcula por separado en Compliance.
       </p>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -261,7 +260,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
                     {module.processed !== null ? (
                       <>
                         <span className="text-xs tabular-nums text-[#C6C8CC]">{module.processed.toLocaleString('es-CL')} gestionados</span>
-                        <span className="text-[11px] tabular-nums text-[#777C84]">{module.current.toLocaleString('es-CL')} actuales</span>
+                        <span className="text-[11px] tabular-nums text-[#777C84]">{module.current.toLocaleString('es-CL')} registros</span>
                       </>
                     ) : (
                       <span className="text-xs tabular-nums text-[#C6C8CC]">{module.current.toLocaleString('es-CL')} asignadas</span>
