@@ -5,6 +5,7 @@ import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 import { selectCanonicalPendingF301 } from '@/lib/f301-canonical'
 import { selectCanonicalPendingMutualRates } from '@/lib/mutual-rates-canonical'
 import { getExecutiveScope, type ExecutiveScopeMode } from '@/lib/executive-coverage-scope'
+import { collapseConfirmedStorageDuplicates, getPendingStorageDedupCandidateFolders } from '@/lib/pending-storage-dedup'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -509,7 +510,7 @@ export async function GET(request: Request) {
     let suppressedByApprovedEvidence = 0
     let suppressedByExplicitSupersession = 0
 
-    const subDocs = mergedRawSubDocs.filter((doc: any) => {
+    const canonicalSubDocs = mergedRawSubDocs.filter((doc: any) => {
       const typeInfo = subTypeMap.get(doc.document_type_id)
 
       // F30-1 client and mutual-rate families have their own instance canonicalizers.
@@ -532,6 +533,36 @@ export async function GET(request: Request) {
       const typeCode = typeInfo?.code
       return Boolean(typeCode && LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES.has(typeCode))
     })
+
+    const storageMetadataByObjectName = new Map<string, any>()
+    const candidateStorageFolders = getPendingStorageDedupCandidateFolders(canonicalSubDocs)
+    let storageMetadataReadFailures = 0
+
+    await Promise.all(candidateStorageFolders.map(async (folder) => {
+      for (let offset = 0; ; offset += PAGE_SIZE) {
+        const { data: objects, error: storageError } = await admin.storage
+          .from('subcontractor-documents')
+          .list(folder, { limit: PAGE_SIZE, offset })
+
+        if (storageError) {
+          storageMetadataReadFailures += 1
+          break
+        }
+
+        const page = objects || []
+        for (const object of page) {
+          storageMetadataByObjectName.set(`${folder}/${object.name}`, object.metadata || {})
+        }
+
+        if (page.length < PAGE_SIZE) break
+      }
+    }))
+
+    const {
+      rows: subDocs,
+      suppressedCount: confirmedStorageDuplicatesSuppressed,
+      duplicateGroups: confirmedStorageDuplicateGroups,
+    } = collapseConfirmedStorageDuplicates(canonicalSubDocs, storageMetadataByObjectName)
 
     const providerRuts = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.rut_proveedor).filter(Boolean))]
     const directCompanyIds = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.transportista_id).filter(Boolean))]
@@ -687,6 +718,9 @@ export async function GET(request: Request) {
             extraDocumentsBeyondOnePerRequirement: Math.max(0, filteredSubDocs.length - pendingRequirementSlots),
             suppressedByApprovedEvidence,
             suppressedByExplicitSupersession,
+            confirmedStorageDuplicatesSuppressed,
+            confirmedStorageDuplicateGroups,
+            storageMetadataReadFailures,
             f301: f301Diagnostics,
             mutualRates: mutualRatesDiagnostics,
             pagination: { pageSize: PAGE_SIZE, complete: true },
