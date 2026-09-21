@@ -92,18 +92,25 @@ async function fetchAllApproved(supabase: ReturnType<typeof createAdminClient>, 
 }
 
 
-async function fetchAllF301SubcontractorDocuments(supabase: ReturnType<typeof createAdminClient>) {
+async function fetchAllF301SubcontractorDocuments(
+  supabase: ReturnType<typeof createAdminClient>,
+  companyIds: string[] | null,
+) {
+  if (companyIds && companyIds.length === 0) return []
   const documents: any[] = []
   const pageSize = 1000
 
   for (let page = 0; ; page += 1) {
-    const { data, error } = await supabase
+    let query: any = supabase
       .from('subcontractor_documents')
       .select(`id,file_name,document_type_id,status,file_url,approved_at,reviewed_by_ejecutiva,reviewed_at,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current,ai_document_type,ai_extracted_text,document_type:subcontractor_document_types!inner(code)`)
       .eq('document_type.code', 'F30-1_CLIENTE')
       .order('uploaded_at', { ascending: false })
       .range(page * pageSize, page * pageSize + pageSize - 1)
 
+    if (companyIds) query = query.in('subcontractor_id', companyIds)
+
+    const { data, error } = await query
     if (error) throw error
     if (!data?.length) break
     documents.push(...data)
@@ -177,10 +184,16 @@ export async function GET(request: Request) {
       }
     }
 
+    const f301ScopedCompanyIds = focus?.mode === 'company'
+      ? [focus.id]
+      : executiveCompanyIds
+        ? Array.from(executiveCompanyIds)
+        : null
+
     const [conductorDocs, subDocs, f301History, conductorTypesResult, subcontractorTypesResult, executivesResult] = await Promise.all([
       fetchAllApproved(supabase, 'uploaded_documents'),
       fetchAllApproved(supabase, 'subcontractor_documents'),
-      fetchAllF301SubcontractorDocuments(supabase),
+      fetchAllF301SubcontractorDocuments(supabase, f301ScopedCompanyIds),
       supabase.from('document_types').select('id, code, name'),
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
       supabase.from('executive_staff').select('id, full_name, email, is_active'),
