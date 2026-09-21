@@ -34,57 +34,57 @@ const AlertItem = React.memo<AlertItemProps>(({
     const t = alertType?.toUpperCase() || ''
 
     if (t.includes('APPROVED') || t.includes('APROBADO')) {
-      return <CheckCircle className="h-5 w-5 text-green-500" />
+      return <CheckCircle className="h-5 w-5 text-[var(--cf-success)]" aria-hidden="true" />
     }
     if (t.includes('REJECTED') || t.includes('RECHAZADO')) {
-      return <XCircle className="h-5 w-5 text-red-500" />
+      return <XCircle className="h-5 w-5 text-[var(--cf-danger)]" aria-hidden="true" />
     }
     if (t.includes('UPLOAD') || t.includes('SUBIDO')) {
-      return <FileUp className="h-5 w-5 text-blue-500" />
+      return <FileUp className="h-5 w-5 text-[var(--cf-text-secondary)]" aria-hidden="true" />
     }
     if (t.includes('EXPIR') || t.includes('VENC')) {
-      return <Clock className="h-5 w-5 text-orange-500" />
+      return <Clock className="h-5 w-5 text-[var(--cf-warning)]" aria-hidden="true" />
     }
     if (t.includes('PENDING') || t.includes('PENDIENTE')) {
-      return <Clock className="h-5 w-5 text-yellow-500" />
+      return <Clock className="h-5 w-5 text-[var(--cf-warning)]" aria-hidden="true" />
     }
     if (t.includes('ANOMAL') || t.includes('WARNING')) {
-      return <AlertTriangle className="h-5 w-5 text-yellow-500" />
+      return <AlertTriangle className="h-5 w-5 text-[var(--cf-warning)]" aria-hidden="true" />
     }
     if (t.includes('AI') || t.includes('ANALISIS') || t.includes('IA')) {
-      return <Brain className="h-5 w-5 text-purple-500" />
+      return <Brain className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
     }
-    return <Info className="h-5 w-5 text-blue-500" />
+    return <Info className="h-5 w-5 text-[var(--cf-text-secondary)]" aria-hidden="true" />
   }
 
   const getStatusBadge = (alertType: string) => {
     const t = alertType?.toUpperCase() || ''
 
     if (t.includes('APPROVED') || t.includes('APROBADO')) {
-      return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Aprobado</Badge>
+      return <Badge className="border-[var(--cf-success)] bg-[var(--cf-surface-2)] text-[var(--cf-success)]">Aprobado</Badge>
     }
     if (t.includes('REJECTED') || t.includes('RECHAZADO')) {
-      return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Rechazado</Badge>
+      return <Badge className="border-[var(--cf-danger)] bg-[var(--cf-surface-2)] text-[var(--cf-danger)]">Rechazado</Badge>
     }
     if (t.includes('UPLOAD') || t.includes('SUBIDO')) {
-      return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Subido</Badge>
+      return <Badge className="border-[var(--cf-border)] bg-[var(--cf-surface-2)] text-[var(--cf-text-secondary)]">Subido</Badge>
     }
     if (t.includes('EXPIR') || t.includes('VENC')) {
-      return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Vencimiento</Badge>
+      return <Badge className="border-[var(--cf-warning)] bg-[var(--cf-surface-2)] text-[var(--cf-warning)]">Vencimiento</Badge>
     }
     if (t.includes('PENDING') || t.includes('PENDIENTE')) {
-      return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Pendiente</Badge>
+      return <Badge className="border-[var(--cf-warning)] bg-[var(--cf-surface-2)] text-[var(--cf-warning)]">Pendiente</Badge>
     }
     if (t.includes('ANOMAL') || t.includes('WARNING')) {
-      return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Anomalia</Badge>
+      return <Badge className="border-[var(--cf-warning)] bg-[var(--cf-surface-2)] text-[var(--cf-warning)]">Anomalía</Badge>
     }
     if (t.includes('AI') || t.includes('ANALISIS') || t.includes('IA')) {
-      return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">IA</Badge>
+      return <Badge className="border-[var(--cf-accent)] bg-[var(--cf-surface-2)] text-[var(--cf-text-secondary)]">IA</Badge>
     }
     if (t.includes('INFO') || t.includes('SUCCESS')) {
-      return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Info</Badge>
+      return <Badge className="border-[var(--cf-border)] bg-[var(--cf-surface-2)] text-[var(--cf-text-secondary)]">Info</Badge>
     }
-    return <Badge variant="secondary" className="bg-slate-500/20 text-slate-400">Sistema</Badge>
+    return <Badge variant="secondary" className="border-[var(--cf-border)] bg-[var(--cf-surface-2)] text-[var(--cf-text-muted)]">Sistema</Badge>
   }
 
   const handleClick = () => {
@@ -96,21 +96,23 @@ const AlertItem = React.memo<AlertItemProps>(({
   }
 
   return (
-    <div
-      className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 hover:border-orange-500/30 transition-all cursor-pointer"
+    <button
+      type="button"
+      className="flex w-full flex-col gap-3 rounded-[5px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)] sm:flex-row sm:items-start sm:justify-between"
       onClick={handleClick}
+      aria-label={`${title}. Abrir alertas`}
     >
       <div className="flex items-start space-x-3 flex-1 min-w-0">
         <div className="mt-0.5 flex-shrink-0">{getStatusIcon(type)}</div>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm text-foreground">{title}</p>
           {transportistaNombre && (
-            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-[var(--cf-text-secondary)]">
               <span className="inline-flex items-center gap-1.5 font-medium">
-                <Building2 className="h-3.5 w-3.5 text-slate-500" />
+                <Building2 className="h-3.5 w-3.5 text-[var(--cf-text-muted)]" aria-hidden="true" />
                 Subcontratista: {transportistaNombre}
               </span>
-              {transportistaRut && <span className="text-slate-500">RUT {transportistaRut}</span>}
+              {transportistaRut && <span className="text-[var(--cf-text-muted)]">RUT {transportistaRut}</span>}
             </div>
           )}
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{message}</p>
@@ -133,7 +135,7 @@ const AlertItem = React.memo<AlertItemProps>(({
         </div>
       </div>
       <div className="flex-shrink-0">{getStatusBadge(type)}</div>
-    </div>
+    </button>
   )
 })
 
