@@ -56,7 +56,7 @@ export default function SubcontractorDashboardPage() {
   const today = new Date()
   const [selectedMonth, setSelectedMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
   const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
-  const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
+  const [documentDate, setDocumentDate] = useState(() => { const d = new Date(); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return local.toISOString().split('T')[0] })
 
   const handleDocumentDateChange = (value: string) => {
     setDocumentDate(value)
@@ -442,7 +442,7 @@ export default function SubcontractorDashboardPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="docdate" className="text-[var(--cf-text-secondary)]">Fecha del Documento</Label>
-                  <Input id="docdate" type="date" value={documentDate} onChange={(e) => handleDocumentDateChange(e.target.value)} min={minDateString} max={new Date().toISOString().split('T')[0]} className="bg-[var(--cf-surface-raised)] border-[var(--cf-border)] text-[var(--cf-text-secondary)]" />
+                  <Input id="docdate" type="date" value={documentDate} onChange={(e) => handleDocumentDateChange(e.target.value)} min={minDateString} max={(() => { const d = new Date(); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return local.toISOString().split('T')[0] })()} className="bg-[var(--cf-surface-raised)] border-[var(--cf-border)] text-[var(--cf-text-secondary)]" />
                   <p className="text-xs text-[var(--cf-text-muted)]">Esta fecha define el periodo mensual de cumplimiento</p>
                 </div>
                 <div className="space-y-2">
