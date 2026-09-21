@@ -120,11 +120,7 @@ async function fetchDashboardSnapshot() {
 
   const groupedReviewQueue = new Map<string, typeof reviewCandidates[number] & { count: number }>()
   for (const alert of reviewCandidates) {
-    const key = [
-      String(alert.metadata.company_id || alert.metadata.transportista_nombre || 'sin-empresa'),
-      String(alert.document_type || 'sin-tipo'),
-      String(alert.metadata.document_source || 'sin-fuente'),
-    ].join('::')
+    const key = String(alert.metadata.company_id || alert.metadata.transportista_nombre || 'sin-empresa')
 
     const existing = groupedReviewQueue.get(key)
     if (!existing) {
@@ -143,7 +139,7 @@ async function fetchDashboardSnapshot() {
       ...alert,
       title: alert.count > 1 ? `${alert.count} documentos nuevos para revisión` : alert.title,
       message: alert.count > 1
-        ? `${alert.document_type || 'Documento'} · ${alert.metadata.transportista_nombre || 'Empresa sin nombre'}`
+        ? `${alert.metadata.transportista_nombre || 'Empresa sin nombre'} · revisar carga reciente`
         : alert.message,
       metadata: {
         ...alert.metadata,
