@@ -201,51 +201,37 @@ export async function changeDocumentStatus(
       console.warn('[v0] Status update verification failed, but update likely succeeded')
     }
 
-    // STEP 6: Create durable security audit entry.
-    // audit_log exists in production and stores actor + portfolio owner separately.
-    try {
-      const { error: auditError } = await adminClient
-        .from('audit_log')
-        .insert({
-          user_id: userId || null,
-          action: reviewContext?.coverageReview ? 'document_review_coverage' : 'document_status_change',
-          table_name: tableName,
-          record_id: documentId,
-          old_values: {
-            status: previousStatus,
-          },
-          new_values: {
-            status: newStatus,
-            reviewed_by: userEmail || userId || 'system',
-            reviewer_role: reviewContext?.reviewerRole || null,
-            coverage_review: reviewContext?.coverageReview === true,
-            assigned_executive_id: reviewContext?.assignedExecutiveId || null,
-            assigned_executive_name: reviewContext?.assignedExecutiveName || null,
-            reason: reason || null,
-          },
-          created_at: new Date().toISOString(),
-        })
+    // STEP 6: Record ordinary status changes in the existing audit_log.
+    // Coverage reviews are audited atomically by DB triggers from migration 027.
+    if (!reviewContext?.coverageReview) {
+      try {
+        const { error: auditError } = await adminClient
+          .from('audit_log')
+          .insert({
+            user_id: userId || null,
+            action: 'document_status_change',
+            table_name: tableName,
+            record_id: documentId,
+            old_values: {
+              status: previousStatus,
+            },
+            new_values: {
+              status: newStatus,
+              reviewed_by: userEmail || userId || 'system',
+              reviewer_role: reviewContext?.reviewerRole || null,
+              coverage_review: false,
+              assigned_executive_id: reviewContext?.assignedExecutiveId || null,
+              assigned_executive_name: reviewContext?.assignedExecutiveName || null,
+              reason: reason || null,
+            },
+            created_at: new Date().toISOString(),
+          })
 
-      if (auditError) {
-        console.error('[v0] Security audit insert failed:', auditError)
-        return {
-          success: false,
-          documentId,
-          previousStatus,
-          newStatus,
-          message: 'El estado cambió, pero no se pudo registrar la auditoría. Requiere revisión administrativa.',
-          error: 'AUDIT_LOG_FAILED',
+        if (auditError) {
+          console.warn('[v0] Status audit insert failed:', auditError)
         }
-      }
-    } catch (auditError) {
-      console.error('[v0] Security audit exception:', auditError)
-      return {
-        success: false,
-        documentId,
-        previousStatus,
-        newStatus,
-        message: 'El estado cambió, pero no se pudo registrar la auditoría. Requiere revisión administrativa.',
-        error: 'AUDIT_LOG_FAILED',
+      } catch (auditError) {
+        console.warn('[v0] Status audit exception:', auditError)
       }
     }
 
