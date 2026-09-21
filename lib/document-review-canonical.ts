@@ -47,6 +47,11 @@ export function isClearlyMisclassifiedSubcontractorDocument(doc: any, typeCode: 
 
   const isAntecedentes = text.includes('certificado de antecedentes laborales y previsionales')
   const isCumplimiento = text.includes('certificado de cumplimiento de obligaciones laborales y previsionales')
+
+  // F30 and F30-1 are different Dirección del Trabajo certificates.
+  // F30 = antecedentes laborales y previsionales.
+  // F30-1 = cumplimiento de obligaciones laborales y previsionales.
+  if (typeCode === 'F30') return isCumplimiento && !isAntecedentes
   return isAntecedentes && !isCumplimiento
 }
 
