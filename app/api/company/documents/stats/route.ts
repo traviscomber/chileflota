@@ -82,7 +82,12 @@ export async function GET(request: NextRequest) {
       kind: 'conductor' | 'subcontractor',
       statusColumn: string,
       status: string,
-    ) => runCount(table, kind, (query) => query.eq(statusColumn, status))
+    ) => runCount(
+      table,
+      kind,
+      (query) => query.eq(statusColumn, status),
+      kind === 'conductor',
+    )
 
     const countPending = (
       table: string,
@@ -94,6 +99,7 @@ export async function GET(request: NextRequest) {
       (query) => kind === 'conductor'
         ? query.or(`${statusColumn}.eq.pending,${statusColumn}.is.null`)
         : query.eq(statusColumn, 'pending'),
+      kind === 'conductor',
     )
 
     const countCanonicalProcessed = async (applyScope = true) => {
@@ -153,7 +159,7 @@ export async function GET(request: NextRequest) {
       countByStatus('uploaded_documents', 'conductor', 'validation_status', 'approved'),
       countByStatus('uploaded_documents', 'conductor', 'validation_status', 'rejected'),
       countPending('uploaded_documents', 'conductor', 'validation_status'),
-      runCount('subcontractor_documents', 'subcontractor'),
+      runCount('subcontractor_documents', 'subcontractor', undefined, false),
       runCount('subcontractor_documents', 'subcontractor', undefined, false),
       countByStatus('subcontractor_documents', 'subcontractor', 'status', 'approved'),
       countByStatus('subcontractor_documents', 'subcontractor', 'status', 'rejected'),
