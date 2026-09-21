@@ -1,54 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, checkRolePermission } from '@/lib/auth-middleware'
 import { type NextRequest, NextResponse } from 'next/server'
+import { resolveExecutiveCompanyIds } from '@/lib/executive-scope'
 
 export const dynamic = 'force-dynamic'
-
-async function resolveExecutiveCompanyIds(
-  supabase: ReturnType<typeof createAdminClient>,
-  email: string,
-  authUserId: string,
-) {
-  const { data: exact } = await supabase
-    .from('executive_staff')
-    .select('id')
-    .ilike('email', email)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
-
-  let executiveStaffId = exact?.id as string | undefined
-
-  if (!executiveStaffId) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', authUserId)
-      .maybeSingle()
-
-    if (profile?.full_name) {
-      const { data: matches } = await supabase
-        .from('executive_staff')
-        .select('id')
-        .ilike('full_name', profile.full_name)
-        .eq('is_active', true)
-        .limit(2)
-
-      if (matches?.length === 1) executiveStaffId = matches[0].id as string
-    }
-  }
-
-  if (!executiveStaffId) return null
-
-  const { data: companies, error } = await supabase
-    .from('transportistas')
-    .select('id')
-    .eq('assigned_executive_id', executiveStaffId)
-    .eq('is_active', true)
-
-  if (error) throw error
-  return (companies || []).map((company) => company.id).filter(Boolean)
-}
 
 const ALERT_ACTION_ROLES = [
   'super_admin',
