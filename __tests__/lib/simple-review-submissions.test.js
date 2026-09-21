@@ -61,4 +61,24 @@ describe('simple subcontractor review submissions', () => {
     expect(page).toContain("countByStatus('subcontractor_documents', 'status', 'pending', false)")
     expect(stats).toContain("kind === 'conductor'")
   })
+
+  test('subcontractor document endpoint authorizes owner or internal role before service-role access', () => {
+    const source = read('app/api/subcontractors/[id]/documents/route.ts')
+    expect(source).toContain('authorizeSubcontractorAccess')
+    expect(source).toContain("request.cookies.get('transportista_token')")
+    expect(source).toContain("decoded.transportista_id === subcontractorId")
+    expect(source).toContain("await verifyAuth(request)")
+    expect(source).toContain("mode: 'read' | 'write'")
+    expect(source).toContain("canonicalSubcontractor.rut")
+  })
+
+  test('subcontractor upload validates file and active document type server-side', () => {
+    const source = read('app/api/subcontractors/[id]/documents/route.ts')
+    expect(source).toContain("50 * 1024 * 1024")
+    expect(source).toContain("'application/pdf'")
+    expect(source).toContain("'image/jpeg'")
+    expect(source).toContain("'image/png'")
+    expect(source).toContain(".eq('is_active', true)")
+  })
+
 })
