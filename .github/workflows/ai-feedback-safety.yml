@@ -1,0 +1,26 @@
+name: AI Feedback Safety
+
+on:
+  pull_request:
+    paths:
+      - 'app/api/company/ai-training/feedback/route.ts'
+      - 'lib/ai-feedback-safety.ts'
+      - '__tests__/ai-feedback-safety.test.ts'
+      - '.github/workflows/ai-feedback-safety.yml'
+  workflow_dispatch:
+
+jobs:
+  ai-feedback-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/ai-feedback-safety.test.ts --runInBand
