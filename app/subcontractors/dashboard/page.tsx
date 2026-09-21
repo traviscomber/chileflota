@@ -356,7 +356,7 @@ export default function SubcontractorDashboardPage() {
         
 
         {(statusSummary.actionRequired > 0 || statusSummary.expiringSoon > 0) && (
-          <div className="rounded-lg border border-[var(--cf-expiring)]/40 bg-[var(--cf-expiring-soft)] p-4 text-sm text-orange-100">
+          <div className="rounded-lg border border-[var(--cf-expiring)]/40 bg-[var(--cf-expiring-soft)] p-4 text-sm text-[var(--cf-expiring)]">
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--cf-expiring)]" />
               <p>
