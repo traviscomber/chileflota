@@ -98,6 +98,7 @@ export async function GET(request: Request) {
 
     const supabase = createAdminClient()
     const focus = getFocus(request)
+    const compact = new URL(request.url).searchParams.get('compact') === '1'
     const requestedExecutiveScope = getExecutiveScope(request)
     let executiveStaffId: string | null = null
     let executiveCompanyIds: Set<string> | null = null
@@ -233,11 +234,9 @@ export async function GET(request: Request) {
     const filteredSub = scopedSub.filter(filterByFocus)
     const allDocs = [...filteredConductor, ...filteredSub].sort((a, b) => new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime())
 
-    const response = NextResponse.json({
+    const payload: any = {
       conductorDocs: filteredConductor,
       subDocs: filteredSub,
-      allDocs,
-      documents: allDocs,
       total: allDocs.length,
       scope: auth.user.role === 'ejecutiva'
         ? (effectiveExecutiveScope === 'mine' ? 'assigned_executive_reviewed_submissions' : 'coverage_reviewed_submissions')
@@ -256,7 +255,12 @@ export async function GET(request: Request) {
         : { mode: 'all', canCover: false, availableExecutives: [] },
       historyEndpoint: '/api/company/documents/history',
       timestamp: new Date().toISOString(),
-    })
+    }
+    if (!compact) {
+      payload.allDocs = allDocs
+      payload.documents = allDocs
+    }
+    const response = NextResponse.json(payload)
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
     return response
   } catch (error) {
