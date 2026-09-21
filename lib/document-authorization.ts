@@ -4,6 +4,9 @@ import { isSuperAdmin, type UserRole as AuthUserRole } from '@/lib/auth-middlewa
 export type CanChangeDocumentStatusResult = {
   allowed: boolean
   reason?: string
+  coverageReview?: boolean
+  assignedExecutiveId?: string | null
+  assignedExecutiveName?: string | null
 }
 
 const REVIEWER_ROLES = new Set(['admin', 'administrador', 'ejecutiva', 'mandante'])
@@ -129,13 +132,28 @@ export async function canChangeDocumentStatus(
           reviewerMatchesAssignment(actorProfile.full_name, assignedExecutive.full_name)
 
         if (!sameExecutive) {
+          if (actorProfile.role === 'ejecutiva') {
+            return {
+              allowed: true,
+              coverageReview: true,
+              assignedExecutiveId: assignedExecutive.id,
+              assignedExecutiveName: assignedExecutive.full_name || assignedExecutive.email || null,
+              reason: 'Cobertura temporal de otra cartera',
+            }
+          }
+
           return {
             allowed: false,
-            reason: `Documento asignado a ${assignedExecutive.full_name || assignedExecutive.email}; no puedes aprobar o rechazar documentos de otra ejecutiva`,
+            reason: `Documento asignado a ${assignedExecutive.full_name || assignedExecutive.email}; solo una ejecutiva activa puede revisarlo en modo cobertura`,
           }
         }
 
-        return { allowed: true }
+        return {
+          allowed: true,
+          coverageReview: false,
+          assignedExecutiveId: assignedExecutive.id,
+          assignedExecutiveName: assignedExecutive.full_name || assignedExecutive.email || null,
+        }
       }
 
       // Legacy fallback for rows that genuinely have only the short display name.
@@ -143,13 +161,22 @@ export async function canChangeDocumentStatus(
         transportista.ejecutivo_nombre &&
         !reviewerMatchesAssignment(actorProfile.full_name, transportista.ejecutivo_nombre)
       ) {
+        if (actorProfile.role === 'ejecutiva') {
+          return {
+            allowed: true,
+            coverageReview: true,
+            assignedExecutiveName: transportista.ejecutivo_nombre,
+            reason: 'Cobertura temporal de otra cartera',
+          }
+        }
+
         return {
           allowed: false,
-          reason: `Documento asignado a ${transportista.ejecutivo_nombre}; no puedes aprobar o rechazar documentos de otra ejecutiva`,
+          reason: `Documento asignado a ${transportista.ejecutivo_nombre}; solo una ejecutiva activa puede revisarlo en modo cobertura`,
         }
       }
 
-      return { allowed: true }
+      return { allowed: true, coverageReview: false, assignedExecutiveName: transportista.ejecutivo_nombre || null }
     }
 
     // Preserve the existing conductor-document authorization contract.
