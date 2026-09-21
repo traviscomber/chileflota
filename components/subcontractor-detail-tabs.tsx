@@ -423,10 +423,10 @@ export function SubcontractorDetailTabs({
                     {/* Compliance Bar */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-400">Progreso General</span>
+                        <span className="text-xs text-slate-400">Requisitos aprobados</span>
                         <span className="text-sm font-bold text-white">
                           {summary.totalRequirements > 0 
-                            ? Math.round((summary.approvedDocuments / summary.totalRequirements) * 100)
+                            ? Math.round((summary.approvedRequirements / summary.totalRequirements) * 100)
                             : 0}%
                         </span>
                       </div>
