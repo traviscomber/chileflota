@@ -37,6 +37,7 @@ interface LifetimeStats {
   registered: number
   processed: number
   awaitingProcessing: number
+  globalProcessed: number
 }
 
 
@@ -138,6 +139,7 @@ export function DashboardOverview() {
     registered: 0,
     processed: 0,
     awaitingProcessing: 0,
+    globalProcessed: 0,
   })
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
@@ -160,6 +162,7 @@ export function DashboardOverview() {
       registered: lifetime.registered || 0,
       processed: lifetime.processed || 0,
       awaitingProcessing: lifetime.awaitingProcessing || 0,
+      globalProcessed: lifetime.globalProcessed || lifetime.processed || 0,
     })
 
     setStats([
@@ -283,8 +286,10 @@ export function DashboardOverview() {
               <p className="text-xs font-medium text-[var(--cf-text-muted)]">Procesados</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
               <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">
-                Histórico procesado por ChileFlota
-                {lifetimeStats.awaitingProcessing > 0 ? ` · ${lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} aún sin procesar` : ''}
+                Tu cartera · {lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} aún sin procesar
+              </p>
+              <p className="mt-1 text-xs font-medium text-[var(--cf-text-secondary)]">
+                ChileFlota total: {lifetimeStats.globalProcessed.toLocaleString('es-CL')} procesados
               </p>
             </div>
 
