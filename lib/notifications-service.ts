@@ -21,6 +21,13 @@ export interface NotificationJob {
   sent_at?: string
 }
 
+export class NotificationProviderNotConfiguredError extends Error {
+  constructor(channel: 'email' | 'sms') {
+    super(`Notification ${channel} provider is not configured`)
+    this.name = 'NotificationProviderNotConfiguredError'
+  }
+}
+
 // Plantillas de notificación
 export const NOTIFICATION_TEMPLATES: Record<string, NotificationTemplate> = {
   licencia_vencida: {
@@ -72,45 +79,33 @@ export const NOTIFICATION_TEMPLATES: Record<string, NotificationTemplate> = {
 }
 
 /**
- * Envía una notificación por email
+ * Provider adapter placeholder. Until a real adapter is implemented this must
+ * fail explicitly instead of logging PII and pretending that delivery occurred.
  */
 export async function sendEmailNotification(
-  email: string,
+  _email: string,
   template_id: string,
-  variables: Record<string, string>
+  _variables: Record<string, string>
 ): Promise<void> {
   const template = NOTIFICATION_TEMPLATES[template_id]
   if (!template || template.type !== 'email') {
     throw new Error(`Template ${template_id} not found or not an email template`)
   }
 
-  const body = interpolateTemplate(template.body, variables)
-  const subject = template.subject ? interpolateTemplate(template.subject, variables) : template.title
-
-  // TODO: Integrar con servicio de email (SendGrid, Resend, etc.)
-  console.log(`[EMAIL] To: ${email}`)
-  console.log(`[EMAIL] Subject: ${subject}`)
-  console.log(`[EMAIL] Body: ${body}`)
+  throw new NotificationProviderNotConfiguredError('email')
 }
 
-/**
- * Envía una notificación por SMS
- */
 export async function sendSmsNotification(
-  phone: string,
+  _phone: string,
   template_id: string,
-  variables: Record<string, string>
+  _variables: Record<string, string>
 ): Promise<void> {
   const template = NOTIFICATION_TEMPLATES[template_id]
   if (!template || template.type !== 'sms') {
     throw new Error(`Template ${template_id} not found or not an SMS template`)
   }
 
-  const body = interpolateTemplate(template.body, variables)
-
-  // TODO: Integrar con servicio de SMS (Twilio, Nexmo, etc.)
-  console.log(`[SMS] To: ${phone}`)
-  console.log(`[SMS] Message: ${body}`)
+  throw new NotificationProviderNotConfiguredError('sms')
 }
 
 /**
@@ -128,7 +123,8 @@ export function interpolateTemplate(
 }
 
 /**
- * Crea un job de notificación
+ * Legacy persistence adapter. Production currently has no notification_jobs
+ * table, so callers must gate this behind getNotificationDeliveryCapability().
  */
 export async function createNotificationJob(
   user_id: string,
@@ -155,9 +151,6 @@ export async function createNotificationJob(
   return data
 }
 
-/**
- * Obtiene jobs de notificación pendientes
- */
 export async function getPendingNotifications(): Promise<NotificationJob[]> {
   const supabase = createAdminClient()
 
@@ -172,9 +165,6 @@ export async function getPendingNotifications(): Promise<NotificationJob[]> {
   return data || []
 }
 
-/**
- * Marca una notificación como enviada
- */
 export async function markNotificationAsSent(job_id: string): Promise<void> {
   const supabase = createAdminClient()
 
@@ -186,9 +176,6 @@ export async function markNotificationAsSent(job_id: string): Promise<void> {
   if (error) throw error
 }
 
-/**
- * Marca una notificación como fallida
- */
 export async function markNotificationAsFailed(job_id: string, error_message: string): Promise<void> {
   const supabase = createAdminClient()
 

@@ -5,6 +5,11 @@ import {
   createNotificationJob,
   NOTIFICATION_TEMPLATES,
 } from '@/lib/notifications-service'
+import {
+  buildNotificationIdempotencyKey,
+  getNotificationDeliveryCapability,
+  type NotificationDeliveryType,
+} from '@/lib/notification-delivery-safety'
 import { protectedEndpoint, type UserRole } from '@/lib/auth-middleware'
 
 const NOTIFICATION_ROLES: UserRole[] = [
@@ -14,7 +19,7 @@ const NOTIFICATION_ROLES: UserRole[] = [
   'ejecutiva',
 ]
 
-const NOTIFICATION_TYPES = new Set(['email', 'sms', 'both'])
+const NOTIFICATION_TYPES = new Set<NotificationDeliveryType>(['email', 'sms', 'both'])
 
 export async function POST(request: NextRequest) {
   return protectedEndpoint(
@@ -83,8 +88,33 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Persist the job only after authentication, role authorization and
-        // request validation have succeeded.
+        const delivery = getNotificationDeliveryCapability()
+        const idempotencyKey = buildNotificationIdempotencyKey({
+          userId: user_id,
+          type,
+          templateId: template_id,
+          variables,
+          contact,
+        })
+
+        // Fail closed. Until a durable delivery ledger and a real provider adapter
+        // are explicitly provisioned, authenticated requests must not create jobs
+        // or report a simulated console.log as a successful delivery.
+        if (!delivery.ready) {
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'NOTIFICATION_DELIVERY_NOT_READY',
+              message: 'El canal de entrega está deshabilitado hasta completar ledger, idempotencia y proveedor real.',
+              idempotencyKey,
+              delivery,
+            },
+            { status: 503 }
+          )
+        }
+
+        // This path remains unreachable until a provider is explicitly registered
+        // in notification-delivery-safety and the durable ledger is provisioned.
         const job = await createNotificationJob(user_id, template_id, variables, contact)
 
         if ((type === 'email' || type === 'both') && hasEmail && template.type === 'email') {
@@ -98,6 +128,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           job_id: job.id,
+          idempotencyKey,
           message: 'Notificación enviada',
         })
       } catch (error) {
@@ -112,7 +143,7 @@ export async function POST(request: NextRequest) {
   )
 }
 
-// GET: Obtener plantillas disponibles para roles autorizados.
+// GET: Obtener plantillas y capacidad real de entrega para roles autorizados.
 export async function GET(request: NextRequest) {
   return protectedEndpoint(
     request,
@@ -135,6 +166,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           success: true,
           templates,
+          delivery: getNotificationDeliveryCapability(),
         })
       } catch (error) {
         console.error('Error fetching templates:', error)
