@@ -17,12 +17,50 @@ export interface AlertEvent {
   driverId?: string
   documentId?: string
   documentType?: string
+  source?: string
 }
 
 /**
  * Lookup ejecutiva from transportista_id, subcontratista_id, or driver_id
  * Returns the assigned ejecutiva's name for proper alert routing
  */
+async function resolveTransportistaId(params: { transportistaId?: string; subcontratistaId?: string; driverId?: string }): Promise<string | null> {
+  try {
+    const adminClient = await createAdminClient()
+    if (params.transportistaId) return params.transportistaId
+
+    if (params.subcontratistaId) {
+      const { data: transportista } = await adminClient
+        .from('transportistas')
+        .select('id')
+        .eq('id', params.subcontratistaId)
+        .maybeSingle()
+      if (transportista?.id) return transportista.id
+    }
+
+    if (params.driverId) {
+      const { data: conductor } = await adminClient
+        .from('conductores')
+        .select('transportista_id')
+        .eq('id', params.driverId)
+        .maybeSingle()
+      if (conductor?.transportista_id) return conductor.transportista_id
+
+      const { data: driver } = await adminClient
+        .from('drivers')
+        .select('transportista_id')
+        .eq('id', params.driverId)
+        .maybeSingle()
+      if (driver?.transportista_id) return driver.transportista_id
+    }
+
+    return null
+  } catch (error) {
+    console.error('[v0] Error resolving transportista for alert:', error)
+    return null
+  }
+}
+
 async function lookupEjecutiva(params: {
   transportistaId?: string
   subcontratistaId?: string
@@ -91,11 +129,17 @@ export async function logAlert(event: AlertEvent) {
 
     const adminClient = await createAdminClient()
     
+    const resolvedTransportistaId = await resolveTransportistaId({
+      transportistaId: event.transportistaId,
+      subcontratistaId: event.subcontratistaId,
+      driverId: event.driverId,
+    })
+
     // Auto-lookup ejecutiva if not provided
     let ejecutivaNombre = event.ejecutivaNombre
     if (!ejecutivaNombre) {
       const lookedUp = await lookupEjecutiva({
-        transportistaId: event.transportistaId,
+        transportistaId: resolvedTransportistaId || undefined,
         subcontratistaId: event.subcontratistaId,
         driverId: event.driverId,
       })
@@ -127,14 +171,14 @@ export async function logAlert(event: AlertEvent) {
       is_resolved: false,
       status: 'pendiente',
       ejecutiva_nombre: ejecutivaNombre || null,
-      transportista_id: event.transportistaId || null,
-      subcontratista_id: event.subcontratistaId || null,
+      transportista_id: resolvedTransportistaId || null,
       driver_id: event.driverId || null,
       document_id: event.documentId || null,
       document_type: event.documentType || null,
       metadata: {
         entityType: event.entityType,
         entityId: event.entityId,
+        source: event.source || null,
         entityName: event.entityName,
       },
     }
@@ -193,6 +237,7 @@ export async function triggerDocumentUploadedAlert(
     driverId,
     documentId,
     documentType,
+    source: 'document_upload',
   })
 }
 
@@ -311,9 +356,10 @@ export async function triggerSubcontractorDocumentUploadedAlert(
     entityId: subcontractorId,
     entityName: subcontractorName,
     actionUrl: `/dashboard/company/subcontratistas?search=${encodeURIComponent(subcontractorName || '')}`,
-    subcontratistaId: subcontractorId,
+    transportistaId: subcontractorId,
     documentId,
     documentType,
+    source: 'document_upload',
   })
 }
 

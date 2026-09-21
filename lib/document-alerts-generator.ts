@@ -91,8 +91,19 @@ export async function generateDocumentUploadAlerts(
 
     console.log('[v0] generateDocumentUploadAlerts:', { uploadedDocumentId, documentType, uploaderName, uploaderType, uploaderId })
 
-    // Lookup ejecutiva based on uploader type
+    let transportistaId: string | null = null
+    if (uploaderType === 'conductor' && isUuid(uploaderId)) {
+      const { data: conductor } = await supabase
+        .from('conductores')
+        .select('transportista_id')
+        .eq('id', uploaderId)
+        .maybeSingle()
+
+      transportistaId = conductor?.transportista_id || null
+    }
+
     const ejecutivaNombre = await lookupEjecutiva({
+      transportistaId: transportistaId || undefined,
       conductorId: uploaderType === 'conductor' ? uploaderId : undefined,
     })
 
@@ -113,13 +124,16 @@ export async function generateDocumentUploadAlerts(
         is_resolved: false,
         status: 'pendiente',
         ejecutiva_nombre: ejecutivaNombre,
+        transportista_id: transportistaId,
         driver_id: uploaderType === 'conductor' ? uploaderId : null,
         document_id: uploadedDocumentId,
         document_type: documentType,
-        action_url: `/dashboard/company/documentos`,
+        action_url: `/dashboard/company/documentos/pendientes`,
         created_at: new Date().toISOString(),
         metadata: {
+          source: 'document_upload',
           document_id: uploadedDocumentId,
+          transportista_id: transportistaId,
           uploader_type: uploaderType,
           uploader_name: uploaderName,
           document_type: documentType,
@@ -142,15 +156,19 @@ export async function generateDocumentUploadAlerts(
 export async function generateDocumentStatusChangeAlert(
   uploadedDocumentId: string,
   documentType: string,
-  conductorName: string,
+  entityName: string,
   conductorId: string,
   newStatus: 'approved' | 'rejected' | 'pending',
-  reason?: string
+  reason?: string,
+  options?: {
+    transportistaId?: string | null
+    documentTable?: 'uploaded_documents' | 'subcontractor_documents'
+  },
 ) {
   try {
     const supabase = createAdminClient()
 
-    console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
+    console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, entityName, newStatus })
 
     // Generate unique correlation code (format: ALERT-YYYYMMDD-XXXXXX)
     const now = new Date()
@@ -160,11 +178,11 @@ export async function generateDocumentStatusChangeAlert(
 
     // Fetch conductor's transportista to find ejecutiva
     let transportistaName = 'Transportista Desconocido'
-    let transportistaId: string | null = null
+    let transportistaId: string | null = options?.transportistaId || null
     let ejecutivaAsignada: string | null = null
     
     const normalizedConductorId = isUuid(conductorId) ? conductorId : null
-    const { data: conductor } = normalizedConductorId
+    const { data: conductor } = normalizedConductorId && !transportistaId
       ? await supabase
           .from('conductores')
           .select('id, transportista_id')
@@ -172,17 +190,20 @@ export async function generateDocumentStatusChangeAlert(
           .maybeSingle()
       : { data: null }
 
-    if (conductor?.transportista_id) {
+    if (conductor?.transportista_id && !transportistaId) {
       transportistaId = conductor.transportista_id
+    }
+
+    if (transportistaId) {
       const { data: transportista } = await supabase
         .from('transportistas')
-        .select('razon_social, nombre_fantasia, ejecutivo_nombre, ejecutiva')
-        .eq('id', conductor.transportista_id)
+        .select('razon_social,nombre_fantasia,ejecutivo_nombre,ejecutiva,is_active')
+        .eq('id', transportistaId)
         .maybeSingle()
-      
-      if (transportista) {
-        transportistaName = transportista.nombre_fantasia || transportista.razon_social || 'Transportista Desconocido'
-        ejecutivaAsignada = transportista.ejecutivo_nombre || transportista.ejecutiva || null
+
+      if (transportista?.is_active !== false) {
+        transportistaName = transportista?.nombre_fantasia || transportista?.razon_social || 'Transportista Desconocido'
+        ejecutivaAsignada = transportista?.ejecutivo_nombre || transportista?.ejecutiva || null
       }
     }
 
@@ -194,17 +215,17 @@ export async function generateDocumentStatusChangeAlert(
 
     if (newStatus === 'approved') {
       title = `Documento Aprobado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue aprobado. [${correlationCode}]`
+      message = `El documento ${documentType} de ${entityName} (${transportistaName}) fue aprobado. [${correlationCode}]`
       alertType = 'success'
       priority = 'low'
     } else if (newStatus === 'rejected') {
       title = `Documento Rechazado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue rechazado. Razon: ${reason || 'Sin especificar'}. [${correlationCode}]`
+      message = `El documento ${documentType} de ${entityName} (${transportistaName}) fue rechazado. Razon: ${reason || 'Sin especificar'}. [${correlationCode}]`
       alertType = 'error'
       priority = 'high'
     } else if (newStatus === 'pending') {
       title = `Documento en Revision - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) ha sido retornado a revision. [${correlationCode}]`
+      message = `El documento ${documentType} de ${entityName} (${transportistaName}) ha sido retornado a revision. [${correlationCode}]`
       alertType = 'warning'
       priority = 'medium'
     }
@@ -219,26 +240,32 @@ export async function generateDocumentStatusChangeAlert(
         priority,
         entity_type: 'document',
         entity_id: uploadedDocumentId,
-        entity_name: conductorName,
+        entity_name: entityName,
         is_read: false,
-        is_resolved: newStatus !== 'pending',
-        status: newStatus === 'pending' ? 'pendiente' : 'resuelto',
+        is_resolved: newStatus === 'approved',
+        status: newStatus === 'approved' ? 'resuelto' : 'pendiente',
         ejecutiva_nombre: ejecutivaAsignada,
         transportista_id: transportistaId,
         driver_id: normalizedConductorId,
         document_id: uploadedDocumentId,
         document_type: documentType,
-        action_url: `/dashboard/company/documentos`,
+        action_url: newStatus === 'rejected'
+          ? '/dashboard/company/documentos/rechazados'
+          : newStatus === 'pending'
+            ? '/dashboard/company/documentos/pendientes'
+            : '/dashboard/company/documentos/aprobados',
         created_at: new Date().toISOString(),
         metadata: {
           document_id: uploadedDocumentId,
           conductor_id: normalizedConductorId,
-          conductor_name: conductorName,
+          entity_name: entityName,
           document_type: documentType,
           transportista_name: transportistaName,
           ejecutiva_asignada: ejecutivaAsignada,
           reason: reason || null,
           status: newStatus,
+          source: 'document_status_change',
+          document_table: options?.documentTable || 'uploaded_documents',
           correlation_code: correlationCode,
         },
       })
@@ -279,115 +306,18 @@ export async function generateAIAnalysisAlerts(params: {
       conductorId,
     })
 
-    // If expiration date was detected, check if document is expired or expiring soon
+    // AI-extracted expiration dates are evidence candidates, not canonical deadlines.
+    // Do not create operational alerts or overwrite expires_at from this signal.
+    // Operational expiration alerts must come from validated canonical fields
+    // (for example uploaded_documents.expiration_date via generateExpirationAlerts)
+    // or from the requirement periodicity engine.
     if (aiExpirationDate) {
-      const today = new Date()
-      const expirationDate = new Date(aiExpirationDate)
-      const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-      const expDateStr = expirationDate.toLocaleDateString('es-CL')
-
-      let alertType = 'info'
-      let priority = 'low'
-      let title = ''
-      let message = ''
-      let shouldCreateAlert = false
-
-      if (daysUntilExpiration < 0) {
-        // Document is already expired
-        alertType = 'error'
-        priority = 'critical'
-        title = `DOCUMENTO VENCIDO - ${documentType}`
-        message = `El documento "${fileName}" (${documentType}) VENCIO el ${expDateStr} (hace ${Math.abs(daysUntilExpiration)} dias). Requiere renovacion inmediata.`
-        shouldCreateAlert = true
-      } else if (daysUntilExpiration <= 7) {
-        // Expires within 7 days - critical
-        alertType = 'error'
-        priority = 'high'
-        title = `URGENTE: Documento por Vencer - ${documentType}`
-        message = `El documento "${fileName}" (${documentType}) vence en ${daysUntilExpiration} dias (${expDateStr}). Accion inmediata requerida.`
-        shouldCreateAlert = true
-      } else if (daysUntilExpiration <= 30) {
-        // Expires within 30 days - warning
-        alertType = 'warning'
-        priority = 'medium'
-        title = `Documento por Vencer - ${documentType}`
-        message = `El documento "${fileName}" (${documentType}) vence el ${expDateStr} (en ${daysUntilExpiration} dias). Considere renovarlo pronto.`
-        shouldCreateAlert = true
-      } else if (daysUntilExpiration <= 60) {
-        // Expires within 60 days - info
-        alertType = 'info'
-        priority = 'low'
-        title = `Aviso: Vencimiento Proximo - ${documentType}`
-        message = `El documento "${fileName}" (${documentType}) vence el ${expDateStr} (en ${daysUntilExpiration} dias).`
-        shouldCreateAlert = true
-      }
-
-      if (shouldCreateAlert) {
-        // Check if similar alert already exists to avoid duplicates
-        const { data: existingAlert } = await supabase
-          .from('alerts_log')
-          .select('id')
-          .eq('document_id', documentId)
-          .eq('alert_type', alertType)
-          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-          .maybeSingle()
-
-        if (!existingAlert) {
-          const { error: insertError } = await supabase
-            .from('alerts_log')
-            .insert({
-              alert_type: alertType,
-              title,
-              description: message,
-              message,
-              priority,
-              entity_type: 'document',
-              entity_id: documentId,
-              entity_name: fileName,
-              is_read: false,
-              is_resolved: false,
-              status: 'pendiente',
-              ejecutiva_nombre: ejecutivaNombre,
-              transportista_id: transportistaId || null,
-              driver_id: conductorId || null,
-              document_id: documentId,
-              document_type: documentType,
-              action_url: `/dashboard/company/documentos/pendientes`,
-              created_at: new Date().toISOString(),
-              metadata: {
-                document_id: documentId,
-                document_table: documentTable,
-                ai_expiration_date: aiExpirationDate,
-                ai_confidence: aiConfidence,
-                days_until_expiration: daysUntilExpiration,
-                file_name: fileName,
-                source: 'ai_analysis',
-              },
-            })
-
-          if (insertError) {
-            console.error('[v0] Error creating AI analysis alert:', insertError)
-          } else {
-            console.log(`[v0] Created AI expiration alert: ${title} (${daysUntilExpiration} days, ejecutiva: ${ejecutivaNombre})`)
-          }
-        } else {
-          console.log('[v0] Similar alert already exists, skipping')
-        }
-      }
-
-      // Update the document with the AI-detected expiration date in expires_at column
-      const { error: updateError } = await supabase
-        .from(documentTable)
-        .update({ 
-          expires_at: aiExpirationDate,
-        })
-        .eq('id', documentId)
-
-      if (updateError) {
-        console.error('[v0] Error updating expires_at:', updateError)
-      } else {
-        console.log('[v0] Updated document expires_at to:', aiExpirationDate)
-      }
+      console.log('[v0] AI expiration candidate kept non-operational:', {
+        documentId,
+        documentTable,
+        aiExpirationDate,
+        aiConfidence,
+      })
     }
 
     // Also create a general "analysis complete" info alert
@@ -439,26 +369,66 @@ export async function generateExpirationAlerts() {
     const today = new Date()
     const in7days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    // Find documents expiring in the next 7 days
+    // Only canonical, approved, current documents can create operational expiry alerts.
     const { data: expiringDocs } = await supabase
       .from('uploaded_documents')
-      .select('id, conductor_id, document_type_id, expiration_date, document_types(name)')
+      .select('id, conductor_id, transportista_id, document_type_id, expiration_date, document_types(name)')
+      .eq('is_current', true)
+      .eq('validation_status', 'approved')
       .lt('expiration_date', in7days.toISOString())
       .gt('expiration_date', today.toISOString())
       .is('last_expiration_alert_sent', null)
 
     if (!expiringDocs || expiringDocs.length === 0) {
-      console.log('[v0] No expiring documents found')
+      console.log('[v0] No canonical expiring documents found')
       return
     }
 
-    // Build alerts with ejecutiva lookup
-    const alertsToCreate = await Promise.all(
-      expiringDocs.map(async (doc: any) => {
-        const ejecutivaNombre = await lookupEjecutiva({
-          conductorId: doc.conductor_id,
-        })
+    const conductorIds = Array.from(new Set(expiringDocs.map((doc: any) => doc.conductor_id).filter(Boolean)))
+    const conductorCompanyMap = new Map<string, string>()
+    if (conductorIds.length > 0) {
+      const { data: conductores = [] } = await supabase
+        .from('conductores')
+        .select('id, transportista_id')
+        .in('id', conductorIds)
 
+      for (const conductor of conductores || []) {
+        if (conductor.id && conductor.transportista_id) {
+          conductorCompanyMap.set(conductor.id, conductor.transportista_id)
+        }
+      }
+    }
+
+    const candidateCompanyIds = Array.from(new Set(
+      expiringDocs
+        .map((doc: any) => doc.transportista_id || conductorCompanyMap.get(doc.conductor_id))
+        .filter(Boolean),
+    ))
+
+    const activeCompanyIds = new Set<string>()
+    if (candidateCompanyIds.length > 0) {
+      const { data: activeCompanies = [] } = await supabase
+        .from('transportistas')
+        .select('id')
+        .in('id', candidateCompanyIds)
+        .eq('is_active', true)
+
+      for (const company of activeCompanies || []) {
+        if (company.id) activeCompanyIds.add(company.id)
+      }
+    }
+
+    const relevantDocs = expiringDocs.filter((doc: any) => {
+      const transportistaId = doc.transportista_id || conductorCompanyMap.get(doc.conductor_id)
+      return Boolean(transportistaId && activeCompanyIds.has(transportistaId))
+    })
+
+    const alertsToCreate = (await Promise.all(
+      relevantDocs.map(async (doc: any) => {
+        const transportistaId = doc.transportista_id || conductorCompanyMap.get(doc.conductor_id)
+        if (!transportistaId) return null
+
+        const ejecutivaNombre = await lookupEjecutiva({ transportistaId })
         const docName = doc.document_types?.name || 'Documento'
         const expDate = new Date(doc.expiration_date).toLocaleDateString('es-CL')
         const message = `El documento ${docName} vence el ${expDate}`
@@ -475,19 +445,23 @@ export async function generateExpirationAlerts() {
           is_resolved: false,
           status: 'pendiente',
           ejecutiva_nombre: ejecutivaNombre,
+          transportista_id: transportistaId,
           driver_id: doc.conductor_id,
           document_id: doc.id,
           document_type: docName,
-          action_url: `/dashboard/company/documentos`,
+          action_url: '/dashboard/company/documentos/renovar',
           created_at: new Date().toISOString(),
           metadata: {
+            source: 'expiration_cron',
+            canonical_source: 'uploaded_documents.expiration_date',
             document_id: doc.id,
             conductor_id: doc.conductor_id,
+            transportista_id: transportistaId,
             expiration_date: doc.expiration_date,
           },
         }
       })
-    )
+    )).filter(Boolean)
 
     if (alertsToCreate.length > 0) {
       const { error: insertError } = await supabase
@@ -499,7 +473,7 @@ export async function generateExpirationAlerts() {
         await supabase
           .from('uploaded_documents')
           .update({ last_expiration_alert_sent: new Date().toISOString() })
-          .in('id', expiringDocs.map((d: any) => d.id))
+          .in('id', relevantDocs.map((d: any) => d.id))
 
         console.log(`[v0] Created ${alertsToCreate.length} expiration alerts`)
       } else {
