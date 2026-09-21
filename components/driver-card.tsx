@@ -317,7 +317,7 @@ export function DriverCard({
                 {/* Botón de upload para LABBE */}
                 <button
                   onClick={() => setShowUploadModal(true)}
-                  className="ml-2 p-2 rounded bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-1 text-xs text-[var(--cf-text)]"
+                  className="ml-2 p-2 rounded bg-[var(--cf-accent)] hover:bg-[var(--cf-accent-hover)] transition-colors flex items-center gap-1 text-xs text-[var(--cf-text)]"
                   title="Subir documento"
                 >
                   <Plus className="h-3 w-3" />
