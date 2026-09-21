@@ -81,8 +81,8 @@ async function fetchDashboardSnapshot() {
     ...(approvedData.allDocs || approvedData.documents || []).map((doc: any) => ({
       id: `review_approved_${doc.id}`,
       type: 'document_approved',
-      title: 'Documento aprobado',
-      message: `${doc.docType?.nombre || 'Documento'} · ${doc.empresa_nombre || 'Empresa sin nombre'}`,
+      title: doc.empresa_nombre || 'Empresa sin nombre',
+      message: `Aprobado · ${doc.docType?.nombre || 'Documento'}`,
       priority: 'medium',
       is_read: false,
       is_dismissed: false,
@@ -92,7 +92,6 @@ async function fetchDashboardSnapshot() {
       metadata: {
         document_id: doc.id,
         company_id: doc.company_id,
-        transportista_nombre: doc.empresa_nombre,
         conductor_nombre: [doc.conductores?.nombres, doc.conductores?.apellido_paterno].filter(Boolean).join(' '),
         document_source: doc.document_source,
         review_result: 'approved',
@@ -101,8 +100,8 @@ async function fetchDashboardSnapshot() {
     ...(rejectedData.allDocs || rejectedData.documents || []).map((doc: any) => ({
       id: `review_rejected_${doc.id}`,
       type: 'document_rejected',
-      title: 'Documento rechazado',
-      message: `${doc.docType?.nombre || 'Documento'} · ${doc.empresa_nombre || 'Empresa sin nombre'}`,
+      title: doc.empresa_nombre || 'Empresa sin nombre',
+      message: `Rechazado · ${doc.docType?.nombre || 'Documento'}`,
       priority: 'high',
       is_read: false,
       is_dismissed: false,
@@ -112,7 +111,6 @@ async function fetchDashboardSnapshot() {
       metadata: {
         document_id: doc.id,
         company_id: doc.company_id,
-        transportista_nombre: doc.empresa_nombre,
         conductor_nombre: [doc.conductores?.nombres, doc.conductores?.apellido_paterno].filter(Boolean).join(' '),
         document_source: doc.document_source,
         review_result: 'rejected',
@@ -419,18 +417,12 @@ export function DashboardOverview() {
           <CardHeader className="pb-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Alertas prioritarias</CardTitle>
+                <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Revisiones recientes</CardTitle>
                 <CardDescription className="mt-1 text-[var(--cf-text-muted)]">
-                  Resultados recientes de revisión · {alerts.length} movimientos
+                  Últimos documentos revisados
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-[4px] bg-[#173B2C] px-2 py-1 text-xs font-medium text-[#67C18D]">
-                  {alerts.filter(a => a.type === 'document_approved').length} aprobados
-                </span>
-                <span className="rounded-[4px] bg-[#45242B] px-2 py-1 text-xs font-medium text-[#E17B8C]">
-                  {alerts.filter(a => a.type === 'document_rejected').length} rechazados
-                </span>
                 <Button
                   variant="outline"
                   size="sm"
