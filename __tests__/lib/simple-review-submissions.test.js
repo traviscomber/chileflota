@@ -84,4 +84,19 @@ describe('simple subcontractor review submissions', () => {
     expect(source).toContain(".eq('is_active', true)")
   })
 
+
+  test('subcontractor detail shows every submission and separates requirement coverage', () => {
+    const route = read('app/api/subcontractors/[id]/documents/route.ts')
+    const detail = read('components/subcontractor-detail-tabs.tsx')
+
+    expect(route).toContain('requirementsCovered: coveredRequirementIds.size')
+    expect(route).toContain('requirementsMissing: Math.max')
+    expect(route).toContain('approvedRequirements: approvedRequirementIds.size')
+    expect(detail).toContain("const docType = requirement || doc.document_type")
+    expect(detail).not.toContain('if (!req) return null')
+    expect(detail).toContain('summary.requirementsMissing')
+    expect(detail).toContain('summary.approvedRequirements / summary.totalRequirements')
+    expect(detail).not.toContain('summary.approvedDocuments / summary.totalRequirements')
+  })
+
 })
