@@ -230,7 +230,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-5">
         <MetricCard label="Procesados cartera" value={totalGestionados} detail={`ChileFlota total: ${totalChileFlota.toLocaleString('es-CL')}`} icon={FileStack} tone="neutral" />
-        <MetricCard label="Registros" value={totalActuales} detail="Cada carga se revisa como evidencia independiente" icon={FileText} tone="neutral" />
+        <MetricCard label="Registros" value={totalActuales} detail="Estados de revisión de la cartera documental" icon={FileText} tone="neutral" />
         <Link href="/dashboard/company/documentos/pendientes" className="contents">
           <MetricCard label="Pendientes" value={totalPendientes} icon={Clock} tone="warning" />
         </Link>
@@ -243,7 +243,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       </div>
 
       <p className="text-xs leading-5 text-[#777C84]">
-        Pendientes, Aprobados y Rechazados reflejan el estado de cada carga documental. La vigencia operacional se calcula por separado en Compliance.
+        En subcontratistas, cada carga conserva su propio estado de revisión. La vigencia operacional se calcula por separado en Compliance.
       </p>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
