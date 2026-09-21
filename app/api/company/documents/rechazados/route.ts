@@ -54,7 +54,7 @@ async function fetchAllRejectedSubcontractorDocuments(supabase: ReturnType<typeo
   const documents: any[] = []
   const pageSize = 1000
   for (let page = 0; ; page += 1) {
-    let query: any = supabase
+    const { data, error } = await supabase
       .from('subcontractor_documents')
       .select(`id,file_name,document_type_id,status,file_url,rejection_reason,reviewed_at,reviewed_by_ejecutiva,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,ai_document_type,ai_extracted_text,transportistas:subcontractor_id(id,razon_social,rut)`)
       .eq('status', 'rejected')
