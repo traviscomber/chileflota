@@ -20,8 +20,3 @@ export function isDisplayRelevantAlert(alert: AlertLike): boolean {
 export function isDocumentUploadAlert(alert: AlertLike): boolean {
   return Boolean(alert.metadata?.uploader_type && alert.metadata?.document_id)
 }
-
-
-export function isDocumentStatusChangeAlert(alert: AlertLike): boolean {
-  return String(alert.metadata?.source || '') === 'document_status_change'
-}

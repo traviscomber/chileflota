@@ -237,71 +237,39 @@ export async function changeDocumentStatus(
 
     // STEP 7: Generate status change alerts (non-blocking)
     try {
-      let entityName = documentType === 'subcontractor' ? 'Empresa' : 'Conductor'
+      let conductorName = 'Conductor'
       let documentTypeName = 'Documento'
-      let transportistaId: string | null = documentBefore.transportista_id || null
-      let conductorId = documentBefore.conductor_id || ''
 
-      if (documentType === 'subcontractor') {
-        transportistaId = documentBefore.subcontractor_id || transportistaId
-        if (transportistaId) {
-          const { data: transportista } = await adminClient
-            .from('transportistas')
-            .select('razon_social,nombre_fantasia')
-            .eq('id', transportistaId)
-            .maybeSingle()
+      if (documentBefore.conductor_id) {
+        const { data: conductor } = await adminClient
+          .from('conductores')
+          .select('nombres, apellido_paterno, apellido_materno')
+          .eq('id', documentBefore.conductor_id)
+          .single()
 
-          if (transportista) {
-            entityName = transportista.nombre_fantasia || transportista.razon_social || entityName
-          }
+        if (conductor) {
+          conductorName = [conductor.nombres, conductor.apellido_paterno, conductor.apellido_materno]
+            .filter(Boolean).join(' ').trim()
         }
+      }
 
-        if (documentBefore.document_type_id) {
-          const { data: docType } = await adminClient
-            .from('subcontractor_document_types')
-            .select('nombre,code')
-            .eq('id', documentBefore.document_type_id)
-            .maybeSingle()
+      if (documentBefore.document_type_id) {
+        const { data: docType } = await adminClient
+          .from('document_types')
+          .select('name')
+          .eq('id', documentBefore.document_type_id)
+          .single()
 
-          if (docType) documentTypeName = docType.nombre || docType.code || documentTypeName
-        }
-      } else {
-        if (conductorId) {
-          const { data: conductor } = await adminClient
-            .from('conductores')
-            .select('nombres,apellido_paterno,apellido_materno,transportista_id')
-            .eq('id', conductorId)
-            .maybeSingle()
-
-          if (conductor) {
-            entityName = [conductor.nombres, conductor.apellido_paterno, conductor.apellido_materno]
-              .filter(Boolean).join(' ').trim() || entityName
-            transportistaId = transportistaId || conductor.transportista_id || null
-          }
-        }
-
-        if (documentBefore.document_type_id) {
-          const { data: docType } = await adminClient
-            .from('document_types')
-            .select('name')
-            .eq('id', documentBefore.document_type_id)
-            .maybeSingle()
-
-          if (docType?.name) documentTypeName = docType.name
-        }
+        if (docType?.name) documentTypeName = docType.name
       }
 
       await generateDocumentStatusChangeAlert(
         documentId,
         documentTypeName,
-        entityName,
-        conductorId,
+        conductorName,
+        documentBefore.conductor_id || '',
         newStatus,
-        reason,
-        {
-          transportistaId,
-          documentTable: tableName,
-        },
+        reason
       )
     } catch (alertError) {
       console.warn('[v0] Alert generation failed:', alertError)

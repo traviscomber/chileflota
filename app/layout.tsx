@@ -8,12 +8,6 @@ import { ToastProvider } from "@/lib/toast-context"
 import { ToastContainer } from "@/components/toast-container"
 import { DocumentSyncProvider } from "@/contexts/document-sync-context"
 
-// ChileFlota is an authenticated operational application. Many routes depend on
-// request-time auth, live data, redirects, or client hydration. Prevent Next.js
-// from attempting static generation for the route tree during production builds.
-export const dynamic = "force-dynamic"
-export const revalidate = 0
-
 const siteUrl = "https://chileflota.app"
 const canonicalDescription =
   "ChileFlota es una plataforma de compliance operacional para flotas, transportistas y contratistas que conecta documentación, vigencias, evidencia y alertas para priorizar decisiones operativas."
