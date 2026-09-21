@@ -104,10 +104,21 @@ export async function POST(
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
     }
 
+    const maxFileSize = 50 * 1024 * 1024
+    const allowedMimeTypes = new Set(['application/pdf', 'image/jpeg', 'image/png'])
+
+    if (file.size <= 0 || file.size > maxFileSize) {
+      return NextResponse.json({ error: 'Archivo inválido o superior a 50MB' }, { status: 400 })
+    }
+    if (!allowedMimeTypes.has(file.type)) {
+      return NextResponse.json({ error: 'Solo se permiten archivos PDF, JPG o PNG' }, { status: 400 })
+    }
+
     const { data: docType, error: docTypeError } = await supabase
       .from('subcontractor_document_types')
-      .select('id, code, periodicidad')
+      .select('id, code, periodicidad, is_active')
       .eq('id', documentTypeId)
+      .eq('is_active', true)
       .single()
 
     if (docTypeError || !docType) {
