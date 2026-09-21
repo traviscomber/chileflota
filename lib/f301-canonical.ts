@@ -1,4 +1,4 @@
-type F301Document = {
+export type F301Document = {
   id: string
   subcontractor_id?: string | null
   file_name?: string | null
@@ -8,9 +8,19 @@ type F301Document = {
   document_period_month?: number | string | null
   uploaded_at?: string | null
   created_at?: string | null
+  updated_at?: string | null
   version_number?: number | null
   ai_document_type?: string | null
   ai_extracted_text?: string | null
+}
+
+export type F301CanonicalDiagnostics = {
+  input: number
+  canonicalCurrent: number
+  filenameFallback: number
+  ambiguousCurrentFallback: number
+  unresolvedHistorical: number
+  excludedMisclassifiedAntecedentes: number
 }
 
 function normalizeRut(value: string | null | undefined): string | null {
@@ -46,11 +56,14 @@ export function extractF301PrincipalRut(text: string | null | undefined): string
 
 function isMisclassifiedAntecedentes(doc: F301Document): boolean {
   const type = (doc.ai_document_type || '').toLocaleLowerCase('es-CL')
-  return type.includes('antecedentes laborales') || type.includes('antecedentes laborales y previsionales')
+  const text = (doc.ai_extracted_text || '').toLocaleLowerCase('es-CL')
+  return type.includes('antecedentes laborales')
+    || type.includes('antecedentes laborales y previsionales')
+    || text.includes('certificado de antecedentes laborales y previsionales')
 }
 
 function timestamp(doc: F301Document): number {
-  const raw = doc.uploaded_at || doc.created_at || ''
+  const raw = doc.uploaded_at || doc.created_at || doc.updated_at || ''
   const parsed = Date.parse(raw)
   return Number.isFinite(parsed) ? parsed : 0
 }
@@ -75,16 +88,31 @@ function filenameFallbackKey(doc: F301Document): string | null {
   return meaningful.length >= 3 ? meaningful : normalized
 }
 
-export function selectCanonicalPendingF301<T extends F301Document>(docs: T[]): {
-  pending: T[]
-  diagnostics: {
-    input: number
-    canonicalPending: number
-    filenameFallback: number
-    ambiguousCurrentFallback: number
-    unresolvedHistorical: number
-    excludedMisclassifiedAntecedentes: number
-  }
+export function getF301InstanceKey(doc: F301Document): string | null {
+  const principalRut = extractF301PrincipalRut(doc.ai_extracted_text)
+  const filenameKey = principalRut ? null : filenameFallbackKey(doc)
+  if (!principalRut && !filenameKey) return null
+
+  return [
+    doc.subcontractor_id || 'unknown',
+    periodPart(doc.document_period_year),
+    periodPart(doc.document_period_month),
+    principalRut ? `rut:${principalRut}` : `file:${filenameKey}`,
+  ].join(':')
+}
+
+function sortNewestFirst<T extends F301Document>(left: T, right: T) {
+  const byTime = timestamp(right) - timestamp(left)
+  if (byTime !== 0) return byTime
+  const byVersion = (right.version_number || 0) - (left.version_number || 0)
+  if (byVersion !== 0) return byVersion
+  return String(right.id).localeCompare(String(left.id))
+}
+
+export function selectCanonicalF301<T extends F301Document>(docs: T[]): {
+  current: T[]
+  historical: T[]
+  diagnostics: F301CanonicalDiagnostics
 } {
   const keyedGroups = new Map<string, T[]>()
   const ambiguous: T[] = []
@@ -98,53 +126,74 @@ export function selectCanonicalPendingF301<T extends F301Document>(docs: T[]): {
     }
 
     const principalRut = extractF301PrincipalRut(doc.ai_extracted_text)
-    const filenameKey = principalRut ? null : filenameFallbackKey(doc)
+    const key = getF301InstanceKey(doc)
 
-    if (!principalRut && !filenameKey) {
+    if (!key) {
       ambiguous.push(doc)
       continue
     }
 
-    if (!principalRut && filenameKey) filenameFallback += 1
-
-    const key = [
-      doc.subcontractor_id || 'unknown',
-      periodPart(doc.document_period_year),
-      periodPart(doc.document_period_month),
-      principalRut ? `rut:${principalRut}` : `file:${filenameKey}`,
-    ].join(':')
-
+    if (!principalRut) filenameFallback += 1
     const group = keyedGroups.get(key) || []
     group.push(doc)
     keyedGroups.set(key, group)
   }
 
-  const pending: T[] = []
+  const current: T[] = []
+  const historical: T[] = []
 
   for (const group of keyedGroups.values()) {
-    const latest = [...group].sort((a, b) => {
-      const byTime = timestamp(b) - timestamp(a)
-      if (byTime !== 0) return byTime
-      const byVersion = (b.version_number || 0) - (a.version_number || 0)
-      if (byVersion !== 0) return byVersion
-      return String(b.id).localeCompare(String(a.id))
-    })[0]
-
-    if (latest?.status === 'pending') pending.push(latest)
+    const ordered = [...group].sort(sortNewestFirst)
+    if (ordered[0]) current.push(ordered[0])
+    historical.push(...ordered.slice(1))
   }
 
-  const ambiguousCurrent = ambiguous.filter((doc) => doc.is_current === true && doc.status === 'pending')
-  pending.push(...ambiguousCurrent)
+  // Legacy records without an extractable client identity fail open to the
+  // persisted current flag. We never promote an ambiguous historical row.
+  const ambiguousCurrent = ambiguous.filter((doc) => doc.is_current === true)
+  current.push(...ambiguousCurrent)
+  historical.push(...ambiguous.filter((doc) => doc.is_current !== true))
 
   return {
-    pending,
+    current,
+    historical,
     diagnostics: {
       input: docs.length,
-      canonicalPending: pending.length,
+      canonicalCurrent: current.length,
       filenameFallback,
       ambiguousCurrentFallback: ambiguousCurrent.length,
-      unresolvedHistorical: ambiguous.filter((doc) => doc.is_current !== true && doc.status === 'pending').length,
+      unresolvedHistorical: ambiguous.filter((doc) => doc.is_current !== true).length,
       excludedMisclassifiedAntecedentes,
+    },
+  }
+}
+
+export function selectCanonicalF301ByStatus<T extends F301Document>(
+  docs: T[],
+  status: string,
+): {
+  documents: T[]
+  historical: T[]
+  diagnostics: F301CanonicalDiagnostics
+} {
+  const result = selectCanonicalF301(docs)
+  return {
+    documents: result.current.filter((doc) => doc.status === status),
+    historical: result.historical,
+    diagnostics: result.diagnostics,
+  }
+}
+
+export function selectCanonicalPendingF301<T extends F301Document>(docs: T[]): {
+  pending: T[]
+  diagnostics: F301CanonicalDiagnostics & { canonicalPending: number }
+} {
+  const result = selectCanonicalF301ByStatus(docs, 'pending')
+  return {
+    pending: result.documents,
+    diagnostics: {
+      ...result.diagnostics,
+      canonicalPending: result.documents.length,
     },
   }
 }
