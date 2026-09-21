@@ -220,42 +220,42 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
             onClick={() => setShowFilters(!showFilters)}
             variant="outline"
             size="sm"
-            className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800/50"
+            className="gap-2 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface)]"
           >
             <Filter className="w-4 h-4" />
             {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
           </Button>
           {hasActiveFilters && (
-            <Badge variant="secondary" className="bg-orange-500/20 text-orange-300">
+            <Badge variant="secondary" className="bg-[var(--cf-accent)]/20 text-[var(--cf-expiring)]">
               {filteredDocs.length} / {allDocs.length} documentos
             </Badge>
           )}
         </div>
 
         {showFilters && (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 space-y-3">
+          <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[6px] p-4 space-y-3">
             {/* Search */}
             <div>
-              <label className="text-xs font-medium text-slate-400 block mb-2">
+              <label className="text-xs font-medium text-[var(--cf-text-muted)] block mb-2">
                 Buscar por documento, empresa, RUT o conductor
               </label>
               <Input
                 placeholder="Ej: Rodmac, 76..., certificado, Juan..."
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
-                className="bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500"
+                className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)]"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {/* Empresa */}
               <div>
-                <label className="text-xs font-medium text-slate-400 block mb-2">Empresa</label>
+                <label className="text-xs font-medium text-[var(--cf-text-muted)] block mb-2">Empresa</label>
                 <Select value={selectedEmpresa} onValueChange={setSelectedEmpresa}>
-                  <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
+                  <SelectTrigger className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-[var(--cf-text)]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700">
+                  <SelectContent className="bg-[var(--cf-surface)] border-[var(--cf-border)]">
                     <SelectItem value={ALL_EMPRESA}>Todas las empresas</SelectItem>
                     {empresas.map(emp => (
                       <SelectItem key={emp} value={emp}>{emp}</SelectItem>
@@ -266,12 +266,12 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
               {/* Executive */}
               <div>
-                <label className="text-xs font-medium text-slate-400 block mb-2">Ejecutiva</label>
+                <label className="text-xs font-medium text-[var(--cf-text-muted)] block mb-2">Ejecutiva</label>
                 <Select value={selectedExecutive} onValueChange={setSelectedExecutive}>
-                  <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
+                  <SelectTrigger className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-[var(--cf-text)]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700">
+                  <SelectContent className="bg-[var(--cf-surface)] border-[var(--cf-border)]">
                     <SelectItem value={ALL_EXEC}>Todas las ejecutivas</SelectItem>
                     {executives.map(exec => (
                       <SelectItem key={exec} value={exec}>{exec}</SelectItem>
@@ -282,12 +282,12 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
               {/* Doc Type */}
               <div>
-                <label className="text-xs font-medium text-slate-400 block mb-2">Tipo de documento</label>
+                <label className="text-xs font-medium text-[var(--cf-text-muted)] block mb-2">Tipo de documento</label>
                 <Select value={selectedDocType} onValueChange={setSelectedDocType}>
-                  <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
+                  <SelectTrigger className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-[var(--cf-text)]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700">
+                  <SelectContent className="bg-[var(--cf-surface)] border-[var(--cf-border)]">
                     <SelectItem value={ALL_TYPE}>Todos los tipos</SelectItem>
                     {docTypes.map(({ code, nombre }) => (
                       <SelectItem key={code} value={code}>{nombre}</SelectItem>
@@ -302,7 +302,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                 onClick={handleClearFilters}
                 variant="ghost"
                 size="sm"
-                className="gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 w-full"
+                className="gap-2 text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] w-full"
               >
                 <X className="w-4 h-4" />
                 Limpiar todos los filtros
@@ -315,11 +315,11 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       {/* ── Document List ─────────────────────────────── */}
       {filteredDocs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
-          <p className="text-slate-400">
+          <p className="text-[var(--cf-text-muted)]">
             {hasActiveFilters ? 'No hay documentos que coincidan con los filtros' : 'No hay documentos aprobados'}
           </p>
           {hasActiveFilters && (
-            <Button onClick={handleClearFilters} variant="ghost" size="sm" className="mt-2 text-slate-400">
+            <Button onClick={handleClearFilters} variant="ghost" size="sm" className="mt-2 text-[var(--cf-text-muted)]">
               Limpiar filtros
             </Button>
           )}
@@ -341,14 +341,14 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
           {hasMore && (
             <div className="flex flex-col items-center gap-3 py-6 px-4">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-[var(--cf-text-muted)]">
                 Mostrando {paginatedDocs.length} de {filteredDocs.length} documentos
                 {remainingCount > 0 && ` (+${remainingCount} mas)`}
               </p>
               <Button
                 onClick={() => setDisplayCount(prev => prev + LOAD_MORE_INCREMENT)}
                 variant="outline"
-                className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800/50"
+                className="gap-2 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface)]"
               >
                 <ChevronDown className="w-4 h-4" />
                 Cargar {Math.min(LOAD_MORE_INCREMENT, remainingCount)} mas documentos
@@ -361,7 +361,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       {/* ── Preview Modal ─────────────────────────────── */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
         <DialogContent
-          className="max-w-4xl bg-slate-900 border-slate-700"
+          className="max-w-4xl bg-[var(--cf-surface)] border-[var(--cf-border)]"
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
@@ -376,7 +376,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                   filename={previewDoc.original_filename || previewDoc?.document_name || 'document.pdf'}
                 />
               ) : (
-                <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
+                <div className="flex justify-center items-center bg-[var(--cf-surface)] rounded-[6px] p-4 max-h-[60vh] overflow-auto">
                   <img
                     src={previewDoc.file_url}
                     alt="Preview"
@@ -388,7 +388,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
           )}
 
           {!previewDoc?.file_url && (
-            <div className="w-full h-96 bg-slate-800 rounded-lg flex items-center justify-center">
+            <div className="w-full h-96 bg-[var(--cf-surface)] rounded-[6px] flex items-center justify-center">
               <p className="text-muted-foreground">No hay documento disponible para previsualizar</p>
             </div>
           )}
