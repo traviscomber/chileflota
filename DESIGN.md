@@ -132,3 +132,17 @@ Evitar mayúsculas extensas, pesos 700/800 y texto blanco puro. Los badges puede
 - ¿Un usuario puede distinguir estado sin depender del color?
 - ¿Hay contraste, foco y targets táctiles suficientes?
 - ¿La interfaz se ve como un único producto, no como páginas de librerías distintas?
+
+
+## Regla de cobertura
+
+DESIGN.md aplica a **toda superficie autenticada y pública**: login, shell, contenido de páginas, tablas, filtros, modales, estados vacíos, onboarding, formularios y vistas móviles.
+
+No se considera una migración completa si sólo cambió el shell o el login. Al tocar una ruta, el contenido interior debe cumplir también:
+
+- Sin `slate-*`, `orange-*`, `cyan-*`, gradientes o sombras decorativas en JSX.
+- Títulos de página de 24–28 px y peso 600; evitar `text-4xl/text-5xl` y `font-bold`.
+- Cards planas con `--cf-surface`, `--cf-border` y radio 6–8 px.
+- Estados con los tokens semánticos definidos en esta guía.
+- Una sola acción primaria por bloque.
+- No duplicar un título que ya exista en el shell.
