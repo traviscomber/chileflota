@@ -81,6 +81,41 @@ function getMetadataTransportistaId(metadata?: Record<string, unknown>) {
   return typeof value === 'string' && value ? value : undefined
 }
 
+function getOperationalPriorityScore(alert: NormalizedAlert) {
+  const priorityScore = alert.priority === 'critical'
+    ? 100
+    : alert.priority === 'high'
+      ? 70
+      : alert.priority === 'medium'
+        ? 40
+        : 10
+
+  const text = `${alert.type} ${alert.title} ${alert.message} ${alert.document_type || ''}`.toLowerCase()
+  let score = priorityScore
+
+  if (alert.type.toLowerCase() === 'error') score += 25
+  if (alert.type.toLowerCase() === 'warning') score += 10
+  if (/venc|expir|rechaz|bloque|incumpl|f30|f30-1/.test(text)) score += 20
+
+  const ageHours = Math.max(0, (Date.now() - new Date(alert.created_at).getTime()) / 3_600_000)
+  if (ageHours >= 48) score += 15
+  else if (ageHours >= 24) score += 8
+
+  return score
+}
+
+function isOperationalPriorityAlert(alert: NormalizedAlert) {
+  const status = String(alert.status || '').toLowerCase()
+  const type = String(alert.type || '').toLowerCase()
+
+  if (status === 'resuelto' || status === 'actioned' || status === 'completado') return false
+  if (type === 'success' || alert.is_dismissed) return false
+
+  return ['critical', 'high', 'medium'].includes(alert.priority)
+    || type === 'error'
+    || type === 'warning'
+}
+
 function buildIdentityMetadata(
   metadata: Record<string, unknown> | undefined,
   transportistaId: string | undefined,
@@ -114,6 +149,8 @@ export async function GET(request: NextRequest) {
     const status = url.searchParams.get('status')
     const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '100', 10), 1), 500)
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0)
+    const mode = url.searchParams.get('mode')
+    const priorityMode = mode === 'priority'
     const executiveCompanyIds = user.role === 'ejecutiva'
       ? await resolveExecutiveCompanyIds(supabase, user.email, user.id)
       : null
@@ -133,11 +170,13 @@ export async function GET(request: NextRequest) {
     if (type) alertsLogQuery = alertsLogQuery.eq('alert_type', type)
     if (priority) alertsLogQuery = alertsLogQuery.eq('priority', priority)
     if (status) alertsLogQuery = alertsLogQuery.eq('status', status)
+    if (priorityMode && !status) alertsLogQuery = alertsLogQuery.eq('status', 'pendiente')
+    if (priorityMode && !priority) alertsLogQuery = alertsLogQuery.in('priority', ['critical', 'high', 'medium'])
     if (isRead !== null && isRead !== '') alertsLogQuery = alertsLogQuery.eq('is_read', isRead === 'true')
 
     const { data: logAlerts = [], error: logError } = await alertsLogQuery
       .order('created_at', { ascending: false })
-      .limit(limit * 2)
+      .limit(priorityMode ? Math.max(limit * 10, 100) : limit * 2)
 
     if (logError) console.error('alerts_log query error:', logError)
 
@@ -145,11 +184,13 @@ export async function GET(request: NextRequest) {
     if (type) legacyQuery = legacyQuery.eq('type', type)
     if (priority) legacyQuery = legacyQuery.eq('priority', priority)
     if (status) legacyQuery = legacyQuery.eq('status', status)
+    if (priorityMode && !status) legacyQuery = legacyQuery.eq('status', 'pendiente')
+    if (priorityMode && !priority) legacyQuery = legacyQuery.in('priority', ['critical', 'high', 'medium'])
     if (isRead !== null && isRead !== '') legacyQuery = legacyQuery.eq('is_read', isRead === 'true')
 
     const { data: rawLegacyAlerts = [], error: legacyError } = await legacyQuery
       .order('created_at', { ascending: false })
-      .limit(limit * 2)
+      .limit(priorityMode ? Math.max(limit * 10, 100) : limit * 2)
 
     if (legacyError) console.warn('legacy alerts query skipped:', legacyError.message)
 
@@ -246,15 +287,25 @@ export async function GET(request: NextRequest) {
 
     const combined = [...alerts, ...legacyAlerts]
       .filter((alert) => !ejecutiva || alert.ejecutiva_asignada === ejecutiva)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .filter((alert) => !priorityMode || isOperationalPriorityAlert(alert))
+      .sort((a, b) => {
+        if (priorityMode) {
+          const scoreDiff = getOperationalPriorityScore(b) - getOperationalPriorityScore(a)
+          if (scoreDiff !== 0) return scoreDiff
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
 
-    const paginated = combined.slice(offset, offset + limit)
+    const paginated = combined.slice(offset, offset + limit).map((alert) => priorityMode
+      ? { ...alert, priority_score: getOperationalPriorityScore(alert) }
+      : alert)
     const response = NextResponse.json({
       alerts: paginated,
       total: combined.length,
       limit,
       offset,
       ejecutiva: ejecutiva || null,
+      mode: priorityMode ? 'priority' : 'all',
     })
 
     response.headers.set('Cache-Control', 'private, max-age=10, stale-while-revalidate=30')
