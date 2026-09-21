@@ -56,10 +56,8 @@ export function extractF301PrincipalRut(text: string | null | undefined): string
 
 function isMisclassifiedAntecedentes(doc: F301Document): boolean {
   const type = (doc.ai_document_type || '').toLocaleLowerCase('es-CL')
-  const text = (doc.ai_extracted_text || '').toLocaleLowerCase('es-CL')
   return type.includes('antecedentes laborales')
     || type.includes('antecedentes laborales y previsionales')
-    || text.includes('certificado de antecedentes laborales y previsionales')
 }
 
 function timestamp(doc: F301Document): number {
