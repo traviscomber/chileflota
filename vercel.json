@@ -12,39 +12,39 @@
     },
     {
       "path": "/api/cron/cronos-sii-transportistas",
-      "schedule": "*/5 * * * *"
+      "schedule": "5 * * * *"
     },
     {
       "path": "/api/cron/f30-backfill",
-      "schedule": "* * * * *"
+      "schedule": "10 * * * *"
     },
     {
       "path": "/api/cron/cronos-reconcile",
-      "schedule": "*/5 * * * *"
+      "schedule": "15 * * * *"
     },
     {
       "path": "/api/cron/cronos-document-text-extract",
-      "schedule": "1,6,11,16,21,26,31,36,41,46,51,56 * * * *"
+      "schedule": "20 * * * *"
     },
     {
       "path": "/api/cron/cronos-compliance-events",
-      "schedule": "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+      "schedule": "25 * * * *"
     },
     {
       "path": "/api/cron/cronos-document-ocr",
-      "schedule": "4,19,34,49 * * * *"
+      "schedule": "30 * * * *"
     },
     {
       "path": "/api/cron/pdf-ocr-backfill",
-      "schedule": "*/5 * * * *"
+      "schedule": "35 * * * *"
     },
     {
       "path": "/api/cron/cronos-vehicle-fleet-recovery",
-      "schedule": "8,23,38,53 * * * *"
+      "schedule": "40 * * * *"
     },
     {
       "path": "/api/cron/cronos-compliance-intelligence",
-      "schedule": "3,13,23,33,43,53 * * * *"
+      "schedule": "45 * * * *"
     },
     {
       "path": "/api/cron/cronos-prt-discovery",
@@ -52,19 +52,19 @@
     },
     {
       "path": "/api/cron/cronos-prt-inspect",
-      "schedule": "0,15,30,45 * * * *"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/cronos-prt-profile",
-      "schedule": "5,20,35,50 * * * *"
+      "schedule": "15 2 * * *"
     },
     {
       "path": "/api/cron/cronos-prt-import",
-      "schedule": "10,25,40,55 * * * *"
+      "schedule": "30 2 * * *"
     },
     {
       "path": "/api/cron/cronos-prt-import-stream",
-      "schedule": "12,27,42,57 * * * *"
+      "schedule": "45 2 * * *"
     }
   ]
 }
