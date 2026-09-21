@@ -55,7 +55,7 @@ async function fetchAllRejectedSubcontractorDocuments(supabase: ReturnType<typeo
   for (let page = 0; ; page += 1) {
     const { data, error } = await supabase
       .from('subcontractor_documents')
-      .select(`id,file_name,document_type_id,status,file_url,rejection_reason,reviewed_at,reviewed_by_ejecutiva,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current,ai_document_type,ai_extracted_text,transportistas:subcontractor_id(id,razon_social,rut)`)
+      .select(`id,file_name,document_type_id,status,file_url,rejection_reason,reviewed_at,reviewed_by_ejecutiva,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current,transportistas:subcontractor_id(id,razon_social,rut)`)
       .eq('status', 'rejected')
       .order('updated_at', { ascending: false })
       .range(page * pageSize, page * pageSize + pageSize - 1)
@@ -75,25 +75,6 @@ async function fetchAllApprovedConductorDocuments(supabase: ReturnType<typeof cr
       .from('uploaded_documents')
       .select('id,original_filename,document_type_id,validation_status,validated_at,created_at,updated_at,conductor_id,document_period_month,document_period_year,document_period_start,version_number')
       .eq('validation_status', 'approved')
-      .eq('is_current', true)
-      .order('updated_at', { ascending: false })
-      .range(page * pageSize, page * pageSize + pageSize - 1)
-    if (error) throw error
-    if (!data?.length) break
-    documents.push(...data)
-    if (data.length < pageSize) break
-  }
-  return documents
-}
-
-async function fetchAllApprovedSubcontractorDocuments(supabase: ReturnType<typeof createAdminClient>) {
-  const documents: any[] = []
-  const pageSize = 1000
-  for (let page = 0; ; page += 1) {
-    const { data, error } = await supabase
-      .from('subcontractor_documents')
-      .select('id,file_name,document_type_id,status,reviewed_at,approved_at,created_at,updated_at,subcontractor_id,document_period_month,document_period_year,document_period_start,version_number,ai_document_type,ai_extracted_text')
-      .eq('status', 'approved')
       .eq('is_current', true)
       .order('updated_at', { ascending: false })
       .range(page * pageSize, page * pageSize + pageSize - 1)
@@ -169,11 +150,10 @@ export async function GET(request: Request) {
       }
     }
 
-    const [conductorResult, approvedConductorResult, subDocs, approvedSubResult, conductorTypesResult, subcontractorTypesResult, executivesResult] = await Promise.all([
+    const [conductorResult, approvedConductorResult, subDocs, conductorTypesResult, subcontractorTypesResult, executivesResult] = await Promise.all([
       supabase.from('uploaded_documents').select(`id,original_filename,document_type_id,validation_status,file_url,rejection_reason,validated_at,ejecutiva,created_at,updated_at,conductor_id,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,conductores(id,nombres,apellido_paterno,rut,rut_proveedor,transportista_id)`).eq('validation_status', 'rejected').eq('is_current', true).order('updated_at', { ascending: false }),
       fetchAllApprovedConductorDocuments(supabase),
       fetchAllRejectedSubcontractorDocuments(supabase),
-      fetchAllApprovedSubcontractorDocuments(supabase),
       supabase.from('document_types').select('id, code, name'),
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
       supabase.from('executive_staff').select('id, full_name, email, is_active'),
@@ -186,7 +166,6 @@ export async function GET(request: Request) {
 
     const conductorDocs = conductorResult.data || []
     const approvedConductorDocs = approvedConductorResult || []
-    const approvedSubDocs = approvedSubResult || []
     const conductorTypeMap = new Map((conductorTypesResult.data || []).map((type) => [type.id, { code: type.code, nombre: type.name }]))
     const deprecatedCodes = new Set(['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL'])
     const subcontractorTypeMap = new Map((subcontractorTypesResult.data || []).filter((type) => !deprecatedCodes.has(type.code)).map((type) => [type.id, { code: type.code, nombre: type.nombre }]))
