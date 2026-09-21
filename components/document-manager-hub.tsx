@@ -234,7 +234,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       </header>
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-5">
-        <MetricCard label="Procesados cartera" value={isCanonicalReady ? totalGestionados : null} detail={`ChileFlota total: ${totalChileFlota.toLocaleString('es-CL')}`} icon={FileStack} tone="neutral" />
+        <MetricCard label="Procesados cartera" value={isCanonicalReady ? totalGestionados : null} detail={isCanonicalReady ? `ChileFlota total: ${totalChileFlota.toLocaleString('es-CL')}` : 'Sincronizando fuente canónica'} icon={FileStack} tone="neutral" />
         <MetricCard label="Actuales" value={isCanonicalReady ? totalActuales : null} detail="Una versión activa por requisito" icon={FileText} tone="neutral" />
         <Link href="/dashboard/company/documentos/pendientes" className="contents">
           <MetricCard label="Pendientes" value={isCanonicalReady ? totalPendientes : null} icon={Clock} tone="warning" />
