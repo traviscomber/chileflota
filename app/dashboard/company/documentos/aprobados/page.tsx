@@ -38,8 +38,10 @@ function matchesSearch(doc: any, rawQuery: string) {
 export default function AprobadosPage() {
   const searchParams = useSearchParams()
   const globalSearch = searchParams.get('search')?.trim() || ''
-  const requestQuery = searchParams.toString()
-  const requestUrl = `/api/company/documents/aprobados${requestQuery ? `?${requestQuery}` : ''}`
+  const requestParams = new URLSearchParams(searchParams.toString())
+  requestParams.set('compact', '1')
+  const requestQuery = requestParams.toString()
+  const requestUrl = `/api/company/documents/aprobados?${requestQuery}`
   const [allData, setAllData] = useState<any>(null)
   const [period, setPeriod] = useState<DateFilterValue>({
     month: ALL_VALUE,
