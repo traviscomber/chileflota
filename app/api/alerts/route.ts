@@ -3,6 +3,7 @@ import { verifyAuth } from "@/lib/auth-middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { resolveExecutiveCompanyIds } from "@/lib/executive-scope"
+import { isDisplayRelevantAlert } from "@/lib/alerts/relevance"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 30
@@ -286,6 +287,7 @@ export async function GET(request: NextRequest) {
         })
 
     const combined = [...alerts, ...legacyAlerts]
+      .filter((alert) => isDisplayRelevantAlert(alert))
       .filter((alert) => !ejecutiva || alert.ejecutiva_asignada === ejecutiva)
       .filter((alert) => !priorityMode || isOperationalPriorityAlert(alert))
       .sort((a, b) => {
