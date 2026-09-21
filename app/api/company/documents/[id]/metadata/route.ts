@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { authorizeInternalDocumentRequest, DOCUMENT_WRITE_ROLES } from '@/lib/document-route-auth'
 
 // Generador de código automático
 function generateDocumentCode(
@@ -29,6 +30,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await authorizeInternalDocumentRequest(request, DOCUMENT_WRITE_ROLES)
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const { custom_code, expiration_date } = await request.json()
     const adminClient = createAdminClient()
     const documentId = params.id
@@ -99,6 +103,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await authorizeInternalDocumentRequest(request, DOCUMENT_WRITE_ROLES)
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
     const { company_code, driver_rut, document_type } = await request.json()
     const adminClient = createAdminClient()
     const documentId = params.id
