@@ -3,7 +3,7 @@ import { verifyAuth } from "@/lib/auth-middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { resolveExecutiveCompanyIds } from "@/lib/executive-scope"
-import { isDisplayRelevantAlert } from "@/lib/alerts/relevance"
+import { isDisplayRelevantAlert, isDocumentUploadAlert } from "@/lib/alerts/relevance"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 30
@@ -286,8 +286,40 @@ export async function GET(request: NextRequest) {
           }
         })
 
-    const combined = [...alerts, ...legacyAlerts]
+    const prefilteredAlerts = [...alerts, ...legacyAlerts]
       .filter((alert) => isDisplayRelevantAlert(alert))
+
+    const uploadAlertDocumentIds = Array.from(new Set(
+      prefilteredAlerts
+        .filter((alert) => isDocumentUploadAlert(alert))
+        .map((alert) => String(alert.document_id || alert.metadata?.document_id || ''))
+        .filter(Boolean),
+    ))
+
+    const actionableUploadDocumentIds = new Set<string>()
+    if (uploadAlertDocumentIds.length > 0) {
+      const { data: uploadDocuments = [], error: uploadDocumentsError } = await supabase
+        .from('uploaded_documents')
+        .select('id,validation_status,is_current')
+        .in('id', uploadAlertDocumentIds)
+
+      if (uploadDocumentsError) {
+        console.warn('alert relevance upload lookup skipped:', uploadDocumentsError.message)
+      } else {
+        for (const doc of uploadDocuments || []) {
+          if (doc.validation_status === 'pending' && doc.is_current === true) {
+            actionableUploadDocumentIds.add(doc.id)
+          }
+        }
+      }
+    }
+
+    const combined = prefilteredAlerts
+      .filter((alert) => {
+        if (!isDocumentUploadAlert(alert)) return true
+        const documentId = String(alert.document_id || alert.metadata?.document_id || '')
+        return Boolean(documentId && actionableUploadDocumentIds.has(documentId))
+      })
       .filter((alert) => !ejecutiva || alert.ejecutiva_asignada === ejecutiva)
       .filter((alert) => !priorityMode || isOperationalPriorityAlert(alert))
       .sort((a, b) => {
