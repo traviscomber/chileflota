@@ -44,7 +44,7 @@ async function lookupEjecutiva(params: {
     const driverId = params.driverId || params.conductorId
     if (driverId) {
       // Try drivers table first
-      let transportistaId: string | null = null
+      let transportistaId: string | null = options?.transportistaId || null
       const { data: driver } = await supabase
         .from('drivers')
         .select('transportista_id')
@@ -156,15 +156,19 @@ export async function generateDocumentUploadAlerts(
 export async function generateDocumentStatusChangeAlert(
   uploadedDocumentId: string,
   documentType: string,
-  conductorName: string,
+  entityName: string,
   conductorId: string,
   newStatus: 'approved' | 'rejected' | 'pending',
-  reason?: string
+  reason?: string,
+  options?: {
+    transportistaId?: string | null
+    documentTable?: 'uploaded_documents' | 'subcontractor_documents'
+  },
 ) {
   try {
     const supabase = createAdminClient()
 
-    console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
+    console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, entityName, newStatus })
 
     // Generate unique correlation code (format: ALERT-YYYYMMDD-XXXXXX)
     const now = new Date()
@@ -178,7 +182,7 @@ export async function generateDocumentStatusChangeAlert(
     let ejecutivaAsignada: string | null = null
     
     const normalizedConductorId = isUuid(conductorId) ? conductorId : null
-    const { data: conductor } = normalizedConductorId
+    const { data: conductor } = normalizedConductorId && !transportistaId
       ? await supabase
           .from('conductores')
           .select('id, transportista_id')
@@ -208,17 +212,17 @@ export async function generateDocumentStatusChangeAlert(
 
     if (newStatus === 'approved') {
       title = `Documento Aprobado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue aprobado. [${correlationCode}]`
+      message = `El documento ${documentType} de ${entityName} (${transportistaName}) fue aprobado. [${correlationCode}]`
       alertType = 'success'
       priority = 'low'
     } else if (newStatus === 'rejected') {
       title = `Documento Rechazado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue rechazado. Razon: ${reason || 'Sin especificar'}. [${correlationCode}]`
+      message = `El documento ${documentType} de ${entityName} (${transportistaName}) fue rechazado. Razon: ${reason || 'Sin especificar'}. [${correlationCode}]`
       alertType = 'error'
       priority = 'high'
     } else if (newStatus === 'pending') {
       title = `Documento en Revision - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) ha sido retornado a revision. [${correlationCode}]`
+      message = `El documento ${documentType} de ${entityName} (${transportistaName}) ha sido retornado a revision. [${correlationCode}]`
       alertType = 'warning'
       priority = 'medium'
     }
@@ -233,26 +237,32 @@ export async function generateDocumentStatusChangeAlert(
         priority,
         entity_type: 'document',
         entity_id: uploadedDocumentId,
-        entity_name: conductorName,
+        entity_name: entityName,
         is_read: false,
-        is_resolved: newStatus !== 'pending',
-        status: newStatus === 'pending' ? 'pendiente' : 'resuelto',
+        is_resolved: newStatus === 'approved',
+        status: newStatus === 'approved' ? 'resuelto' : 'pendiente',
         ejecutiva_nombre: ejecutivaAsignada,
         transportista_id: transportistaId,
         driver_id: normalizedConductorId,
         document_id: uploadedDocumentId,
         document_type: documentType,
-        action_url: `/dashboard/company/documentos`,
+        action_url: newStatus === 'rejected'
+          ? '/dashboard/company/documentos/rechazados'
+          : newStatus === 'pending'
+            ? '/dashboard/company/documentos/pendientes'
+            : '/dashboard/company/documentos/aprobados',
         created_at: new Date().toISOString(),
         metadata: {
           document_id: uploadedDocumentId,
           conductor_id: normalizedConductorId,
-          conductor_name: conductorName,
+          entity_name: entityName,
           document_type: documentType,
           transportista_name: transportistaName,
           ejecutiva_asignada: ejecutivaAsignada,
           reason: reason || null,
           status: newStatus,
+          source: 'document_status_change',
+          document_table: options?.documentTable || 'uploaded_documents',
           correlation_code: correlationCode,
         },
       })
