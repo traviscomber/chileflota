@@ -184,21 +184,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message || 'Login failed' }, { status: 500 })
   }
 }
-
-
-export async function GET(request: NextRequest) {
-  const qaToken = request.nextUrl.searchParams.get('qa')
-  const email = request.nextUrl.searchParams.get('email')
-
-  if (process.env.VERCEL_ENV !== 'preview' || qaToken !== 'pr187-preview-session' || !email) {
-    return new NextResponse(null, { status: 404 })
-  }
-
-  const proxyRequest = new NextRequest(request.url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email }),
-  })
-
-  return POST(proxyRequest)
-}
