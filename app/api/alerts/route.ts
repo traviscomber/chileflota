@@ -75,6 +75,52 @@ interface NormalizedAlert {
   [key: string]: unknown
 }
 
+async function resolveExecutiveCompanyIds(
+  supabase: ReturnType<typeof createAdminClient>,
+  email: string,
+  authUserId: string,
+) {
+  const { data: exact } = await supabase
+    .from('executive_staff')
+    .select('id')
+    .ilike('email', email)
+    .eq('is_active', true)
+    .limit(1)
+    .maybeSingle()
+
+  let executiveStaffId = exact?.id as string | undefined
+
+  if (!executiveStaffId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', authUserId)
+      .maybeSingle()
+
+    if (profile?.full_name) {
+      const { data: matches } = await supabase
+        .from('executive_staff')
+        .select('id')
+        .ilike('full_name', profile.full_name)
+        .eq('is_active', true)
+        .limit(2)
+
+      if (matches?.length === 1) executiveStaffId = matches[0].id as string
+    }
+  }
+
+  if (!executiveStaffId) return null
+
+  const { data: companies, error } = await supabase
+    .from('transportistas')
+    .select('id')
+    .eq('assigned_executive_id', executiveStaffId)
+    .eq('is_active', true)
+
+  if (error) throw error
+  return (companies || []).map((company) => company.id).filter(Boolean)
+}
+
 function getMetadataTransportistaId(metadata?: Record<string, unknown>) {
   const value = metadata?.transportista_id || metadata?.subcontractor_id
   return typeof value === 'string' && value ? value : undefined
@@ -113,8 +159,21 @@ export async function GET(request: NextRequest) {
     const status = url.searchParams.get('status')
     const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '100', 10), 1), 500)
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0)
+    const executiveCompanyIds = user.role === 'ejecutiva'
+      ? await resolveExecutiveCompanyIds(supabase, user.email, user.id)
+      : null
+
+    if (user.role === 'ejecutiva' && executiveCompanyIds === null) {
+      return NextResponse.json({ error: 'No se pudo resolver la ejecutiva activa' }, { status: 403 })
+    }
 
     let alertsLogQuery = supabase.from('alerts_log').select('*', { count: 'exact' })
+    if (executiveCompanyIds) {
+      if (executiveCompanyIds.length === 0) {
+        return NextResponse.json({ alerts: [], total: 0, limit, offset, ejecutiva: null })
+      }
+      alertsLogQuery = alertsLogQuery.in('transportista_id', executiveCompanyIds)
+    }
     if (ejecutiva) alertsLogQuery = alertsLogQuery.eq('ejecutiva_nombre', ejecutiva)
     if (type) alertsLogQuery = alertsLogQuery.eq('alert_type', type)
     if (priority) alertsLogQuery = alertsLogQuery.eq('priority', priority)
@@ -196,7 +255,13 @@ export async function GET(request: NextRequest) {
 
     const legacyAlerts: NormalizedAlert[] = legacyError
       ? []
-      : (rawLegacyAlerts as LegacyAlert[]).map((alert) => {
+      : (rawLegacyAlerts as LegacyAlert[])
+          .filter((alert) => {
+            if (!executiveCompanyIds) return true
+            const transportistaId = getMetadataTransportistaId(alert.metadata)
+            return Boolean(transportistaId && executiveCompanyIds.includes(transportistaId))
+          })
+          .map((alert) => {
           const transportistaId = getMetadataTransportistaId(alert.metadata)
           const metadata = buildIdentityMetadata(alert.metadata, transportistaId, transportistaMap)
 
