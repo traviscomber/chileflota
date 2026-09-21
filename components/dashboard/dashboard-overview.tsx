@@ -77,7 +77,7 @@ async function fetchDashboardSnapshot() {
   const rejectedConductor = rejectedData.conductorDocs?.length || 0
   const rejectedSubcontractor = rejectedData.subDocs?.length || 0
 
-  const reviewQueue = [
+  const reviewCandidates = [
     ...(pendingData.conductorDocs || []).map((doc: any) => ({
       id: `review_conductor_${doc.id}`,
       type: 'review_required',
@@ -116,8 +116,40 @@ async function fetchDashboardSnapshot() {
         document_source: 'subcontractor',
       },
     })),
-  ]
-    .filter((alert) => Boolean(alert.created_at))
+  ].filter((alert) => Boolean(alert.created_at))
+
+  const groupedReviewQueue = new Map<string, typeof reviewCandidates[number] & { count: number }>()
+  for (const alert of reviewCandidates) {
+    const key = [
+      String(alert.metadata.company_id || alert.metadata.transportista_nombre || 'sin-empresa'),
+      String(alert.document_type || 'sin-tipo'),
+      String(alert.metadata.document_source || 'sin-fuente'),
+    ].join('::')
+
+    const existing = groupedReviewQueue.get(key)
+    if (!existing) {
+      groupedReviewQueue.set(key, { ...alert, count: 1 })
+      continue
+    }
+
+    existing.count += 1
+    if (new Date(alert.created_at).getTime() > new Date(existing.created_at).getTime()) {
+      groupedReviewQueue.set(key, { ...alert, count: existing.count })
+    }
+  }
+
+  const reviewQueue = Array.from(groupedReviewQueue.values())
+    .map((alert) => ({
+      ...alert,
+      title: alert.count > 1 ? `${alert.count} documentos nuevos para revisión` : alert.title,
+      message: alert.count > 1
+        ? `${alert.document_type || 'Documento'} · ${alert.metadata.transportista_nombre || 'Empresa sin nombre'}`
+        : alert.message,
+      metadata: {
+        ...alert.metadata,
+        grouped_count: alert.count,
+      },
+    }))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10)
 
