@@ -85,6 +85,15 @@ function approvedEvidenceCoversPending(
   if (pending.subcontractor_id !== approved.subcontractor_id) return false
   if (pending.document_type_id !== approved.document_type_id) return false
 
+  // Never let an older approval hide evidence that was uploaded afterwards.
+  // A later upload is a new review event even if legacy period metadata or
+  // filenames make it look like the same singleton requirement.
+  const pendingTime = Date.parse(pending.uploaded_at || pending.created_at || '')
+  const approvedTime = Date.parse(approved.reviewed_at || approved.uploaded_at || approved.created_at || '')
+  if (Number.isFinite(pendingTime) && Number.isFinite(approvedTime) && approvedTime < pendingTime) {
+    return false
+  }
+
   const pendingName = normalizeFileName(pending.file_name)
   const approvedName = normalizeFileName(approved.file_name)
   const sameInstance = SINGLETON_COVERAGE_CODES.has(typeCode || '') || (pendingName && pendingName === approvedName)
@@ -299,6 +308,7 @@ export async function GET(request: Request) {
               expires_at,
               supersedes_document_id,
               reviewed_at,
+              uploaded_at,
               created_at
             `)
             .eq('status', 'approved')

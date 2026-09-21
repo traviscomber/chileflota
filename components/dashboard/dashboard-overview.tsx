@@ -524,13 +524,23 @@ export function DashboardOverview() {
                   created_at={alert.created_at}
                   source={alert.source}
                   metadata={alert.metadata}
-                  onNavigate={() => router.push(
-                    alert.type === 'document_pending'
-                      ? '/dashboard/company/documentos/pendientes'
-                      : alert.type === 'document_rejected'
+                  onNavigate={() => {
+                    if (alert.type === 'document_pending') {
+                      const companyId = String(alert.metadata?.company_id || '').trim()
+                      router.push(
+                        companyId
+                          ? `/dashboard/company/documentos/pendientes?focus_mode=company&focus_id=${encodeURIComponent(companyId)}`
+                          : '/dashboard/company/documentos/pendientes'
+                      )
+                      return
+                    }
+
+                    router.push(
+                      alert.type === 'document_rejected'
                         ? '/dashboard/company/documentos/rechazados'
                         : '/dashboard/company/documentos/aprobados'
-                  )}
+                    )
+                  }}
                 />
               ))}
             </div>
