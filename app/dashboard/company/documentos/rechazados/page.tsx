@@ -50,8 +50,8 @@ export default function RechazadosPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 text-red-500 animate-spin" />
-          <p className="text-slate-400">Cargando documentos...</p>
+          <Loader2 className="h-8 w-8 text-[var(--cf-danger)] animate-spin" />
+          <p className="text-[var(--cf-text-muted)]">Cargando documentos...</p>
         </div>
       </div>
     )
@@ -64,14 +64,14 @@ export default function RechazadosPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/company/documentos">
-            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-200">
+            <Button variant="ghost" size="sm" className="text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-100">Documentos Rechazados</h1>
-            <p className="text-sm text-slate-400">
+            <h1 className="text-2xl font-semibold text-[var(--cf-text)]">Documentos Rechazados</h1>
+            <p className="text-sm text-[var(--cf-text-muted)]">
               {totalRejected} documentos para revisar
             </p>
           </div>
@@ -80,7 +80,7 @@ export default function RechazadosPage() {
         <Button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="bg-red-600 hover:bg-red-700 text-white"
+          className="bg-red-600 hover:bg-red-700 text-[var(--cf-text)]"
           size="sm"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
@@ -88,7 +88,7 @@ export default function RechazadosPage() {
         </Button>
       </div>
 
-      <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-sm text-slate-300">
+      <div className="rounded-[6px] border border-red-500/20 bg-red-500/5 p-4 text-sm text-[var(--cf-text-secondary)]">
         Filtra por ejecutiva, empresa, tipo de documento y período desde el listado.
       </div>
 
