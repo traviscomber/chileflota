@@ -321,7 +321,7 @@ export default function SubcontractorDashboardPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--cf-text)]">{transportista.nombre}</h1>
+            <h1 className="text-3xl font-semibold text-[var(--cf-text)]">{transportista.nombre}</h1>
             <p className="text-[var(--cf-text-muted)]">RUT: {transportista.rut}</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface)]">
@@ -404,7 +404,7 @@ export default function SubcontractorDashboardPage() {
                         <Button
                           type="button"
                           size="sm"
-                          className="bg-[var(--cf-accent)] text-slate-950 hover:bg-[var(--cf-accent-hover)]"
+                          className="bg-[var(--cf-accent)] text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]"
                           onClick={() => focusUploadFor(doc.document_type_id)}
                         >
                           Reemplazar
