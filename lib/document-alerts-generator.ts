@@ -91,8 +91,19 @@ export async function generateDocumentUploadAlerts(
 
     console.log('[v0] generateDocumentUploadAlerts:', { uploadedDocumentId, documentType, uploaderName, uploaderType, uploaderId })
 
-    // Lookup ejecutiva based on uploader type
+    let transportistaId: string | null = null
+    if (uploaderType === 'conductor' && isUuid(uploaderId)) {
+      const { data: conductor } = await supabase
+        .from('conductores')
+        .select('transportista_id')
+        .eq('id', uploaderId)
+        .maybeSingle()
+
+      transportistaId = conductor?.transportista_id || null
+    }
+
     const ejecutivaNombre = await lookupEjecutiva({
+      transportistaId: transportistaId || undefined,
       conductorId: uploaderType === 'conductor' ? uploaderId : undefined,
     })
 
@@ -113,13 +124,16 @@ export async function generateDocumentUploadAlerts(
         is_resolved: false,
         status: 'pendiente',
         ejecutiva_nombre: ejecutivaNombre,
+        transportista_id: transportistaId,
         driver_id: uploaderType === 'conductor' ? uploaderId : null,
         document_id: uploadedDocumentId,
         document_type: documentType,
-        action_url: `/dashboard/company/documentos`,
+        action_url: `/dashboard/company/documentos/pendientes`,
         created_at: new Date().toISOString(),
         metadata: {
+          source: 'document_upload',
           document_id: uploadedDocumentId,
+          transportista_id: transportistaId,
           uploader_type: uploaderType,
           uploader_name: uploaderName,
           document_type: documentType,
