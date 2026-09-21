@@ -53,7 +53,7 @@ async function fetchDashboardSnapshot() {
   }
 
   const [alertsRes, statsRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
-    fetch(`/api/alerts?limit=50&_t=${timestamp}`, requestOptions),
+    fetch(`/api/alerts?mode=priority&limit=10&_t=${timestamp}`, requestOptions),
     fetch(`/api/company/documents/stats?_t=${timestamp}`, requestOptions),
     fetch(`/api/dashboard/pending-documents?_t=${timestamp}`, requestOptions),
     fetch(`/api/company/documents/aprobados?_t=${timestamp}`, requestOptions),
@@ -376,35 +376,29 @@ export function DashboardOverview() {
               <div>
                 <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Alertas prioritarias</CardTitle>
                 <CardDescription className="mt-1 text-[var(--cf-text-muted)]">
-                  Evidencia que requiere lectura o seguimiento · {alerts.length} alertas
+                  Excepciones operacionales que requieren acción · {alerts.length} prioritarias
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {(() => {
-                  const approved = alerts.filter(a => a.type?.toUpperCase().includes('APPROVED')).length
-                  const rejected = alerts.filter(a => a.type?.toUpperCase().includes('REJECTED')).length
-                  const pending = alerts.filter(a => a.type?.toUpperCase().includes('PENDING') || a.type?.toUpperCase().includes('UPLOAD')).length
-                  const expiring = alerts.filter(a => a.type?.toUpperCase().includes('EXPIR') || a.type?.toUpperCase().includes('VENC')).length
+                  const critical = alerts.filter(a => a.priority === 'critical').length
+                  const high = alerts.filter(a => a.priority === 'high').length
+                  const medium = alerts.filter(a => a.priority === 'medium').length
                   return (
                     <>
-                      {approved > 0 && (
-                        <span className="rounded-[4px] bg-[#173B2C] px-2 py-1 text-xs font-medium text-[#67C18D]">
-                          {approved} aprobados
-                        </span>
-                      )}
-                      {rejected > 0 && (
+                      {critical > 0 && (
                         <span className="rounded-[4px] bg-[#45242B] px-2 py-1 text-xs font-medium text-[#E17B8C]">
-                          {rejected} rechazados
+                          {critical} críticas
                         </span>
                       )}
-                      {pending > 0 && (
-                        <span className="rounded-[4px] bg-[#40341B] px-2 py-1 text-xs font-medium text-[#D9B65C]">
-                          {pending} en revisión
-                        </span>
-                      )}
-                      {expiring > 0 && (
+                      {high > 0 && (
                         <span className="rounded-[4px] bg-[#4A2F18] px-2 py-1 text-xs font-medium text-[#E6A35A]">
-                          {expiring} por vencer
+                          {high} altas
+                        </span>
+                      )}
+                      {medium > 0 && (
+                        <span className="rounded-[4px] bg-[#40341B] px-2 py-1 text-xs font-medium text-[#D9B65C]">
+                          {medium} medias
                         </span>
                       )}
                     </>
@@ -422,8 +416,8 @@ export function DashboardOverview() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
-              {alerts.slice(0, 20).map((alert) => (
+            <div className="space-y-2">
+              {alerts.map((alert) => (
                 <AlertItem
                   key={alert.id}
                   id={alert.id}
@@ -437,11 +431,7 @@ export function DashboardOverview() {
                 />
               ))}
             </div>
-            {alerts.length > 20 && (
-              <p className="mt-4 border-t border-[var(--cf-border)] py-3 text-center text-xs text-[var(--cf-text-muted)]">
-                + {alerts.length - 20} alertas más · <button onClick={() => router.push('/dashboard/company/alertas')} className="font-medium text-[var(--cf-accent-hover)] hover:underline">Abrir panel completo</button>
-              </p>
-            )}
+
           </CardContent>
         </Card>
       )}
