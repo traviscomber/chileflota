@@ -317,7 +317,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       </div>
 
                       {doc.rejection_reason && (
-                        <div className="mt-3 flex items-start gap-2 bg-red-500/5 p-3 rounded-md border border-red-500/10">
+                        <div className="mt-3 flex items-start gap-2 bg-[var(--cf-danger-soft)]/5 p-3 rounded-md border border-red-500/10">
                           <AlertTriangle className="h-4 w-4 text-[var(--cf-danger)] mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
                             <p className="text-xs font-semibold text-[var(--cf-danger)]">Motivo del rechazo:</p>
