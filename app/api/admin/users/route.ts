@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
+import { CANONICAL_SUPER_ADMIN_EMAIL, isCanonicalSuperAdminEmail, isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 
 async function requireSuperAdmin(request: NextRequest): Promise<NextResponse | null> {
@@ -52,10 +52,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // The database also enforces that only cfarias@labbe.cl may hold super_admin.
-    if (role === 'super_admin' && email.trim().toLowerCase() !== 'cfarias@labbe.cl') {
+    // The database also enforces one canonical active super_admin identity.
+    if (role === 'super_admin' && !isCanonicalSuperAdminEmail(email)) {
       return NextResponse.json(
-        { error: 'super_admin is reserved for the canonical Cecilia account' },
+        { error: `super_admin is reserved for ${CANONICAL_SUPER_ADMIN_EMAIL}` },
         { status: 403 }
       )
     }
