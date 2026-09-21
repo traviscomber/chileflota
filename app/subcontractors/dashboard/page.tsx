@@ -56,7 +56,7 @@ export default function SubcontractorDashboardPage() {
   const today = new Date()
   const [selectedMonth, setSelectedMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
   const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
-  const [documentDate, setDocumentDate] = useState(() => { const d = new Date(); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return local.toISOString().split('T')[0] })
+  const [documentDate, setDocumentDate] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))
 
   const handleDocumentDateChange = (value: string) => {
     setDocumentDate(value)
