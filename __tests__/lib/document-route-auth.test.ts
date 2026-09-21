@@ -2,7 +2,9 @@ import jwt from 'jsonwebtoken'
 import {
   DOCUMENT_READ_ROLES,
   DOCUMENT_WRITE_ROLES,
+  createDocumentInternalAuthHeaders,
   hasOwnTransportistaAccess,
+  hasValidDocumentInternalSignature,
   isAllowedDocumentRole,
 } from '@/lib/document-route-auth'
 
@@ -18,9 +20,11 @@ function requestWithTransportistaToken(token?: string) {
 
 describe('document route authorization', () => {
   const originalSecret = process.env.JWT_SECRET
+  const originalAppSessionSecret = process.env.APP_SESSION_SECRET
 
   afterEach(() => {
     process.env.JWT_SECRET = originalSecret
+    process.env.APP_SESSION_SECRET = originalAppSessionSecret
   })
 
   it('keeps prevencionista read-only', () => {
@@ -53,5 +57,16 @@ describe('document route authorization', () => {
   it('rejects invalid transportista tokens', () => {
     process.env.JWT_SECRET = 'document-route-test-secret'
     expect(hasOwnTransportistaAccess(requestWithTransportistaToken('invalid'), 'company-a')).toBe(false)
+  })
+
+  it('accepts a short-lived signed internal reprocess request only for the same document', () => {
+    process.env.APP_SESSION_SECRET = 'internal-document-test-secret'
+    const headers = createDocumentInternalAuthHeaders('doc-a')
+    const request = {
+      headers: { get: (name: string) => headers[name] || null },
+    } as any
+
+    expect(hasValidDocumentInternalSignature(request, 'doc-a')).toBe(true)
+    expect(hasValidDocumentInternalSignature(request, 'doc-b')).toBe(false)
   })
 })
