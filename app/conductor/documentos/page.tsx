@@ -110,7 +110,7 @@ export default function ConductorDocumentosPage() {
   const { broadcastSync } = useDocumentSync()
   const [compliancePercentage, setCompliancePercentage] = useState(0)
   const [selectedDocumentType, setSelectedDocumentType] = useState('LIC_CONDUCIR')
-  const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
+  const [documentDate, setDocumentDate] = useState(() => { const d = new Date(); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return local.toISOString().split('T')[0] })
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -612,7 +612,7 @@ export default function ConductorDocumentosPage() {
                 type="date"
                 value={documentDate}
                 onChange={(e) => setDocumentDate(e.target.value)}
-                max={new Date().toISOString().split('T')[0]}
+                max={(() => { const d = new Date(); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return local.toISOString().split('T')[0] })()}
                 className="w-full rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] px-4 py-2 text-[var(--cf-text)] transition-colors focus:border-orange-500 focus:outline-none"
               />
               <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Esta fecha define el período histórico del documento.</p>
