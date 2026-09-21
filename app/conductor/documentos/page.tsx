@@ -492,7 +492,7 @@ export default function ConductorDocumentosPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <Loader className="h-6 w-6 animate-spin text-orange-500" />
+              <Loader className="h-6 w-6 animate-spin text-[var(--cf-expiring)]" />
             </div>
           ) : (
             <div className="space-y-3">
@@ -645,7 +645,7 @@ export default function ConductorDocumentosPage() {
 
           {isUploading && (
             <div className="flex items-center justify-center gap-2">
-              <Loader className="h-4 w-4 animate-spin text-orange-500" />
+              <Loader className="h-4 w-4 animate-spin text-[var(--cf-expiring)]" />
               <span className="text-sm text-[var(--cf-text-secondary)]">Subiendo documento...</span>
             </div>
           )}
