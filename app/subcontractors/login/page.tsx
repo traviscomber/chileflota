@@ -83,7 +83,7 @@ export default function SubcontratistasLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-slate-200">
+              <Label htmlFor="password" className="text-sm font-medium text-[var(--cf-text-secondary)]">
                 Contrasena
               </Label>
               <div className="relative">
