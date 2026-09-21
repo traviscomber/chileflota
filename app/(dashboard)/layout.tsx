@@ -38,8 +38,8 @@ export default function DashboardLayout({
 
   if (loading || !cookieCheckDone) {
     return (
-      <div className="min-h-screen bg-gradient-dark flex items-center justify-center">
-        <div className="text-slate-400 text-sm">Cargando...</div>
+      <div className="min-h-screen bg-[var(--cf-canvas)] flex items-center justify-center">
+        <div className="text-[var(--cf-text-muted)] text-sm">Cargando...</div>
       </div>
     )
   }
@@ -56,7 +56,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-dark">
+    <div className="min-h-screen bg-[var(--cf-canvas)]">
       <DashboardSidebar />
       <main className="md:ml-64 min-h-screen">
         <div className="p-4 sm:p-6 lg:p-8">
