@@ -279,115 +279,18 @@ export async function generateAIAnalysisAlerts(params: {
       conductorId,
     })
 
-    // If expiration date was detected, check if document is expired or expiring soon
+    // AI-extracted expiration dates are evidence candidates, not canonical deadlines.
+    // Do not create operational alerts or overwrite expires_at from this signal.
+    // Operational expiration alerts must come from validated canonical fields
+    // (for example uploaded_documents.expiration_date via generateExpirationAlerts)
+    // or from the requirement periodicity engine.
     if (aiExpirationDate) {
-      const today = new Date()
-      const expirationDate = new Date(aiExpirationDate)
-      const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-      const expDateStr = expirationDate.toLocaleDateString('es-CL')
-
-      let alertType = 'info'
-      let priority = 'low'
-      let title = ''
-      let message = ''
-      let shouldCreateAlert = false
-
-      if (daysUntilExpiration < 0) {
-        // Document is already expired
-        alertType = 'error'
-        priority = 'critical'
-        title = `DOCUMENTO VENCIDO - ${documentType}`
-        message = `El documento "${fileName}" (${documentType}) VENCIO el ${expDateStr} (hace ${Math.abs(daysUntilExpiration)} dias). Requiere renovacion inmediata.`
-        shouldCreateAlert = true
-      } else if (daysUntilExpiration <= 7) {
-        // Expires within 7 days - critical
-        alertType = 'error'
-        priority = 'high'
-        title = `URGENTE: Documento por Vencer - ${documentType}`
-        message = `El documento "${fileName}" (${documentType}) vence en ${daysUntilExpiration} dias (${expDateStr}). Accion inmediata requerida.`
-        shouldCreateAlert = true
-      } else if (daysUntilExpiration <= 30) {
-        // Expires within 30 days - warning
-        alertType = 'warning'
-        priority = 'medium'
-        title = `Documento por Vencer - ${documentType}`
-        message = `El documento "${fileName}" (${documentType}) vence el ${expDateStr} (en ${daysUntilExpiration} dias). Considere renovarlo pronto.`
-        shouldCreateAlert = true
-      } else if (daysUntilExpiration <= 60) {
-        // Expires within 60 days - info
-        alertType = 'info'
-        priority = 'low'
-        title = `Aviso: Vencimiento Proximo - ${documentType}`
-        message = `El documento "${fileName}" (${documentType}) vence el ${expDateStr} (en ${daysUntilExpiration} dias).`
-        shouldCreateAlert = true
-      }
-
-      if (shouldCreateAlert) {
-        // Check if similar alert already exists to avoid duplicates
-        const { data: existingAlert } = await supabase
-          .from('alerts_log')
-          .select('id')
-          .eq('document_id', documentId)
-          .eq('alert_type', alertType)
-          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-          .maybeSingle()
-
-        if (!existingAlert) {
-          const { error: insertError } = await supabase
-            .from('alerts_log')
-            .insert({
-              alert_type: alertType,
-              title,
-              description: message,
-              message,
-              priority,
-              entity_type: 'document',
-              entity_id: documentId,
-              entity_name: fileName,
-              is_read: false,
-              is_resolved: false,
-              status: 'pendiente',
-              ejecutiva_nombre: ejecutivaNombre,
-              transportista_id: transportistaId || null,
-              driver_id: conductorId || null,
-              document_id: documentId,
-              document_type: documentType,
-              action_url: `/dashboard/company/documentos/pendientes`,
-              created_at: new Date().toISOString(),
-              metadata: {
-                document_id: documentId,
-                document_table: documentTable,
-                ai_expiration_date: aiExpirationDate,
-                ai_confidence: aiConfidence,
-                days_until_expiration: daysUntilExpiration,
-                file_name: fileName,
-                source: 'ai_analysis',
-              },
-            })
-
-          if (insertError) {
-            console.error('[v0] Error creating AI analysis alert:', insertError)
-          } else {
-            console.log(`[v0] Created AI expiration alert: ${title} (${daysUntilExpiration} days, ejecutiva: ${ejecutivaNombre})`)
-          }
-        } else {
-          console.log('[v0] Similar alert already exists, skipping')
-        }
-      }
-
-      // Update the document with the AI-detected expiration date in expires_at column
-      const { error: updateError } = await supabase
-        .from(documentTable)
-        .update({ 
-          expires_at: aiExpirationDate,
-        })
-        .eq('id', documentId)
-
-      if (updateError) {
-        console.error('[v0] Error updating expires_at:', updateError)
-      } else {
-        console.log('[v0] Updated document expires_at to:', aiExpirationDate)
-      }
+      console.log('[v0] AI expiration candidate kept non-operational:', {
+        documentId,
+        documentTable,
+        aiExpirationDate,
+        aiConfidence,
+      })
     }
 
     // Also create a general "analysis complete" info alert
