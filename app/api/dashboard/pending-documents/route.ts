@@ -4,13 +4,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 import { selectCanonicalPendingF301 } from '@/lib/f301-canonical'
 import { selectCanonicalPendingMutualRates } from '@/lib/mutual-rates-canonical'
+import { getExecutiveScope, type ExecutiveScopeMode } from '@/lib/executive-coverage-scope'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 type FocusMode = 'company' | 'conductor'
-type ExecutiveScopeMode = 'mine' | 'all' | 'executive'
-
 type Focus = {
   mode: FocusMode
   id: string
@@ -36,16 +35,6 @@ const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
   'FOTO_PATENTES',
   'PENSION',
 ])
-
-export function getExecutiveScope(request: Request): { mode: ExecutiveScopeMode; executiveId: string | null } {
-  const url = new URL(request.url)
-  const rawMode = url.searchParams.get('scope')
-  const executiveId = url.searchParams.get('executive_id')
-
-  if (rawMode === 'all') return { mode: 'all', executiveId: null }
-  if (rawMode === 'executive' && executiveId) return { mode: 'executive', executiveId }
-  return { mode: 'mine', executiveId: null }
-}
 
 function getFocus(request: Request): Focus | null {
   const url = new URL(request.url)
