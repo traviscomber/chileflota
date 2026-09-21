@@ -162,7 +162,7 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-1 border-blue-600/50 text-[var(--cf-info)] hover:bg-blue-600/20"
+                      className="gap-1 border-[var(--cf-info)]/35 text-[var(--cf-info)] hover:bg-[var(--cf-info-soft)]"
                       onClick={() => handleSendRenewalRequest(conductor?.id || '', conductor?.rut || '')}
                       disabled={loading === conductor?.id}
                     >
