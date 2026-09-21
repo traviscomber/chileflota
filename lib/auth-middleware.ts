@@ -39,7 +39,7 @@ const SIGNED_SESSION_REQUIRED_ROLES = new Set<UserRole>([
   'prevencionista',
 ])
 
-function requiresSignedSession(role: UserRole | string | null | undefined): boolean {
+export function requiresSignedSession(role: UserRole | string | null | undefined): boolean {
   return Boolean(role && SIGNED_SESSION_REQUIRED_ROLES.has(role as UserRole))
 }
 
