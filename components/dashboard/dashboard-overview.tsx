@@ -39,6 +39,62 @@ interface LifetimeStats {
   awaitingProcessing: number
 }
 
+
+async function fetchDashboardSnapshot() {
+  const timestamp = Date.now()
+  const requestOptions = {
+    cache: "no-store" as RequestCache,
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
+  }
+
+  const [alertsRes, statsRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+    fetch(`/api/alerts?limit=50&_t=${timestamp}`, requestOptions),
+    fetch(`/api/company/documents/stats?_t=${timestamp}`, requestOptions),
+    fetch(`/api/dashboard/pending-documents?_t=${timestamp}`, requestOptions),
+    fetch(`/api/company/documents/aprobados?_t=${timestamp}`, requestOptions),
+    fetch(`/api/company/documents/rechazados?_t=${timestamp}`, requestOptions),
+  ])
+
+  const alertsData = alertsRes.ok ? await alertsRes.json() : []
+  const statsData = statsRes.ok ? await statsRes.json() : {}
+  const pendingData = pendingRes.ok ? await pendingRes.json() : {}
+  const approvedData = approvedRes.ok ? await approvedRes.json() : {}
+  const rejectedData = rejectedRes.ok ? await rejectedRes.json() : {}
+
+  const pendingConductor = pendingData.conductorDocs?.length || 0
+  const pendingSubcontractor = pendingData.subDocs?.length || 0
+  const approvedConductor = approvedData.conductorDocs?.length || 0
+  const approvedSubcontractor = approvedData.subDocs?.length || 0
+  const rejectedConductor = rejectedData.conductorDocs?.length || 0
+  const rejectedSubcontractor = rejectedData.subDocs?.length || 0
+
+  return {
+    alerts: Array.isArray(alertsData) ? alertsData : (alertsData.alerts || []),
+    lifetime: statsData.stats?.lifetime || {},
+    canonical: {
+      conductor: {
+        pending: pendingConductor,
+        approved: approvedConductor,
+        rejected: rejectedConductor,
+      },
+      subcontractor: {
+        pending: pendingSubcontractor,
+        approved: approvedSubcontractor,
+        rejected: rejectedSubcontractor,
+      },
+      total: {
+        pending: pendingConductor + pendingSubcontractor,
+        approved: approvedConductor + approvedSubcontractor,
+        rejected: rejectedConductor + rejectedSubcontractor,
+      },
+    },
+  }
+}
+
 export function DashboardOverview() {
   const [stats, setStats] = useState<Stat[]>([
     {
@@ -94,193 +150,97 @@ export function DashboardOverview() {
   const openRiskItems = pendingDocuments + rejectedDocuments
   const completionRate = totalDocuments > 0 ? Math.round((approvedDocuments / totalDocuments) * 100) : 0
 
+  const applySnapshot = (snapshot: Awaited<ReturnType<typeof fetchDashboardSnapshot>>) => {
+    const lifetime = snapshot.lifetime || {}
+    const canonical = snapshot.canonical
+    const totalDocs = canonical.total.pending + canonical.total.approved + canonical.total.rejected
+
+    setAlerts(snapshot.alerts)
+    setLifetimeStats({
+      registered: lifetime.registered || 0,
+      processed: lifetime.processed || 0,
+      awaitingProcessing: lifetime.awaitingProcessing || 0,
+    })
+
+    setStats([
+      {
+        title: "Documentos operacionales",
+        value: totalDocs.toString(),
+        description: "Estado canónico actual",
+        icon: FileText,
+        status: "active",
+        href: "/dashboard/company/documentos",
+        color: "blue",
+      },
+      {
+        title: "Documentos Aprobados",
+        value: canonical.total.approved.toString(),
+        description: "Validados",
+        icon: CheckCircle,
+        status: "active",
+        href: "/dashboard/company/documentos/aprobados",
+        color: "green",
+      },
+      {
+        title: "Documentos Pendientes",
+        value: canonical.total.pending.toString(),
+        description: "En revisión",
+        icon: Clock,
+        status: "active",
+        href: "/dashboard/company/documentos/pendientes",
+        color: "orange",
+      },
+      {
+        title: "Documentos Rechazados",
+        value: canonical.total.rejected.toString(),
+        description: "No validados",
+        icon: AlertTriangle,
+        status: "warning",
+        href: "/dashboard/company/documentos/rechazados",
+        color: "red",
+      },
+    ])
+
+    console.log('[v0] Canonical dashboard snapshot:', {
+      lifetimeProcessed: lifetime.processed || 0,
+      awaitingProcessing: lifetime.awaitingProcessing || 0,
+      currentOperational: totalDocs,
+      pending: canonical.total.pending,
+      approved: canonical.total.approved,
+      rejected: canonical.total.rejected,
+    })
+  }
+
   useEffect(() => {
-    const fetchData = async () => {
+    let cancelled = false
+
+    const load = async () => {
       try {
-        const timestamp = Date.now()
-        const alertsRes = await fetch(`/api/alerts?limit=50&_t=${timestamp}`, {
-          cache: "no-store",
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-          }
-        })
-
-        const statsRes = await fetch(`/api/company/documents/stats?_t=${timestamp}`, {
-          cache: "no-store",
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-          }
-        })
-
-        if (alertsRes.ok) {
-          const alertsData = await alertsRes.json()
-          const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
-          setAlerts(alertsList)
-        }
-
-        if (statsRes.ok) {
-          const statsData = await statsRes.json()
-          const stats = statsData.stats || {}
-
-          const conductorStats = stats.conductores || {}
-          const subStats = stats.subcontratistas || {}
-          const lifetime = stats.lifetime || {}
-
-          const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
-          const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
-          const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
-          const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
-
-          setLifetimeStats({
-            registered: lifetime.registered || 0,
-            processed: lifetime.processed || 0,
-            awaitingProcessing: lifetime.awaitingProcessing || 0,
-          })
-
-          console.log('[v0] Dashboard Stats from /api/company/documents/stats:', {
-            lifetimeRegistered: lifetime.registered || 0,
-            lifetimeProcessed: lifetime.processed || 0,
-            awaitingProcessing: lifetime.awaitingProcessing || 0,
-            current: totalDocs,
-            pending: pendingDocs,
-            approved: approvedDocs,
-            rejected: rejectedDocs
-          })
-
-          setStats([
-            {
-              title: "Total de Documentos",
-              value: totalDocs.toString(),
-              description: "En el sistema",
-              icon: FileText,
-              status: "active",
-              href: "/dashboard/company/documentos",
-              color: "blue",
-            },
-            {
-              title: "Documentos Aprobados",
-              value: approvedDocs.toString(),
-              description: "Validados",
-              icon: CheckCircle,
-              status: "active",
-              href: "/dashboard/company/documentos/aprobados",
-              color: "green",
-            },
-            {
-              title: "Documentos Pendientes",
-              value: pendingDocs.toString(),
-              description: "En revisión",
-              icon: Clock,
-              status: "active",
-              href: "/dashboard/company/documentos/pendientes",
-              color: "orange",
-            },
-            {
-              title: "Documentos Rechazados",
-              value: rejectedDocs.toString(),
-              description: "No validados",
-              icon: AlertTriangle,
-              status: "warning",
-              href: "/dashboard/company/documentos/rechazados",
-              color: "red",
-            },
-          ])
-        }
+        const snapshot = await fetchDashboardSnapshot()
+        if (!cancelled) applySnapshot(snapshot)
       } catch (error) {
-        console.error('[v0] Error loading dashboard data:', error)
+        console.error('[v0] Error loading canonical dashboard data:', error)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
-    fetchData()
+    load()
+    const interval = setInterval(load, 30000)
 
-    const interval = setInterval(fetchData, 10000)
-
-    return () => clearInterval(interval)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
   }, [])
 
   useEffect(() => {
     const unsubscribe = onSync((event) => {
-      if (event.type === 'document_uploaded' || event.type === 'document_status_changed') {
-        const fetchUpdatedStats = async () => {
-          try {
-            const statsRes = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, {
-              cache: "no-store",
-              headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-              }
-            })
+      if (event.type !== 'document_uploaded' && event.type !== 'document_status_changed') return
 
-            if (statsRes.ok) {
-              const statsData = await statsRes.json()
-              const stats = statsData.stats || {}
-
-              const conductorStats = stats.conductores || {}
-              const subStats = stats.subcontratistas || {}
-              const lifetime = stats.lifetime || {}
-
-              const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
-              const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
-              const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
-              const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
-
-              setLifetimeStats({
-                registered: lifetime.registered || 0,
-                processed: lifetime.processed || 0,
-                awaitingProcessing: lifetime.awaitingProcessing || 0,
-              })
-
-              setStats([
-                {
-                  title: "Total de Documentos",
-                  value: totalDocs.toString(),
-                  description: "En el sistema",
-                  icon: FileText,
-                  status: "active",
-                  href: "/dashboard/company/documentos",
-                  color: "blue",
-                },
-                {
-                  title: "Documentos Aprobados",
-                  value: approvedDocs.toString(),
-                  description: "Validados",
-                  icon: CheckCircle,
-                  status: "active",
-                  href: "/dashboard/company/documentos/aprobados",
-                  color: "green",
-                },
-                {
-                  title: "Documentos Pendientes",
-                  value: pendingDocs.toString(),
-                  description: "En revisión",
-                  icon: Clock,
-                  status: "active",
-                  href: "/dashboard/company/documentos/pendientes",
-                  color: "orange",
-                },
-                {
-                  title: "Documentos Rechazados",
-                  value: rejectedDocs.toString(),
-                  description: "No validados",
-                  icon: AlertTriangle,
-                  status: "warning",
-                  href: "/dashboard/company/documentos/rechazados",
-                  color: "red",
-                },
-              ])
-            }
-          } catch (error) {
-            console.error('[v0] Error refetching stats:', error)
-          }
-        }
-
-        fetchUpdatedStats()
-      }
+      fetchDashboardSnapshot()
+        .then(applySnapshot)
+        .catch((error) => console.error('[v0] Error refetching canonical dashboard data:', error))
     })
 
     return () => unsubscribe()
@@ -316,15 +276,17 @@ export function DashboardOverview() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <button
-              onClick={() => router.push("/dashboard/company/documentos")}
-              className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
+            <div
+              className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left"
             >
               <FileText className="mb-4 h-4 w-4 text-[var(--cf-text-muted)] transition-colors group-hover:text-[var(--cf-text-secondary)]" />
               <p className="text-xs font-medium text-[var(--cf-text-muted)]">Procesados</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Histórico procesado por ChileFlota</p>
-            </button>
+              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">
+                Histórico procesado por ChileFlota
+                {lifetimeStats.awaitingProcessing > 0 ? ` · ${lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} aún sin procesar` : ''}
+              </p>
+            </div>
 
             <button
               onClick={() => router.push("/dashboard/company/documentos/aprobados")}
