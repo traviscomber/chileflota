@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
+import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
+import jwt from 'jsonwebtoken'
 
 export const maxDuration = 60
 
@@ -10,23 +12,95 @@ type DocumentVerification = {
   plate: string | null
 }
 
+
+const JWT_SECRET = process.env.JWT_SECRET || 'transportista-secret-key'
+const INTERNAL_READ_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
+const INTERNAL_WRITE_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva'])
+
+async function authorizeSubcontractorAccess(
+  request: NextRequest,
+  subcontractorId: string,
+  mode: 'read' | 'write',
+) {
+  const token = request.cookies.get('transportista_token')?.value
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as {
+        transportista_id?: string
+        tipo?: string
+      }
+
+      if (decoded.tipo === 'subcontratista' && decoded.transportista_id === subcontractorId) {
+        const admin = createAdminClient()
+        const { data: authRecord, error } = await admin
+          .from('transportista_auth')
+          .select('id')
+          .eq('transportista_id', subcontractorId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle()
+
+        if (!error && authRecord?.id) {
+          return { kind: 'subcontractor' as const }
+        }
+      }
+    } catch {
+      // Fall through to internal staff authentication.
+    }
+  }
+
+  const internal = await verifyAuth(request)
+  if (!internal.user) return null
+
+  const allowed = mode === 'write' ? INTERNAL_WRITE_ROLES : INTERNAL_READ_ROLES
+  if (!allowed.has(internal.user.role)) return null
+
+  return { kind: 'internal' as const, user: internal.user }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createAdminClient()
     const { id } = params
+    const authorization = await authorizeSubcontractorAccess(request, id, 'write')
+    if (!authorization) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
+    const { data: canonicalSubcontractor, error: subcontractorError } = await supabase
+      .from('transportistas')
+      .select('id, rut, is_active')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (subcontractorError || !canonicalSubcontractor) {
+      return NextResponse.json({ error: 'Subcontratista no encontrado' }, { status: 404 })
+    }
+    if (canonicalSubcontractor.is_active === false) {
+      return NextResponse.json({ error: 'Subcontratista inactivo' }, { status: 403 })
+    }
+
     const formData = await request.formData()
 
     const file = formData.get('file') as File
     const documentTypeId = formData.get('documentTypeId') as string
-    const subcontractorRut = formData.get('subcontractorRut') as string
+    const submittedSubcontractorRut = formData.get('subcontractorRut') as string | null
     const periodMonth = formData.get('documentPeriodMonth') || formData.get('periodMonth')
     const periodYear = formData.get('documentPeriodYear') || formData.get('periodYear')
     const documentPeriod = normalizeDocumentPeriod(periodMonth as string | null, periodYear as string | null)
 
-    if (!file || !documentTypeId || !subcontractorRut || !id) {
+    if (
+      submittedSubcontractorRut &&
+      submittedSubcontractorRut.replace(/[^0-9kK]/g, '').toLowerCase() !==
+        String(canonicalSubcontractor.rut || '').replace(/[^0-9kK]/g, '').toLowerCase()
+    ) {
+      return NextResponse.json({ error: 'El RUT no coincide con el subcontratista autenticado' }, { status: 403 })
+    }
+
+    if (!file || !documentTypeId || !id) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
     }
 
@@ -93,7 +167,7 @@ export async function POST(
 
     const insertPayload = {
       subcontractor_id: id,
-      subcontractor_rut: subcontractorRut,
+      subcontractor_rut: canonicalSubcontractor.rut,
       document_type_id: documentTypeId,
       file_url: publicUrl,
       file_name: file.name,
@@ -153,13 +227,18 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createAdminClient()
     const { id } = params
 
     if (!id) {
       return NextResponse.json({ error: 'Subcontractor ID is required' }, { status: 400 })
     }
 
+    const authorization = await authorizeSubcontractorAccess(request, id, 'read')
+    if (!authorization) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
     const { data: documents, error: docsError } = await supabase
       .from('subcontractor_documents')
       .select(`
