@@ -61,7 +61,7 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
       
       // Show success message
       const msg = document.createElement('div')
-      msg.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
+      msg.className = 'fixed bottom-4 right-4 bg-blue-600 text-[var(--cf-text)] px-6 py-3 rounded-[6px] shadow-none z-[100]'
       msg.textContent = `Solicitud de renovación enviada a ${conductorEmail}`
       document.body.appendChild(msg)
       setTimeout(() => msg.remove(), 3000)
@@ -75,8 +75,8 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
   }
 
   const getDaysColor = (days: number) => {
-    if (days <= 7) return 'text-red-400 bg-red-900/30'
-    if (days <= 14) return 'text-orange-400 bg-orange-900/30'
+    if (days <= 7) return 'text-[var(--cf-danger)] bg-red-900/30'
+    if (days <= 14) return 'text-[var(--cf-expiring)] bg-orange-900/30'
     return 'text-yellow-400 bg-yellow-900/30'
   }
 
@@ -89,9 +89,9 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
   return (
     <div className="space-y-4">
       {documents.length === 0 ? (
-        <Card className="bg-slate-800/50 border-slate-700 text-center py-12">
+        <Card className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-center py-12">
           <CardContent>
-            <p className="text-slate-400">No hay documentos próximos a vencer</p>
+            <p className="text-[var(--cf-text-muted)]">No hay documentos próximos a vencer</p>
           </CardContent>
         </Card>
       ) : (
@@ -105,17 +105,17 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
           })
 
           return (
-            <Card key={doc.id} className="bg-slate-800/50 border-slate-700 hover:border-slate-600 transition-colors">
+            <Card key={doc.id} className="bg-[var(--cf-surface)] border-[var(--cf-border)] hover:border-[var(--cf-border)] transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-3">
                     {/* Document info */}
                     <div>
-                      <p className="font-medium text-white flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-slate-400" />
+                      <p className="font-medium text-[var(--cf-text)] flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-[var(--cf-text-muted)]" />
                         {doc.original_filename || doc.document_type || 'Sin nombre'}
                       </p>
-                      <p className="text-sm text-slate-400 mt-1">
+                      <p className="text-sm text-[var(--cf-text-muted)] mt-1">
                         Tipo: {doc.document_type || 'Desconocido'}
                       </p>
                     </div>
@@ -123,13 +123,13 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
                     {/* Conductor info */}
                     {conductor && (
                       <div className="text-sm">
-                        <p className="text-slate-400">
-                          Conductor: <span className="text-slate-200 font-medium">
+                        <p className="text-[var(--cf-text-muted)]">
+                          Conductor: <span className="text-[var(--cf-text-secondary)] font-medium">
                             {conductor.nombres} {conductor.apellido_paterno}
                           </span>
                         </p>
-                        <p className="text-slate-400">
-                          RUT: <span className="text-slate-200 font-medium">{conductor.rut}</span>
+                        <p className="text-[var(--cf-text-muted)]">
+                          RUT: <span className="text-[var(--cf-text-secondary)] font-medium">{conductor.rut}</span>
                         </p>
                       </div>
                     )}
@@ -142,7 +142,7 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
                           {doc.days_until_expiration} días
                         </span>
                       </div>
-                      <p className="text-sm text-slate-300">
+                      <p className="text-sm text-[var(--cf-text-secondary)]">
                         Vence el: <span className="font-medium">{formattedDate}</span>
                       </p>
                     </div>
@@ -162,7 +162,7 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-1 border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
+                      className="gap-1 border-blue-600/50 text-[var(--cf-info)] hover:bg-blue-600/20"
                       onClick={() => handleSendRenewalRequest(conductor?.id || '', conductor?.rut || '')}
                       disabled={loading === conductor?.id}
                     >
@@ -181,11 +181,11 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
       {previewDoc && (
         <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
           <DialogContent 
-            className="bg-slate-900 border-slate-700 max-w-2xl"
+            className="bg-[var(--cf-surface)] border-[var(--cf-border)] max-w-2xl"
             onPointerDownOutside={(e) => e.preventDefault()}
           >
             <DialogHeader>
-              <DialogTitle className="text-white">
+              <DialogTitle className="text-[var(--cf-text)]">
                 Vista previa: {previewDoc.original_filename || previewDoc.document_type}
               </DialogTitle>
             </DialogHeader>
@@ -195,25 +195,25 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
                 {previewDoc.file_url.toLowerCase().endsWith('.pdf') ? (
                   <iframe
                     src={previewDoc.file_url}
-                    className="w-full h-96 border border-slate-700 rounded"
+                    className="w-full h-96 border border-[var(--cf-border)] rounded"
                     title="Preview"
                   />
                 ) : previewDoc.file_url.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/i) ? (
                   <img
                     src={previewDoc.file_url}
                     alt="Preview"
-                    className="w-full rounded border border-slate-700"
+                    className="w-full rounded border border-[var(--cf-border)]"
                   />
                 ) : (
-                  <div className="bg-slate-800 p-6 rounded border border-slate-700 text-center">
-                    <p className="text-slate-400">
+                  <div className="bg-[var(--cf-surface)] p-6 rounded border border-[var(--cf-border)] text-center">
+                    <p className="text-[var(--cf-text-muted)]">
                       Tipo de archivo no soportado para vista previa
                     </p>
                       <a
                         href={buildDocumentAccessUrl(previewDoc.file_url, 'preview')}
                         target="_blank"
                         rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline mt-2 block"
+                      className="text-[var(--cf-info)] hover:underline mt-2 block"
                     >
                       Descargar archivo
                     </a>
@@ -221,8 +221,8 @@ export function RenewalDocumentsList({ initialDocuments }: Props) {
                 )}
               </div>
             ) : (
-              <div className="bg-slate-800 p-6 rounded border border-slate-700 text-center">
-                <p className="text-slate-400">No hay archivo disponible</p>
+              <div className="bg-[var(--cf-surface)] p-6 rounded border border-[var(--cf-border)] text-center">
+                <p className="text-[var(--cf-text-muted)]">No hay archivo disponible</p>
               </div>
             )}
           </DialogContent>
