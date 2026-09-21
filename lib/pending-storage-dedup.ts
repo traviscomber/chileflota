@@ -93,7 +93,7 @@ export function getPendingStorageDedupCandidateFolders<T extends PendingDocument
 
 export function collapseConfirmedStorageDuplicates<T extends PendingDocument>(
   rows: T[],
-  metadataByObjectName: Map<string, StorageMetadata>,
+  metadataByObjectName: ReadonlyMap<string, StorageMetadata>,
 ) {
   const suppressedIds = new Set<string>()
   let duplicateGroups = 0
