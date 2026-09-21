@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Start independent reads immediately instead of waiting for transportistas first.
     const executivesPromise = fetch(
-      `${supabaseUrl}/rest/v1/executive_staff?select=id,full_name&is_active=eq.true`,
+      `${supabaseUrl}/rest/v1/executive_staff?select=id,full_name,email&is_active=eq.true`,
       { headers: commonHeaders },
     )
 
@@ -97,13 +97,23 @@ export async function GET(request: NextRequest) {
       executivesData.forEach((e: any) => execMap.set(e.id, e.full_name))
     }
 
+    const activeExecutive = userRole === 'ejecutiva' && Array.isArray(executivesData)
+      ? executivesData.find((e: any) => String(e.email || '').toLowerCase() === String(userEmail || '').toLowerCase())
+      : null
+
+    if (userRole === 'ejecutiva' && !activeExecutive?.id) {
+      return NextResponse.json({ error: 'No se pudo resolver la ejecutiva activa' }, { status: 403 })
+    }
+
     if (Array.isArray(transportistas)) {
-      transportistas = transportistas.map((t: any) => {
-        if (t.assigned_executive_id && execMap.has(t.assigned_executive_id)) {
-          return { ...t, ejecutivo_nombre: execMap.get(t.assigned_executive_id) }
-        }
-        return t
-      })
+      transportistas = transportistas
+        .filter((t: any) => userRole !== 'ejecutiva' || t.assigned_executive_id === activeExecutive.id)
+        .map((t: any) => {
+          if (t.assigned_executive_id && execMap.has(t.assigned_executive_id)) {
+            return { ...t, ejecutivo_nombre: execMap.get(t.assigned_executive_id) }
+          }
+          return t
+        })
     }
 
     const subMap = new Map<string, any>()
@@ -129,8 +139,14 @@ export async function GET(request: NextRequest) {
         }))
       : []
 
+    const allowedProviderRuts = new Set(
+      Array.isArray(transportistas) ? transportistas.map((item: any) => item.rut).filter(Boolean) : [],
+    )
+
     const conductoresEnriquecidos = Array.isArray(conductores)
-      ? conductores.map((conductor: any) => {
+      ? conductores
+          .filter((conductor: any) => userRole !== 'ejecutiva' || allowedProviderRuts.has(conductor.rut_proveedor))
+          .map((conductor: any) => {
           const subcontractor = subMap.get(conductor.rut_proveedor)
           let fullName = conductor.nombre || ''
 
