@@ -4,7 +4,7 @@ export const revalidate = 0
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
-import { canonicalizeApprovedConductorDocuments, isClearlyMisclassifiedSubcontractorDocument } from '@/lib/document-review-canonical'
+import { canonicalizeApprovedConductorDocuments } from '@/lib/document-review-canonical'
 
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
 
@@ -139,10 +139,7 @@ export async function GET(request: Request) {
     const subcontractorTypeMap = new Map((subcontractorTypesResult.data || []).filter((type: any) => !deprecatedCodes.has(type.code)).map((type: any) => [type.id, { code: type.code, nombre: type.nombre }]))
 
     const canonicalConductorDocs = canonicalizeApprovedConductorDocuments(conductorDocs)
-    const canonicalSubDocs = subDocs.filter((doc: any) => {
-      const typeCode = subcontractorTypeMap.get(doc.document_type_id)?.code
-      return !isClearlyMisclassifiedSubcontractorDocument(doc, typeCode)
-    })
+    const canonicalSubDocs = subDocs
 
     const conductorIds = [...new Set(canonicalConductorDocs.map((doc: any) => doc.conductor_id).filter(Boolean))]
     const subcontractorIds = [...new Set(canonicalSubDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
