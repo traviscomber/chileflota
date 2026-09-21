@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
+import { CANONICAL_SUPER_ADMIN_EMAIL, isCanonicalSuperAdminEmail, isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteParams {
@@ -64,23 +64,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const canonicalEmail = String(target.email || '').trim().toLowerCase()
-    if (role === 'super_admin' && canonicalEmail !== 'cfarias@labbe.cl') {
+    if (role === 'super_admin' && !isCanonicalSuperAdminEmail(canonicalEmail)) {
       return NextResponse.json(
-        { error: 'super_admin is reserved for the canonical Cecilia account' },
+        { error: `super_admin is reserved for ${CANONICAL_SUPER_ADMIN_EMAIL}` },
         { status: 403 }
       )
     }
 
-    if (canonicalEmail === 'cfarias@labbe.cl') {
+    if (isCanonicalSuperAdminEmail(canonicalEmail)) {
       if (role !== undefined && role !== 'super_admin') {
         return NextResponse.json(
-          { error: 'The canonical Cecilia account cannot be demoted' },
+          { error: 'The canonical super-admin account cannot be demoted' },
           { status: 403 }
         )
       }
       if (is_active === false) {
         return NextResponse.json(
-          { error: 'The canonical Cecilia account cannot be deactivated' },
+          { error: 'The canonical super-admin account cannot be deactivated' },
           { status: 403 }
         )
       }
@@ -126,9 +126,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (String(target.email || '').trim().toLowerCase() === 'cfarias@labbe.cl') {
+    if (isCanonicalSuperAdminEmail(target.email)) {
       return NextResponse.json(
-        { error: 'The canonical Cecilia account cannot be deleted' },
+        { error: 'The canonical super-admin account cannot be deleted' },
         { status: 403 }
       )
     }
