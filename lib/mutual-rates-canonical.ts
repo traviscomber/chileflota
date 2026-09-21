@@ -31,12 +31,22 @@ function periodPart(value: number | string | null | undefined): string {
 }
 
 export function classifyMutualRatesInstance(doc: MutualRatesDocument): 'accidentabilidad' | 'siniestralidad' | 'tasas' | 'cotizaciones' | null {
+  const filename = normalize(doc.file_name)
   const haystack = normalize([doc.file_name, doc.ai_document_type, doc.ai_extracted_text].filter(Boolean).join(' '))
 
-  if (/cotizacion|cotizaciones/.test(haystack)) return 'cotizaciones'
+  // Prefer explicit filename/title identity over incidental terms in the body.
+  // A genuine "Certificado de Tasas" normally contains "Cotización Total",
+  // which must not cause it to be reclassified as a cotizaciones certificate.
+  if (/certificado[_\s-]*tasas|\btasas\b/.test(filename)) return 'tasas'
+  if (/accidentabilidad|accident/.test(filename)) return 'accidentabilidad'
+  if (/siniestralidad|siniestral/.test(filename)) return 'siniestralidad'
+  if (/cotizacion|cotizaciones/.test(filename)) return 'cotizaciones'
+
+  if (/certificado de tasas|certificado tasas/.test(haystack)) return 'tasas'
   if (/accidentabilidad|accident/.test(haystack)) return 'accidentabilidad'
   if (/siniestralidad|siniestral/.test(haystack)) return 'siniestralidad'
-  if (/certificado de tasas|certificado tasas|\btasas\b/.test(haystack)) return 'tasas'
+  if (/cotizacion|cotizaciones/.test(haystack)) return 'cotizaciones'
+  if (/\btasas\b/.test(haystack)) return 'tasas'
   return null
 }
 
