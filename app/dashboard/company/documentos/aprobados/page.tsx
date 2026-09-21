@@ -9,6 +9,7 @@ import { ApprovedDocumentsList } from '@/components/approved-documents-list'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, filterByMonthYear, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 import { getDocumentPeriodDate } from '@/lib/document-period'
+import { ExecutiveCoverageControl } from '@/components/executive-coverage-control'
 
 function matchesSearch(doc: any, rawQuery: string) {
   const query = rawQuery.trim().toLowerCase()
@@ -37,6 +38,8 @@ function matchesSearch(doc: any, rawQuery: string) {
 export default function AprobadosPage() {
   const searchParams = useSearchParams()
   const globalSearch = searchParams.get('search')?.trim() || ''
+  const requestQuery = searchParams.toString()
+  const requestUrl = `/api/company/documents/aprobados${requestQuery ? `?${requestQuery}` : ''}`
   const [allData, setAllData] = useState<any>(null)
   const [period, setPeriod] = useState<DateFilterValue>({
     month: ALL_VALUE,
@@ -48,7 +51,7 @@ export default function AprobadosPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/company/documents/aprobados', {
+        const response = await fetch(requestUrl, {
           cache: 'no-store',
         })
         const data = await response.json()
@@ -61,7 +64,7 @@ export default function AprobadosPage() {
     }
 
     fetchData()
-  }, [])
+  }, [requestUrl])
 
   const filteredData = useMemo(() => {
     if (!allData) return null
@@ -86,7 +89,7 @@ export default function AprobadosPage() {
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      const response = await fetch('/api/company/documents/aprobados', {
+      const response = await fetch(requestUrl, {
         cache: 'no-store',
       })
       const data = await response.json()
@@ -143,6 +146,8 @@ export default function AprobadosPage() {
           Actualizar
         </Button>
       </div>
+
+      <ExecutiveCoverageControl reviewScope={allData?.reviewScope} />
 
       {globalSearch && (
         <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] px-4 py-3 text-sm text-[var(--cf-text-secondary)]">
