@@ -56,6 +56,9 @@ export async function POST(request: NextRequest) {
 
     if (Array.isArray(profiles) && profiles.length > 0) {
       user = profiles[0]
+      if (user.is_active === false) {
+        return NextResponse.json({ error: 'Usuario desactivado' }, { status: 403 })
+      }
       fullName = user.full_name || ''
       role = user.role || 'admin'
       organizationId = user.organization_id || ''
