@@ -136,7 +136,7 @@ export default function AprobadosPage() {
         <Button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="bg-[var(--cf-accent)] text-white hover:bg-[var(--cf-accent-hover)]"
+          className="bg-[var(--cf-accent)] text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]"
           size="sm"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
