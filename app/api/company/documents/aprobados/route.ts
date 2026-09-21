@@ -48,6 +48,26 @@ async function resolveExecutiveStaffId(supabase: ReturnType<typeof createAdminCl
   return matches?.length === 1 ? matches[0].id as string : null
 }
 
+async function fetchRowsByIds(
+  supabase: ReturnType<typeof createAdminClient>,
+  table: string,
+  select: string,
+  column: string,
+  ids: string[],
+) {
+  const rows: any[] = []
+  const chunkSize = 50
+
+  for (let start = 0; start < ids.length; start += chunkSize) {
+    const chunk = ids.slice(start, start + chunkSize)
+    const { data, error } = await supabase.from(table).select(select).in(column, chunk)
+    if (error) throw error
+    rows.push(...(data || []))
+  }
+
+  return rows
+}
+
 async function fetchAllApproved(supabase: ReturnType<typeof createAdminClient>, table: 'uploaded_documents' | 'subcontractor_documents') {
   const documents: any[] = []
   const pageSize = 1000
@@ -121,22 +141,23 @@ export async function GET(request: Request) {
     const conductorIds = [...new Set(canonicalConductorDocs.map((doc: any) => doc.conductor_id).filter(Boolean))]
     const subcontractorIds = [...new Set(canonicalSubDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
 
-    const [conductorsResult, subcontractorsResult] = await Promise.all([
-      conductorIds.length ? supabase.from('conductores').select('id,nombres,apellido_paterno,rut,rut_proveedor').in('id', conductorIds) : Promise.resolve({ data: [], error: null }),
-      subcontractorIds.length ? supabase.from('transportistas').select('id,rut,razon_social,assigned_executive_id').in('id', subcontractorIds) : Promise.resolve({ data: [], error: null }),
+    const [conductors, subcontractors] = await Promise.all([
+      conductorIds.length
+        ? fetchRowsByIds(supabase, 'conductores', 'id,nombres,apellido_paterno,rut,rut_proveedor', 'id', conductorIds)
+        : Promise.resolve([]),
+      subcontractorIds.length
+        ? fetchRowsByIds(supabase, 'transportistas', 'id,rut,razon_social,assigned_executive_id', 'id', subcontractorIds)
+        : Promise.resolve([]),
     ])
-    if (conductorsResult.error) throw conductorsResult.error
-    if (subcontractorsResult.error) throw subcontractorsResult.error
 
-    const conductorMap = new Map((conductorsResult.data || []).map((conductor: any) => [conductor.id, conductor]))
-    const providerRuts = [...new Set((conductorsResult.data || []).map((conductor: any) => conductor.rut_proveedor).filter(Boolean))]
-    const conductorCompaniesResult = providerRuts.length
-      ? await supabase.from('transportistas').select('id,rut,razon_social,assigned_executive_id').in('rut', providerRuts)
-      : { data: [], error: null }
-    if (conductorCompaniesResult.error) throw conductorCompaniesResult.error
+    const conductorMap = new Map(conductors.map((conductor: any) => [conductor.id, conductor]))
+    const providerRuts = [...new Set(conductors.map((conductor: any) => conductor.rut_proveedor).filter(Boolean))]
+    const conductorCompanies = providerRuts.length
+      ? await fetchRowsByIds(supabase, 'transportistas', 'id,rut,razon_social,assigned_executive_id', 'rut', providerRuts)
+      : []
 
-    const companyByRut = new Map((conductorCompaniesResult.data || []).map((company: any) => [company.rut, company]))
-    const companyById = new Map((subcontractorsResult.data || []).map((company: any) => [company.id, company]))
+    const companyByRut = new Map(conductorCompanies.map((company: any) => [company.rut, company]))
+    const companyById = new Map(subcontractors.map((company: any) => [company.id, company]))
     const executiveById = new Map((executivesResult.data || []).map((executive: any) => [executive.id, executive.full_name]))
     const executiveByEmail = new Map((executivesResult.data || []).filter((executive: any) => executive.email).map((executive: any) => [executive.email.toLowerCase(), executive.full_name]))
     const normalizedConductor = canonicalConductorDocs.map((doc: any) => {
