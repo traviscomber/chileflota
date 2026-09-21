@@ -110,6 +110,8 @@ export async function POST(
       return NextResponse.json({ error: 'Alert not found' }, { status: 404 })
     }
 
+    const existingAlertRow = existingAlert as any
+
     if (user.role === 'ejecutiva') {
       const executiveCompanyIds = await resolveExecutiveCompanyIds(supabase, user.email, user.id)
       if (executiveCompanyIds === null) {
@@ -117,8 +119,8 @@ export async function POST(
       }
 
       const transportistaId = isLogAlert
-        ? existingAlert.transportista_id
-        : existingAlert.metadata?.transportista_id || existingAlert.metadata?.subcontractor_id
+        ? existingAlertRow.transportista_id
+        : existingAlertRow.metadata?.transportista_id || existingAlertRow.metadata?.subcontractor_id
 
       if (!transportistaId || !executiveCompanyIds.includes(transportistaId)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
