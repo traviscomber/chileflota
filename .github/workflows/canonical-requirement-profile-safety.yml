@@ -1,0 +1,24 @@
+name: Canonical Requirement Profile Safety
+
+on:
+  pull_request:
+    paths:
+      - 'lib/canonical-requirement-profile.ts'
+      - 'app/api/company/canonical-requirement-profile/**'
+      - '__tests__/canonical-requirement-profile.test.ts'
+      - '.github/workflows/canonical-requirement-profile-safety.yml'
+
+jobs:
+  canonical-requirement-profile-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/canonical-requirement-profile.test.ts --runInBand
