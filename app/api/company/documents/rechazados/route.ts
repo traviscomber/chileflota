@@ -4,7 +4,7 @@ export const revalidate = 0
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
-import { canonicalizeRejectedConductorDocuments, canonicalizeRejectedSubcontractorDocuments } from '@/lib/document-review-canonical'
+import { canonicalizeRejectedConductorDocuments, isClearlyMisclassifiedSubcontractorDocument } from '@/lib/document-review-canonical'
 
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
 
@@ -54,9 +54,8 @@ async function fetchAllRejectedSubcontractorDocuments(supabase: ReturnType<typeo
   for (let page = 0; ; page += 1) {
     const { data, error } = await supabase
       .from('subcontractor_documents')
-      .select(`id,file_name,document_type_id,status,file_url,rejection_reason,reviewed_at,reviewed_by_ejecutiva,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,ai_document_type,ai_extracted_text,transportistas:subcontractor_id(id,razon_social,rut)`)
+      .select(`id,file_name,document_type_id,status,file_url,rejection_reason,reviewed_at,reviewed_by_ejecutiva,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current,ai_document_type,ai_extracted_text,transportistas:subcontractor_id(id,razon_social,rut)`)
       .eq('status', 'rejected')
-      .eq('is_current', true)
       .order('updated_at', { ascending: false })
       .range(page * pageSize, page * pageSize + pageSize - 1)
     if (error) throw error
@@ -157,7 +156,10 @@ export async function GET(request: Request) {
     const deprecatedCodes = new Set(['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL'])
     const subcontractorTypeMap = new Map((subcontractorTypesResult.data || []).filter((type) => !deprecatedCodes.has(type.code)).map((type) => [type.id, { code: type.code, nombre: type.nombre }]))
     const canonicalConductorDocs = canonicalizeRejectedConductorDocuments(conductorDocs, approvedConductorDocs)
-    const canonicalSubDocs = canonicalizeRejectedSubcontractorDocuments(subDocs, approvedSubDocs, subcontractorTypeMap)
+    const canonicalSubDocs = subDocs.filter((doc: any) => {
+      const typeCode = subcontractorTypeMap.get(doc.document_type_id)?.code
+      return !isClearlyMisclassifiedSubcontractorDocument(doc, typeCode)
+    })
     const executiveMap = new Map((executivesResult.data || []).map((executive) => [executive.id, executive.full_name]))
 
     const providerRuts = [...new Set(canonicalConductorDocs.map((doc: any) => doc.conductores?.rut_proveedor).filter(Boolean))]
@@ -195,7 +197,7 @@ export async function GET(request: Request) {
         rejected_at: doc.reviewed_at || doc.updated_at, reviewed_at: doc.reviewed_at || doc.updated_at,
         created_at: doc.created_at, updated_at: doc.updated_at, uploaded_at: doc.uploaded_at,
         document_period_month: doc.document_period_month, document_period_year: doc.document_period_year, document_period_start: doc.document_period_start,
-        version_number: doc.version_number, supersedes_document_id: doc.supersedes_document_id, is_current: true,
+        version_number: doc.version_number, supersedes_document_id: doc.supersedes_document_id, is_current: doc.is_current === true,
         subcontractor_id: doc.subcontractor_id, subcontractor_rut: doc.subcontractor_rut, transportistas: company,
         empresa_nombre: company?.razon_social || null, company_id: doc.subcontractor_id,
         ejecutiva: company?.assigned_executive_id ? executiveMap.get(company.assigned_executive_id) || doc.reviewed_by_ejecutiva || 'Sin asignar' : doc.reviewed_by_ejecutiva || 'Sin asignar',
@@ -215,7 +217,7 @@ export async function GET(request: Request) {
     const filteredSub = scopedSub.filter(filterByFocus)
     const allDocs = [...filteredConductor, ...filteredSub].sort((a, b) => new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime())
 
-    const response = NextResponse.json({ conductorDocs: filteredConductor, subDocs: filteredSub, allDocs, documents: allDocs, total: allDocs.length, scope: auth.user.role === 'ejecutiva' ? 'assigned_executive_canonical_current' : 'canonical_current', historyEndpoint: '/api/company/documents/history', timestamp: new Date().toISOString() })
+    const response = NextResponse.json({ conductorDocs: filteredConductor, subDocs: filteredSub, allDocs, documents: allDocs, total: allDocs.length, scope: auth.user.role === 'ejecutiva' ? 'assigned_executive_reviewed_submissions' : 'reviewed_submissions', historyEndpoint: '/api/company/documents/history', timestamp: new Date().toISOString() })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
     return response
   } catch (error) {
