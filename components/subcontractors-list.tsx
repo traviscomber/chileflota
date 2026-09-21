@@ -369,7 +369,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             const siiStatus = siiStatuses[sub.id]
 
             return (
-              <Card key={sub.id} className="transition-colors hover:border-slate-500">
+              <Card key={sub.id} className="transition-colors hover:border-[var(--cf-text-muted)]">
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-start justify-between gap-4">
@@ -392,7 +392,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                       <Badge variant="outline" className={completion.label === 'Completo' ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200' : completion.label === 'Parcial' ? 'border-amber-200/40 bg-[var(--cf-warning-soft)] text-[var(--cf-warning)]' : 'border-rose-200/40 bg-rose-500/10 text-rose-200'}>{completion.label}</Badge>
                       <button onClick={() => { setEditingSubcontractor(sub); setIsEditModalOpen(true) }} className="ml-auto rounded p-2 text-[var(--cf-text-muted)] hover:bg-[var(--cf-surface-raised)]/60 hover:text-[var(--cf-text-secondary)]" title="Editar subcontratista"><Edit className="h-4 w-4" /></button>
                       <button onClick={() => { setAssigningSubcontractor(sub); setIsAssignModalOpen(true) }} className="rounded p-2 text-[var(--cf-text-muted)] hover:bg-[var(--cf-surface-raised)]/60 hover:text-[var(--cf-text-secondary)]" title="Asignar ejecutiva"><UserPlus className="h-4 w-4" /></button>
-                      <button onClick={() => { setDetailTabToOpen('documentos'); setSelectedDetailSubcontractor(sub) }} className="rounded border border-blue-500/30 bg-[var(--cf-info-soft)] px-3 py-1 text-xs text-[var(--cf-info)] hover:bg-blue-500/30">Documentos</button>
+                      <button onClick={() => { setDetailTabToOpen('documentos'); setSelectedDetailSubcontractor(sub) }} className="rounded border border-[var(--cf-info)]/35 bg-[var(--cf-info-soft)] px-3 py-1 text-xs text-[var(--cf-info)] hover:bg-[var(--cf-info-soft)]">Documentos</button>
                       <button onClick={() => { setDetailTabToOpen('conductores'); setSelectedDetailSubcontractor(sub) }} className="rounded border border-[var(--cf-accent)]/30 bg-[var(--cf-accent)]/20 px-3 py-1 text-xs text-[var(--cf-expiring)] hover:bg-[var(--cf-accent)]/30">Ver Conductores</button>
                     </div>
 
