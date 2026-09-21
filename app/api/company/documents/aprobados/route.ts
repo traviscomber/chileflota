@@ -75,7 +75,7 @@ async function fetchAllApproved(supabase: ReturnType<typeof createAdminClient>, 
   for (let page = 0; ; page += 1) {
     let query: any = table === 'uploaded_documents'
       ? supabase.from(table).select('id,original_filename,document_type_id,validation_status,file_url,validated_at,ejecutiva,created_at,updated_at,conductor_id,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current').eq('validation_status', 'approved')
-      : supabase.from(table).select('id,file_name,document_type_id,status,file_url,approved_at,reviewed_by_ejecutiva,reviewed_at,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current,ai_document_type,ai_extracted_text').eq('status', 'approved')
+      : supabase.from(table).select('id,file_name,document_type_id,status,file_url,approved_at,reviewed_by_ejecutiva,reviewed_at,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current').eq('status', 'approved')
 
     // Driver documents keep their legacy current-version semantics for now.
     // Subcontractor review trays show every reviewed upload independently.
