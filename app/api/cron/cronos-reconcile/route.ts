@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { finishSystemJobRun, startSystemJobRun } from '@/lib/system-job-runs'
+import {
+  finishSystemJobRun,
+  recoverStaleSystemJobRuns,
+  startSystemJobRun,
+  type StaleSystemJobRun,
+} from '@/lib/system-job-runs'
 import { RECONCILIATION_THRESHOLDS_MINUTES, reconcileClaims, type ReconciliationClaim } from '@/lib/cronos-reconciliation'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +21,7 @@ export async function GET() {
 
   try {
     const [jobs, prt, compliance, documents, textExtractions, ocrBatches] = await Promise.all([
-      supabase.from('system_job_runs').select('id,status,started_at').eq('status', 'running').neq('id', jobRun.id ?? ''),
+      supabase.from('system_job_runs').select('id,job_name,status,started_at').eq('status', 'running').neq('id', jobRun.id ?? ''),
       supabase.from('prt_import_batches').select('id,status,updated_at').eq('status', 'importing'),
       supabase.from('compliance_events').select('id,processing_status,created_at').eq('processing_status', 'processing'),
       supabase.from('documents').select('id,processing_status,updated_at').eq('processing_status', 'processing'),
@@ -36,19 +41,41 @@ export async function GET() {
       ...(ocrBatches.data ?? []).map((row) => ({ source: 'ocr_processing_batches', id: String(row.id), state: String(row.status), claimedAt: row.updated_at, staleAfterMinutes: RECONCILIATION_THRESHOLDS_MINUTES.ocr_processing_batches })),
     ]
 
-    const summary = reconcileClaims(claims)
+    const observedSummary = reconcileClaims(claims)
+    const staleSystemJobIds = new Set(
+      observedSummary.issues
+        .filter((issue) => issue.source === 'system_job_runs')
+        .map((issue) => issue.id),
+    )
+
+    const staleSystemJobs: StaleSystemJobRun[] = (jobs.data ?? [])
+      .filter((row) => staleSystemJobIds.has(String(row.id)))
+      .map((row) => ({
+        id: String(row.id),
+        job_name: String(row.job_name),
+        started_at: row.started_at,
+      }))
+
+    const recoveredSystemJobRunIds = await recoverStaleSystemJobRuns(staleSystemJobs, jobRun.id)
+    const recoveredSystemJobIds = new Set(recoveredSystemJobRunIds)
+    const postRecoveryClaims = claims.filter(
+      (claim) => !(claim.source === 'system_job_runs' && recoveredSystemJobIds.has(claim.id)),
+    )
+    const summary = reconcileClaims(postRecoveryClaims)
     const status = summary.staleCount > 0 ? 'partial' : 'completed'
 
     await finishSystemJobRun(jobRun, {
       status,
-      processedCount: summary.activeCount,
-      succeededCount: summary.healthyCount,
-      failedCount: 0,
+      processedCount: observedSummary.activeCount,
+      succeededCount: summary.healthyCount + recoveredSystemJobRunIds.length,
+      failedCount: summary.staleCount,
       result: {
         staleCount: summary.staleCount,
         activeCount: summary.activeCount,
+        observedStaleCount: observedSummary.staleCount,
+        recoveredSystemJobRuns: recoveredSystemJobRunIds.length,
         issues: summary.issues.slice(0, 25),
-        recoveryMode: 'observe_only',
+        recoveryMode: 'system_job_runs_only',
       },
       errorMessage: null,
     })
@@ -56,7 +83,9 @@ export async function GET() {
     return NextResponse.json({
       status,
       ...summary,
-      recoveryMode: 'observe_only',
+      observedStaleCount: observedSummary.staleCount,
+      recoveredSystemJobRuns: recoveredSystemJobRunIds.length,
+      recoveryMode: 'system_job_runs_only',
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown Cronos reconciliation error'

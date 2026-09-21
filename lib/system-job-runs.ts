@@ -17,6 +17,12 @@ export type SystemJobRunHandle = {
   jobName: string
 }
 
+export type StaleSystemJobRun = {
+  id: string
+  job_name: string
+  started_at: string | null
+}
+
 export async function startSystemJobRun(
   jobName: string,
   triggerSource = 'cron',
@@ -75,5 +81,42 @@ export async function finishSystemJobRun(
     }
   } catch (error) {
     console.error(`[system-job-runs] Failed to finish ${handle.jobName}:`, error)
+  }
+}
+
+export async function recoverStaleSystemJobRuns(
+  staleRuns: StaleSystemJobRun[],
+  recoveredByRunId: string | null,
+): Promise<string[]> {
+  if (staleRuns.length === 0) return []
+
+  const staleIds = staleRuns.map((run) => run.id)
+  const completedAt = new Date().toISOString()
+
+  try {
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from('system_job_runs')
+      .update({
+        status: 'failed',
+        completed_at: completedAt,
+        failed_count: 1,
+        result: {
+          recovery: 'cronos_stale_run_recovery',
+          recovered_at: completedAt,
+          recovered_by_run_id: recoveredByRunId,
+          previous_status: 'running',
+        },
+        error_message: 'Cronos recovered a stale running job after the reconciliation threshold was exceeded.',
+      })
+      .in('id', staleIds)
+      .eq('status', 'running')
+      .select('id')
+
+    if (error) throw error
+    return (data ?? []).map((row) => String(row.id))
+  } catch (error) {
+    console.error('[system-job-runs] Failed to recover stale system job runs:', error)
+    throw error
   }
 }
