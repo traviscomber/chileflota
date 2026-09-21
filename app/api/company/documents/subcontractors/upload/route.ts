@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerSubcontractorDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
-import { authorizeInternalDocumentRequest, DOCUMENT_WRITE_ROLES } from '@/lib/document-route-auth'
+import {
+  authorizeInternalDocumentRequest,
+  createDocumentInternalAuthHeaders,
+  DOCUMENT_WRITE_ROLES,
+} from '@/lib/document-route-auth'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -27,7 +31,10 @@ async function analyzeF30Document(origin: string, documentId: string): Promise<F
   try {
     const response = await fetch(`${origin}/api/company/documents/${documentId}/reprocess`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...createDocumentInternalAuthHeaders(documentId),
+      },
       body: JSON.stringify({ documentId }),
       cache: 'no-store',
     })
