@@ -8,6 +8,9 @@ import { ToastProvider } from "@/lib/toast-context"
 import { ToastContainer } from "@/components/toast-container"
 import { DocumentSyncProvider } from "@/contexts/document-sync-context"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 const siteUrl = "https://chileflota.app"
 const canonicalDescription =
   "ChileFlota es una plataforma de compliance operacional para flotas, transportistas y contratistas que conecta documentación, vigencias, evidencia y alertas para priorizar decisiones operativas."
