@@ -243,15 +243,23 @@ export async function GET(request: Request) {
         executiveCompanyIds = new Set((assignedCompanies || []).map((company: any) => company.id))
         executiveCompanyRuts = (assignedCompanies || []).map((company: any) => company.rut).filter(Boolean)
 
-        if (executiveCompanyRuts.length > 0) {
-          const { data: executiveConductors, error: executiveConductorsError } = await admin
-            .from('conductores')
-            .select('id')
-            .in('rut_proveedor', executiveCompanyRuts)
+        const assignedCompanyIds = Array.from(executiveCompanyIds)
+        const [conductorsByCompanyId, conductorsByProviderRut] = await Promise.all([
+          assignedCompanyIds.length > 0
+            ? admin.from('conductores').select('id').in('transportista_id', assignedCompanyIds)
+            : Promise.resolve({ data: [], error: null }),
+          executiveCompanyRuts.length > 0
+            ? admin.from('conductores').select('id').in('rut_proveedor', executiveCompanyRuts)
+            : Promise.resolve({ data: [], error: null }),
+        ])
 
-          if (executiveConductorsError) throw executiveConductorsError
-          executiveConductorIds = (executiveConductors || []).map((conductor: any) => conductor.id)
-        }
+        if (conductorsByCompanyId.error) throw conductorsByCompanyId.error
+        if (conductorsByProviderRut.error) throw conductorsByProviderRut.error
+
+        executiveConductorIds = [...new Set([
+          ...(conductorsByCompanyId.data || []).map((conductor: any) => conductor.id),
+          ...(conductorsByProviderRut.data || []).map((conductor: any) => conductor.id),
+        ])]
       }
     }
 
@@ -281,7 +289,8 @@ export async function GET(request: Request) {
                 nombres,
                 apellido_paterno,
                 rut,
-                rut_proveedor
+                rut_proveedor,
+                transportista_id
               )
             `)
             .eq('is_current', true)
@@ -525,12 +534,16 @@ export async function GET(request: Request) {
     })
 
     const providerRuts = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.rut_proveedor).filter(Boolean))]
+    const directCompanyIds = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.transportista_id).filter(Boolean))]
     const subIds = [...new Set(subDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
     const subRuts = [...new Set(subDocs.map((doc: any) => doc.subcontractor_rut).filter(Boolean))]
 
-    const [providerCompaniesResult, subCompaniesByIdResult, subCompaniesByRutResult] = await Promise.all([
+    const [providerCompaniesResult, directCompaniesResult, subCompaniesByIdResult, subCompaniesByRutResult] = await Promise.all([
       providerRuts.length > 0
         ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('rut', providerRuts)
+        : Promise.resolve({ data: [], error: null }),
+      directCompanyIds.length > 0
+        ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('id', directCompanyIds)
         : Promise.resolve({ data: [], error: null }),
       subIds.length > 0
         ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('id', subIds)
@@ -541,6 +554,7 @@ export async function GET(request: Request) {
     ])
 
     if (providerCompaniesResult.error) throw providerCompaniesResult.error
+    if (directCompaniesResult.error) throw directCompaniesResult.error
     if (subCompaniesByIdResult.error) throw subCompaniesByIdResult.error
     if (subCompaniesByRutResult.error) throw subCompaniesByRutResult.error
 
@@ -548,10 +562,11 @@ export async function GET(request: Request) {
       ...(providerCompaniesResult.data || []).map((item: any) => [item.rut, item] as const),
       ...(subCompaniesByRutResult.data || []).map((item: any) => [item.rut, item] as const),
     ])
+    const companyByDirectId = new Map((directCompaniesResult.data || []).map((item: any) => [item.id, item]))
     const companyById = new Map((subCompaniesByIdResult.data || []).map((item: any) => [item.id, item]))
 
     const normalizedConductorDocs = conductorDocs.map((doc: any) => {
-      const company = companyByRut.get(doc.conductores?.rut_proveedor)
+      const company = companyByDirectId.get(doc.conductores?.transportista_id) || companyByRut.get(doc.conductores?.rut_proveedor)
       return {
         id: doc.id,
         original_filename: doc.original_filename,
