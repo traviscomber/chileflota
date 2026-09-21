@@ -52,14 +52,17 @@ describe('simple subcontractor review submissions', () => {
     expect(source).toContain('La vigencia operacional se calcula por separado en Compliance')
   })
 
-  test('subcontractor counters no longer depend on is_current', () => {
+  test('subcontractor counters do not render global data before authenticated portfolio resolution', () => {
     const page = read('app/dashboard/company/documentos/page.tsx')
     const stats = read('app/api/company/documents/stats/route.ts')
+    const hub = read('components/document-manager-hub.tsx')
 
-    expect(page).not.toContain('countActionableSubcontractorPending')
-    expect(page).toContain("countByStatus('subcontractor_documents', 'status', 'approved', false)")
-    expect(page).toContain("countByStatus('subcontractor_documents', 'status', 'pending', false)")
+    expect(page).toContain('EMPTY_STATS')
+    expect(page).not.toContain("from('subcontractor_documents')")
     expect(stats).toContain("kind === 'conductor'")
+    expect(hub).toContain('isPortfolioReady')
+    expect(hub).toContain('Los estados se muestran sólo después de resolver la cartera autenticada.')
+    expect(hub).toContain('value={isPortfolioReady ? totalPendientes : null}')
   })
 
   test('subcontractor document endpoint authorizes owner or internal role before service-role access', () => {
