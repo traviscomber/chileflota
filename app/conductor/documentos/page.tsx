@@ -312,9 +312,9 @@ export default function ConductorDocumentosPage() {
       const daysUntilExpiry = Math.ceil((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       
       if (daysUntilExpiry < 0) {
-        return <Badge className="bg-red-900/30 text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Vencido</Badge>
+        return <Badge className="bg-[var(--cf-danger-soft)] text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Vencido</Badge>
       } else if (daysUntilExpiry < 7) {
-        return <Badge className="bg-orange-900/30 text-[var(--cf-expiring)] border border-[var(--cf-expiring)]/40">Vence en {daysUntilExpiry} días</Badge>
+        return <Badge className="bg-[var(--cf-expiring-soft)] text-[var(--cf-expiring)] border border-[var(--cf-expiring)]/40">Vence en {daysUntilExpiry} días</Badge>
       }
     }
 
@@ -323,9 +323,9 @@ export default function ConductorDocumentosPage() {
       case 'validated':
         return <Badge className="bg-green-900/30 text-[var(--cf-success)] border border-[var(--cf-success)]/40">Aprobado</Badge>
       case 'rejected':
-        return <Badge className="bg-red-900/30 text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Rechazado</Badge>
+        return <Badge className="bg-[var(--cf-danger-soft)] text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Rechazado</Badge>
       case 'expired':
-        return <Badge className="bg-red-900/30 text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Vencido</Badge>
+        return <Badge className="bg-[var(--cf-danger-soft)] text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Vencido</Badge>
       default:
         return <Badge className="bg-[var(--cf-surface-raised)] text-[var(--cf-text-secondary)] border border-[var(--cf-border)]">En revisión</Badge>
     }
@@ -537,7 +537,7 @@ export default function ConductorDocumentosPage() {
                         <Button
                           type="button"
                           size="sm"
-                          className="bg-[var(--cf-accent)] text-slate-950 hover:bg-[var(--cf-accent-hover)]"
+                          className="bg-[var(--cf-accent)] text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]"
                           onClick={() => focusUploadFor(reqDoc.type)}
                         >
                           {uploadedDoc ? 'Reemplazar' : 'Subir'}
