@@ -15,3 +15,8 @@ export function isDisplayRelevantAlert(alert: AlertLike): boolean {
   if (isUnvalidatedAiExpirationAlert(alert)) return false
   return true
 }
+
+
+export function isDocumentUploadAlert(alert: AlertLike): boolean {
+  return Boolean(alert.metadata?.uploader_type && alert.metadata?.document_id)
+}
