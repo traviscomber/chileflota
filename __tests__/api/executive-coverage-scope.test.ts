@@ -1,4 +1,4 @@
-import { getExecutiveScope } from '@/app/api/dashboard/pending-documents/route'
+import { getExecutiveScope } from '@/lib/executive-coverage-scope'
 
 describe('executive coverage scope', () => {
   it('defaults to the reviewer own portfolio', () => {
