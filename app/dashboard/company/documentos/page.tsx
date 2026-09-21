@@ -4,7 +4,6 @@ export const fetchCache = 'force-no-store'
 
 import { createClient } from "@/lib/supabase/server"
 import { DocumentManagerHub } from "@/components/document-manager-hub"
-import { countActionableSubcontractorPending } from "@/lib/pending-document-semantics"
 
 type TransportistaCertificationFlags = {
   ariztia: boolean | null
@@ -16,13 +15,15 @@ type TransportistaCertificationFlags = {
 async function getDocumentStats() {
   const supabase = await createClient()
 
-  const countByStatus = async (table: string, statusColumn: string, status: string) => {
-    const { count, error } = await supabase
+  const countByStatus = async (table: string, statusColumn: string, status: string, currentOnly = true) => {
+    let query: any = supabase
       .from(table)
       .select('id', { count: 'exact', head: true })
-      .eq('is_current', true)
       .eq(statusColumn, status)
 
+    if (currentOnly) query = query.eq('is_current', true)
+
+    const { count, error } = await query
     if (error) throw error
     return count || 0
   }
@@ -64,11 +65,11 @@ async function getDocumentStats() {
     countByStatus('uploaded_documents', 'validation_status', 'approved'),
     countByStatus('uploaded_documents', 'validation_status', 'rejected'),
     countByStatus('uploaded_documents', 'validation_status', 'pending'),
-    countCurrent('subcontractor_documents'),
     countProcessed('subcontractor_documents'),
-    countByStatus('subcontractor_documents', 'status', 'approved'),
-    countByStatus('subcontractor_documents', 'status', 'rejected'),
-    countActionableSubcontractorPending(supabase),
+    countProcessed('subcontractor_documents'),
+    countByStatus('subcontractor_documents', 'status', 'approved', false),
+    countByStatus('subcontractor_documents', 'status', 'rejected', false),
+    countByStatus('subcontractor_documents', 'status', 'pending', false),
     supabase.from('transportistas').select('ariztia, lts, rendic, interpolar'),
   ])
 
