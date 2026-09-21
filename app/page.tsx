@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { createAdminClient } from "@/lib/supabase/admin"
 import {
   AlertTriangle,
   ArrowRight,
@@ -20,21 +19,8 @@ const LABBE_OPERATION_IMAGE =
 const LABBE_FLEET_IMAGE =
   "https://labbe.cl/wp-content/uploads/2021/12/IMG_0068.jpg"
 
-async function getPublicProcessedDocumentCount(): Promise<number | null> {
-  try {
-    const supabase = createAdminClient()
-    const [subcontractorTotal, uploadedTotal] = await Promise.all([
-      supabase.from("subcontractor_documents").select("id", { count: "exact", head: true }),
-      supabase.from("uploaded_documents").select("id", { count: "exact", head: true }),
-    ])
-
-    if (subcontractorTotal.error || uploadedTotal.error) return null
-
-    return Number(subcontractorTotal.count || 0) + Number(uploadedTotal.count || 0)
-  } catch {
-    return null
-  }
-}
+// Public access must not depend on operational database availability.
+// Live document metrics belong in the authenticated application.
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -333,10 +319,7 @@ function OperationalReadGraphic() {
   )
 }
 
-export default async function LandingPage() {
-  const processedDocumentCount = await getPublicProcessedDocumentCount()
-  const formatNumber = new Intl.NumberFormat("es-CL")
-
+export default function LandingPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[var(--cf-canvas)] text-[var(--cf-text)]">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)]">
@@ -417,11 +400,11 @@ export default async function LandingPage() {
           <div className="flex gap-4 p-5 sm:p-6">
             <FileText className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
             <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Documentos procesados</p>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Gestión documental</p>
               <p className="mt-2 text-3xl font-semibold tracking-[-0.04em]">
-                {processedDocumentCount !== null ? formatNumber.format(processedDocumentCount) : "Operación activa"}
+                Evidencia trazable
               </p>
-              <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">Actividad agregada del sistema</p>
+              <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">Carga, revisión e historial documental</p>
             </div>
           </div>
 
@@ -605,11 +588,11 @@ export default async function LandingPage() {
               </div>
 
               <div className="bg-[var(--cf-surface)] p-6">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Actividad registrada</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Control documental</p>
                 <p className="mt-4 text-4xl font-semibold tracking-[-0.045em]">
-                  {processedDocumentCount !== null ? formatNumber.format(processedDocumentCount) : "Activa"}
+                  Trazabilidad
                 </p>
-                <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">documentos procesados por ChileFlota</p>
+                <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">evidencia vinculada a cada revisión</p>
                 <div className="mt-6 flex items-center gap-3 border-t border-[var(--cf-border)] pt-4 text-xs text-[var(--cf-text-muted)]">
                   <ShieldCheck className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
                   Sólo evidencia agregada pública

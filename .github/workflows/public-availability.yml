@@ -1,0 +1,34 @@
+name: Public Availability Guard
+
+on:
+  pull_request:
+    paths:
+      - 'app/page.tsx'
+      - '__tests__/availability/**'
+      - '.github/workflows/public-availability.yml'
+  push:
+    branches:
+      - 'incident/landing-db-isolation'
+    paths:
+      - 'app/page.tsx'
+      - '__tests__/availability/**'
+      - '.github/workflows/public-availability.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-availability-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  landing-db-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Reject operational database dependencies in public rendering
+        run: node --test __tests__/availability/landing-db-isolation.test.cjs
