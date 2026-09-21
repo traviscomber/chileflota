@@ -82,7 +82,6 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const admin = createAdminClient()
     const focus = getFocus(request)
-    const currentPeriod = getCurrentChilePeriod()
     const requestedExecutiveScope = getExecutiveScope(request)
 
     let executiveStaffId: string | null = null
