@@ -6,12 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock, HelpCircle, Trash2 } from 'lucide-react'
-import Link from 'next/link'
+import { Upload, CheckCircle2, AlertCircle, Loader, Download, Clock, Trash2 } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, filterByMonthYear, type DateFilterValue } from '@/lib/date-filters'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
+import { getDocumentPeriodDate, getDocumentPeriodLabel } from '@/lib/document-period'
 
 interface UploadedDocument {
   id: string
@@ -27,6 +27,9 @@ interface UploadedDocument {
   created_at: string
   expiration_date?: string
   rejection_reason?: string
+  document_period_month?: number | string | null
+  document_period_year?: number | string | null
+  document_period_start?: string | null
 }
 
 interface RequiredDocument {
@@ -107,6 +110,7 @@ export default function ConductorDocumentosPage() {
   const { broadcastSync } = useDocumentSync()
   const [compliancePercentage, setCompliancePercentage] = useState(0)
   const [selectedDocumentType, setSelectedDocumentType] = useState('LIC_CONDUCIR')
+  const [documentDate, setDocumentDate] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()))
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -120,15 +124,18 @@ export default function ConductorDocumentosPage() {
   }, [])
 
   useEffect(() => {
-    // Calculate compliance percentage based on required docs that are approved
-    const approvedCount = REQUIRED_DOCUMENTS.filter(reqDoc => {
-      const uploaded = documents.find(d => 
-        d.document_type_id === reqDoc.type || d.document_type === reqDoc.type
-      )
-      return uploaded && (uploaded.validation_status === 'approved' || uploaded.validation_status === 'validated')
+    const approvedCount = REQUIRED_DOCUMENTS.filter((reqDoc) => {
+      const latest = documents
+        .filter((doc) =>
+          [doc.document_type_id, doc.document_type, doc.document_type_code]
+            .some((value) => normalizeDocumentCode(value) === normalizeDocumentCode(reqDoc.type))
+        )
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+
+      return latest && ['approved', 'validated'].includes(latest.validation_status)
     }).length
-    const percentage = Math.round((approvedCount / REQUIRED_DOCUMENTS.length) * 100)
-    setCompliancePercentage(percentage)
+
+    setCompliancePercentage(Math.round((approvedCount / REQUIRED_DOCUMENTS.length) * 100))
   }, [documents])
 
   useEffect(() => {
@@ -182,6 +189,24 @@ export default function ConductorDocumentosPage() {
   const handleFileUpload = async (file: File) => {
     if (!file) return
 
+    const match = /^(\d{4})-(\d{2})-\d{2}$/.exec(documentDate)
+    const uploadYear = match?.[1] || String(new Date().getFullYear())
+    const uploadMonth = match?.[2] || String(new Date().getMonth() + 1).padStart(2, '0')
+    const now = new Date()
+    const currentMonth = String(now.getMonth() + 1).padStart(2, '0')
+    const currentYear = String(now.getFullYear())
+
+    if (uploadMonth !== currentMonth || uploadYear !== currentYear) {
+      const periodLabel = new Date(Number(uploadYear), Number(uploadMonth) - 1, 1).toLocaleDateString('es-CL', {
+        month: 'long',
+        year: 'numeric',
+      })
+      const confirmed = window.confirm(
+        `Estás subiendo este documento para ${periodLabel}. Quedará asociado a ese período histórico. ¿Confirmas?`
+      )
+      if (!confirmed) return
+    }
+
     setIsUploading(true)
     setError('')
     setSuccess('')
@@ -191,6 +216,9 @@ export default function ConductorDocumentosPage() {
       formData.append('file', file)
       // Use selected document type
       formData.append('documentType', selectedDocumentType)
+      formData.append('documentDate', documentDate)
+      formData.append('documentPeriodMonth', uploadMonth)
+      formData.append('documentPeriodYear', uploadYear)
 
       // Fetch uses Supabase cookies automatically (set during login)
       const response = await fetch('/api/conductor/upload-document', {
@@ -204,7 +232,7 @@ export default function ConductorDocumentosPage() {
       }
 
       const result = await response.json()
-      setSuccess('Documento subido exitosamente. Se validará en 24-48 horas.')
+      setSuccess('Documento recibido correctamente. Quedó en revisión; no necesitas volver a subirlo.')
       
       // Broadcast sync event so dashboard and other components update
       if (result.syncEvent) {
@@ -284,202 +312,244 @@ export default function ConductorDocumentosPage() {
       const daysUntilExpiry = Math.ceil((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       
       if (daysUntilExpiry < 0) {
-        return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Vencido</Badge>
+        return <Badge className="bg-[var(--cf-danger-soft)] text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Vencido</Badge>
       } else if (daysUntilExpiry < 7) {
-        return <Badge className="bg-orange-900/30 text-orange-300 border border-orange-900/50">Vence en {daysUntilExpiry} días</Badge>
+        return <Badge className="bg-[var(--cf-expiring-soft)] text-[var(--cf-expiring)] border border-[var(--cf-expiring)]/40">Vence en {daysUntilExpiry} días</Badge>
       }
     }
 
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-900/30 text-green-300 border border-green-900/50">Aprobado</Badge>
+      case 'validated':
+        return <Badge className="bg-green-900/30 text-[var(--cf-success)] border border-[var(--cf-success)]/40">Aprobado</Badge>
       case 'rejected':
-        return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Rechazado</Badge>
+        return <Badge className="bg-[var(--cf-danger-soft)] text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Rechazado</Badge>
+      case 'expired':
+        return <Badge className="bg-[var(--cf-danger-soft)] text-[var(--cf-danger)] border border-[var(--cf-danger)]/40">Vencido</Badge>
       default:
-        return <Badge className="bg-slate-700/50 text-slate-300 border border-slate-600">En Revisión</Badge>
+        return <Badge className="bg-[var(--cf-surface-raised)] text-[var(--cf-text-secondary)] border border-[var(--cf-border)]">En revisión</Badge>
     }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-        return <CheckCircle2 className="h-5 w-5 text-green-600" />
+      case 'validated':
+        return <CheckCircle2 className="h-5 w-5 text-[var(--cf-success)]" />
       case 'rejected':
-        return <AlertCircle className="h-5 w-5 text-red-600" />
+      case 'expired':
+        return <AlertCircle className="h-5 w-5 text-[var(--cf-danger)]" />
       default:
-        return <Loader className="h-5 w-5 text-yellow-600 animate-spin" />
+        return <Clock className="h-5 w-5 text-[var(--cf-warning)]" />
     }
   }
 
-  const getDocumentByType = (type: string) => {
-    // Match on document_type_id (e.g. 'LIC_CONDUCIR') or document_type name
-    return documents.find(d => 
-      d.document_type_id === type || 
-      d.document_type === type ||
-      (d.document_type_id && d.document_type_id.toUpperCase() === type.toUpperCase())
-    )
+  const getDisplayFileName = (fileName?: string) => {
+    if (!fileName) return null
+    if (/^inbound\d+\.[a-z0-9]+$/i.test(fileName.trim())) return null
+    return fileName.trim()
   }
 
+  const normalizeDocumentCode = (value?: string | null) => {
+    if (!value) return ''
+    const normalized = value.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+    const aliases: Record<string, string> = {
+      LICENCIA_CONDUCIR: 'LIC_CONDUCIR',
+      HOJA_VIDA_CONDUCTOR: 'HOJA_VIDA',
+      CERTIFICADO_ANTECEDENTES: 'CERT_ANTECEDENTES',
+      CEDULA_IDENTIDAD: 'CEDULA_IDENTIDAD',
+      REVISION_TECNICA: 'REVISION_TECNICA',
+      SEGURO_OBLIGATORIO_SOAP: 'SOAP',
+    }
+    return aliases[normalized] || normalized
+  }
+
+  const getDocumentLabel = (doc: UploadedDocument) =>
+    doc.document_type_name ||
+    DOCUMENT_TYPES.find((type) =>
+      normalizeDocumentCode(type.code) === normalizeDocumentCode(doc.document_type_id) ||
+      normalizeDocumentCode(type.code) === normalizeDocumentCode(doc.document_type) ||
+      normalizeDocumentCode(type.code) === normalizeDocumentCode(doc.document_type_code)
+    )?.label ||
+    doc.document_type ||
+    'Documento'
+
+  const getDocumentByType = (type: string) => {
+    const target = normalizeDocumentCode(type)
+    return documents
+      .filter((d) =>
+        [d.document_type_id, d.document_type, d.document_type_code]
+          .some((value) => normalizeDocumentCode(value) === target)
+      )
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+  }
+
+  const isExpiringSoon = (doc?: UploadedDocument) => {
+    if (!doc?.expiration_date || !['approved', 'validated'].includes(doc.validation_status)) return false
+    const days = Math.ceil((new Date(doc.expiration_date).getTime() - Date.now()) / 86400000)
+    return days >= 0 && days <= 30
+  }
+
+  const needsAction = (doc?: UploadedDocument) => {
+    if (!doc) return true
+    if (['rejected', 'expired'].includes(doc.validation_status)) return true
+    if (doc.expiration_date && new Date(doc.expiration_date).getTime() < Date.now()) return true
+    return false
+  }
+
+  const focusUploadFor = (documentType: string) => {
+    setSelectedDocumentType(documentType)
+    document.getElementById('upload-document')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const requiredDocumentsByPriority = [...REQUIRED_DOCUMENTS].sort((a, b) => {
+    const aDoc = getDocumentByType(a.type)
+    const bDoc = getDocumentByType(b.type)
+    const rank = (doc?: UploadedDocument) => {
+      if (needsAction(doc)) return 0
+      if (isExpiringSoon(doc)) return 1
+      if (doc?.validation_status === 'pending') return 2
+      return 3
+    }
+    return rank(aDoc) - rank(bDoc)
+  })
+
   const historicalDocuments = useMemo(() => {
-    return filterByMonthYear(documents, (doc) => doc.created_at, archiveFilters.month, archiveFilters.year)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    return filterByMonthYear(
+      documents,
+      (doc) => getDocumentPeriodDate(doc) || doc.created_at,
+      archiveFilters.month,
+      archiveFilters.year
+    ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }, [documents, archiveFilters.month, archiveFilters.year])
+
+  const documentSummary = useMemo(() => {
+    const current = REQUIRED_DOCUMENTS.map((required) =>
+      documents
+        .filter((doc) =>
+          [doc.document_type_id, doc.document_type, doc.document_type_code]
+            .some((value) => normalizeDocumentCode(value) === normalizeDocumentCode(required.type))
+        )
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    )
+
+    const approved = current.filter((doc) => doc && ['approved', 'validated'].includes(doc.validation_status) && !isExpiringSoon(doc)).length
+    const inReview = current.filter((doc) => doc?.validation_status === 'pending').length
+    const expiringSoon = current.filter((doc) => isExpiringSoon(doc)).length
+    const actionRequired = current.filter((doc) => needsAction(doc)).length
+
+    return { approved, inReview, expiringSoon, actionRequired }
+  }, [documents])
 
   return (
       <div className="space-y-8">
-        {/* Header with Compliance */}
-        <div className="flex justify-between items-start border-b border-slate-700 pb-6">
-          <div>
-            <h1 className="text-5xl font-bold text-white">Mis Documentos</h1>
-            <p className="text-slate-300 mt-2">Sube y gestiona tus documentos requeridos para trabajar con Labbe</p>
-          </div>
-          <div className="text-right bg-slate-800 border border-slate-700 rounded-lg p-4 min-w-max">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">Cumplimiento</p>
-            <p className="text-4xl font-bold text-orange-500 mt-1">{compliancePercentage}%</p>
-            <div className="w-32 bg-slate-700 rounded-full h-2 mt-3">
-              <div
-                className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${compliancePercentage}%` }}
-              />
-            </div>
+        <div className="rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <span className="font-medium text-[var(--cf-success)]">{documentSummary.approved} al día</span>
+            <span className="text-[var(--cf-text-secondary)]">{documentSummary.inReview} en revisión</span>
+            {documentSummary.expiringSoon > 0 && (
+              <span className="font-medium text-[var(--cf-expiring)]">{documentSummary.expiringSoon} por vencer</span>
+            )}
+            {documentSummary.actionRequired > 0 && (
+              <span className="font-medium text-[var(--cf-danger)]">{documentSummary.actionRequired} requiere acción</span>
+            )}
+            <span className="ml-auto text-xs text-[var(--cf-text-muted)]">{compliancePercentage}% aprobado</span>
           </div>
         </div>
 
       {/* Alerts */}
       {error && (
-        <Alert className="bg-red-950/30 border-red-900/50">
-          <AlertCircle className="h-4 w-4 text-red-400" />
-          <AlertDescription className="text-red-300">{error}</AlertDescription>
+        <Alert className="bg-[var(--cf-danger-soft)] border-[var(--cf-danger)]/40">
+          <AlertCircle className="h-4 w-4 text-[var(--cf-danger)]" />
+          <AlertDescription className="text-[var(--cf-danger)]">{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert className="bg-green-950/30 border-green-900/50">
-          <CheckCircle2 className="h-4 w-4 text-green-400" />
-          <AlertDescription className="text-green-300">{success}</AlertDescription>
+        <Alert className="bg-[var(--cf-success-soft)] border-[var(--cf-success)]/40">
+          <CheckCircle2 className="h-4 w-4 text-[var(--cf-success)]" />
+          <AlertDescription className="text-[var(--cf-success)]">{success}</AlertDescription>
         </Alert>
       )}
 
-      {/* Test Data Notice */}
-      {documents.some(d => d.rejection_reason === 'test') && (
-        <Alert className="bg-blue-950/30 border-blue-900/50">
-          <HelpCircle className="h-4 w-4 text-blue-400" />
-          <AlertDescription className="text-blue-300">
-            <strong>Nota:</strong> Algunos documentos en tu historial tienen motivo de rechazo "test". Estos son documentos de prueba del sistema y pueden ser ignorados o eliminados. No afectan tu cumplimiento real.
+      {(documentSummary.actionRequired > 0 || documentSummary.expiringSoon > 0) && (
+        <Alert className="border-[var(--cf-expiring)]/40 bg-[var(--cf-expiring-soft)]">
+          <AlertCircle className="h-4 w-4 text-[var(--cf-expiring)]" />
+          <AlertDescription className="text-[var(--cf-expiring)]">
+            {documentSummary.actionRequired > 0 ? `${documentSummary.actionRequired} documento(s) requieren acción` : ''}
+            {documentSummary.actionRequired > 0 && documentSummary.expiringSoon > 0 ? ' · ' : ''}
+            {documentSummary.expiringSoon > 0 ? `${documentSummary.expiringSoon} por vencer` : ''}
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Upload Section */}
-      <Card className="border-slate-700 bg-gradient-to-r from-slate-800/50 to-slate-800/30 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-white">Subir Documento</CardTitle>
-          <CardDescription className="text-slate-400">
-            Selecciona el tipo de documento y arrastra o haz clic para seleccionar (PDF, JPG, PNG - Máximo 10MB)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Document Type Selector */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Tipo de Documento
-            </label>
-            <select
-              value={selectedDocumentType}
-              onChange={(e) => setSelectedDocumentType(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 transition-colors"
-            >
-              {DOCUMENT_TYPES.map((doc) => (
-                <option key={doc.id} value={doc.code}>
-                  {doc.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Upload Area */}
-          <label
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
-              isDragging
-                ? 'bg-orange-500/10 border-orange-500/50'
-                : 'bg-slate-800/30 hover:bg-slate-800/50 border-slate-600'
-            }`}
-          >
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Upload className={`h-10 w-10 mb-2 ${isDragging ? 'text-orange-400' : 'text-slate-500'}`} />
-              <p className="mb-2 text-sm font-semibold text-slate-300">
-                {isDragging ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí o haz clic'}
-              </p>
-              <p className="text-xs text-slate-500">PDF, JPG, PNG</p>
-            </div>
-            <input
-              type="file"
-              className="hidden"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={handleInputChange}
-              disabled={isUploading}
-            />
-          </label>
-          {isUploading && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <Loader className="h-4 w-4 animate-spin text-orange-500" />
-              <span className="text-sm text-slate-300">Subiendo documento...</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Documents Required */}
-      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
+      <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-lg">
         <CardHeader>
-          <CardTitle className="text-white">Documentos Requeridos</CardTitle>
-          <CardDescription className="text-slate-400">
-            Estado de cada documento requerido para tu aprobación
-          </CardDescription>
+          <CardTitle className="text-[var(--cf-text)]">Documentos requeridos</CardTitle>
+          <CardDescription className="text-[var(--cf-text-muted)]">Lo que está pendiente aparece primero.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <Loader className="h-6 w-6 animate-spin text-orange-500" />
+              <Loader className="h-6 w-6 animate-spin text-[var(--cf-expiring)]" />
             </div>
           ) : (
             <div className="space-y-3">
-              {REQUIRED_DOCUMENTS.map((reqDoc) => {
+              {requiredDocumentsByPriority.map((reqDoc) => {
                 const uploadedDoc = getDocumentByType(reqDoc.type)
                 return (
                   <div
                     key={reqDoc.type}
-                    className="flex items-center justify-between p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 bg-slate-800/20 transition-all"
+                    className="flex flex-col gap-3 rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4 transition-all hover:bg-[var(--cf-surface)] sm:flex-row sm:items-center sm:justify-between"
                   >
                   <div className="flex items-center gap-4 flex-1">
                     <div className="flex-shrink-0">
                       {uploadedDoc ? (
                         getStatusIcon(uploadedDoc.validation_status)
                       ) : (
-                        <div className="h-5 w-5 rounded-full border-2 border-slate-600" />
+                        <div className="h-5 w-5 rounded-full border-2 border-[var(--cf-border)]" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-white">{reqDoc.label}</p>
-                      <p className="text-sm text-slate-300">{reqDoc.description}</p>
+                      <p className="font-medium text-[var(--cf-text)]">{reqDoc.label}</p>
+                      <p className="text-sm text-[var(--cf-text-secondary)]">{reqDoc.description}</p>
+                      {getDisplayFileName(uploadedDoc?.file_name) && (
+                        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{getDisplayFileName(uploadedDoc?.file_name)}</p>
+                      )}
+                      {uploadedDoc?.validation_status === 'pending' && (
+                        <p className="mt-1 text-xs text-[var(--cf-warning)]">Recibido correctamente. No necesitas volver a subirlo.</p>
+                      )}
+                      {isExpiringSoon(uploadedDoc) && (
+                        <p className="mt-1 text-xs font-medium text-[var(--cf-expiring)]">Próximo a vencer. Conviene renovarlo antes de que afecte tu habilitación.</p>
+                      )}
                         {uploadedDoc?.rejection_reason && (
-                          <p className="text-sm text-red-400 mt-1">
-                            Razón del rechazo: {uploadedDoc.rejection_reason}
-                          </p>
+                          <div className="mt-2 rounded-md border border-[var(--cf-danger)]/40 bg-[var(--cf-danger-soft)] px-3 py-2">
+                            <p className="text-xs font-medium uppercase tracking-wide text-[var(--cf-danger)]">Requiere acción</p>
+                            <p className="mt-1 text-sm text-[var(--cf-danger)]">Motivo: {uploadedDoc.rejection_reason}</p>
+                            <p className="mt-1 text-xs text-[var(--cf-danger)]">Sube una nueva versión de este documento.</p>
+                          </div>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+                      {(needsAction(uploadedDoc) || isExpiringSoon(uploadedDoc)) && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-[var(--cf-accent)] text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]"
+                          onClick={() => focusUploadFor(reqDoc.type)}
+                        >
+                          {uploadedDoc ? 'Reemplazar' : 'Subir'}
+                        </Button>
+                      )}
                       {uploadedDoc ? (
                         <>
                           {getStatusBadge(uploadedDoc.validation_status, uploadedDoc.expiration_date)}
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-slate-400 hover:text-white"
+                            className="text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]"
                             asChild
                           >
                             <a href={buildDocumentAccessUrl(uploadedDoc.file_url, 'download')} target="_blank" rel="noopener noreferrer">
@@ -489,7 +559,7 @@ export default function ConductorDocumentosPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-slate-400 hover:text-red-400"
+                            className="text-[var(--cf-text-muted)] hover:text-[var(--cf-danger)]"
                             onClick={() => handleDeleteDocument(uploadedDoc.id, uploadedDoc.file_name || 'Documento')}
                             disabled={isUploading}
                           >
@@ -497,7 +567,7 @@ export default function ConductorDocumentosPage() {
                           </Button>
                         </>
                       ) : (
-                        <Badge variant="outline" className="border-slate-600 text-slate-400">No subido</Badge>
+                        <Badge variant="outline" className="border-[var(--cf-border)] text-[var(--cf-text-muted)]">No subido</Badge>
                       )}
                     </div>
                   </div>
@@ -508,27 +578,85 @@ export default function ConductorDocumentosPage() {
         </CardContent>
       </Card>
 
-      {/* Info Card */}
-      <Card className="bg-gradient-to-r from-orange-950/40 to-orange-900/30 border-orange-900/50">
+      {/* Upload Section */}
+      <Card id="upload-document" className="scroll-mt-6 border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-lg">
         <CardHeader>
-          <CardTitle className="text-orange-300 flex items-center gap-2">
-            <HelpCircle className="h-5 w-5" />
-            ¿Necesitas ayuda?
-          </CardTitle>
+          <CardTitle className="text-[var(--cf-text)]">Subir documento</CardTitle>
+          <CardDescription className="text-[var(--cf-text-muted)]">
+            Sube un documento nuevo o reemplaza uno observado. Puedes usar una fecha anterior; el sistema confirmará el período antes de guardar.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="text-orange-100 text-sm space-y-2">
-          <p>• Los documentos se validan en 24-48 horas</p>
-          <p>• Recibirás notificaciones por email y WhatsApp</p>
-          <p>• Puedes subir nuevas versiones si un documento es rechazado</p>
-          <p>• Contacta con soporte@labbe.cl si tienes preguntas</p>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">
+                Tipo de documento
+              </label>
+            <select
+              value={selectedDocumentType}
+              onChange={(e) => setSelectedDocumentType(e.target.value)}
+              className="w-full rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] px-4 py-2 text-[var(--cf-text)] transition-colors focus:border-orange-500 focus:outline-none"
+            >
+              {DOCUMENT_TYPES.map((doc) => (
+                <option key={doc.id} value={doc.code}>
+                  {doc.label}
+                </option>
+              ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">
+                Fecha del documento
+              </label>
+              <input
+                type="date"
+                value={documentDate}
+                onChange={(e) => setDocumentDate(e.target.value)}
+                max={(() => { const d = new Date(); const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return local.toISOString().split('T')[0] })()}
+                className="w-full rounded-lg border border-[var(--cf-border)] bg-[var(--cf-surface)] px-4 py-2 text-[var(--cf-text)] transition-colors focus:border-orange-500 focus:outline-none"
+              />
+              <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Esta fecha define el período histórico del documento.</p>
+            </div>
+          </div>
+
+          <label
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all ${
+              isDragging
+                ? 'border-orange-500/50 bg-[var(--cf-accent)]/10'
+                : 'border-[var(--cf-border)] bg-[var(--cf-surface)] hover:bg-[var(--cf-surface)]'
+            }`}
+          >
+            <Upload className={`mb-2 h-8 w-8 ${isDragging ? 'text-[var(--cf-expiring)]' : 'text-[var(--cf-text-muted)]'}`} />
+            <p className="text-sm font-semibold text-[var(--cf-text-secondary)]">
+              {isDragging ? 'Suelta el archivo aquí' : 'Arrastra un archivo o haz clic'}
+            </p>
+            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">PDF, JPG o PNG · máximo 10 MB</p>
+            <input
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={handleInputChange}
+              disabled={isUploading}
+            />
+          </label>
+
+          {isUploading && (
+            <div className="flex items-center justify-center gap-2">
+              <Loader className="h-4 w-4 animate-spin text-[var(--cf-expiring)]" />
+              <span className="text-sm text-[var(--cf-text-secondary)]">Subiendo documento...</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
+      <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-lg">
         <CardHeader>
-          <CardTitle className="text-white">Historial documental</CardTitle>
-          <CardDescription className="text-slate-400">
-            Archivo histórico filtrado por mes y año de subida
+          <CardTitle className="text-[var(--cf-text)]">Historial documental</CardTitle>
+          <CardDescription className="text-[var(--cf-text-muted)]">
+            Consulta documentos por período
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -539,25 +667,28 @@ export default function ConductorDocumentosPage() {
           />
 
           {historicalDocuments.length === 0 ? (
-            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6 text-center text-slate-400">
+            <div className="rounded-lg border border-[var(--cf-border)] bg-[var(--cf-canvas)]/60 p-6 text-center text-[var(--cf-text-muted)]">
               No hay documentos en el período seleccionado.
             </div>
           ) : (
             <div className="grid gap-3">
               {historicalDocuments.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between gap-4 rounded-lg border border-slate-700 bg-slate-900/50 p-4">
+                <div key={doc.id} className="flex items-center justify-between gap-4 rounded-lg border border-[var(--cf-border)] bg-[var(--cf-canvas)]/50 p-4">
                   <div className="min-w-0">
-                    <p className="font-medium text-white truncate">
-                      {doc.file_name || doc.document_type_name || doc.document_type || 'Documento'}
+                    <p className="font-medium text-[var(--cf-text)] truncate">
+                      {getDocumentLabel(doc)}
                     </p>
-                    <p className="text-sm text-slate-400">
-                      Subido: {new Date(doc.created_at).toLocaleDateString('es-CL')}
+                    {getDisplayFileName(doc.file_name) && (
+                      <p className="mt-0.5 truncate text-xs text-[var(--cf-text-muted)]">{getDisplayFileName(doc.file_name)}</p>
+                    )}
+                    <p className="text-sm text-[var(--cf-text-muted)]">
+                      Período: {getDocumentPeriodLabel(doc)} · Subido: {new Date(doc.created_at).toLocaleDateString('es-CL')}
                       {doc.expiration_date ? ` • Vence: ${new Date(doc.expiration_date).toLocaleDateString('es-CL')}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {getStatusBadge(doc.validation_status, doc.expiration_date)}
-                    <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" asChild>
+                    <Button variant="ghost" size="sm" className="text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]" asChild>
                       <a href={buildDocumentAccessUrl(doc.file_url, 'download')} target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4" />
                       </a>

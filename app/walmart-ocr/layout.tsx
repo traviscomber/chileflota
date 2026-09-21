@@ -1,141 +1,41 @@
 import Link from 'next/link'
+import { BarChart3, CheckCircle2, FileCheck, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { FileCheck, Home, BarChart3, CheckCircle2, LogOut } from 'lucide-react'
 
-export default function WalmartOCRLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function WalmartOCRLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-dark">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-md shadow-lg">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/walmart-ocr" className="flex items-center gap-3 group hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 gradient-accent rounded-lg flex items-center justify-center shadow-lg glow-orange group-hover:scale-110 transition-transform">
-              <FileCheck className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="font-bold text-lg text-foreground">DocuFleet</div>
-              <div className="text-xs text-accent font-semibold">OCR Portal</div>
-            </div>
+    <div className="min-h-screen bg-[var(--cf-canvas)] text-[var(--cf-text)]">
+      <header className="border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
+          <Link href="/walmart-ocr">
+            <p className="text-base font-semibold tracking-tight">ChileFlota</p>
+            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">OCR documental</p>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-2">
-            <Link
-              href="/walmart-ocr"
-              className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-800/50 hover:text-accent transition-all flex items-center gap-2"
-            >
-              <FileCheck className="w-4 h-4" />
-              Cargar Documentos
+          <nav className="flex gap-1 overflow-x-auto">
+            <Link href="/walmart-ocr" className="flex min-h-10 shrink-0 items-center gap-2 rounded-[5px] px-3 py-2 text-sm font-medium text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
+              <FileCheck className="h-4 w-4" />
+              Cargar
             </Link>
-            <Link
-              href="/walmart-ocr/compliance"
-              className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-800/50 hover:text-accent transition-all flex items-center gap-2"
-            >
-              <BarChart3 className="w-4 h-4" />
+            <Link href="/walmart-ocr/compliance" className="flex min-h-10 shrink-0 items-center gap-2 rounded-[5px] px-3 py-2 text-sm font-medium text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
+              <BarChart3 className="h-4 w-4" />
               Compliance
             </Link>
-            <Link
-              href="/walmart-ocr/review"
-              className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-800/50 hover:text-accent transition-all flex items-center gap-2"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Revisar
+            <Link href="/walmart-ocr/review" className="flex min-h-10 shrink-0 items-center gap-2 rounded-[5px] px-3 py-2 text-sm font-medium text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
+              <CheckCircle2 className="h-4 w-4" />
+              Revisión
             </Link>
-            <Separator orientation="vertical" className="mx-2 h-6 bg-slate-700/50" />
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Salir
-            </Button>
+            <Link href="/admin">
+              <Button variant="outline" size="sm">
+                <Home className="h-4 w-4" />
+                Admin
+              </Button>
+            </Link>
           </nav>
-
-          <Link href="/admin">
-            <Button size="sm" className="btn-orange md:hidden">
-              <Home className="w-4 h-4" />
-            </Button>
-          </Link>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1">{children}</main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-700/50 bg-slate-900/50 mt-24 py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-bold text-foreground mb-4">Plataforma</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/walmart-ocr" className="hover:text-accent transition-colors">
-                    Subir Documentos
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/walmart-ocr/compliance" className="hover:text-accent transition-colors">
-                    Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/walmart-ocr/review" className="hover:text-accent transition-colors">
-                    Revisar
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-foreground mb-4">Capacidades</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>35+ Tipos de Documentos</li>
-                <li>Validacion 99% Precision</li>
-                <li>Alertas Automaticas</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-foreground mb-4">Recursos</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/admin" className="hover:text-accent transition-colors">
-                    Panel Admin
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/" className="hover:text-accent transition-colors">
-                    Inicio
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-foreground mb-4">Soporte</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a href="mailto:support@docufleet.cl" className="hover:text-accent transition-colors">
-                    Email: support@docufleet.cl
-                  </a>
-                </li>
-                <li>Chat en vivo disponible</li>
-              </ul>
-            </div>
-          </div>
-
-          <Separator className="my-8 bg-slate-700/30" />
-
-          <div className="text-center text-sm text-muted-foreground">
-            <p>
-              © 2024 DocuFleet - Compliance Documental Automatizado. Todos los derechos reservados.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <main>{children}</main>
     </div>
   )
 }

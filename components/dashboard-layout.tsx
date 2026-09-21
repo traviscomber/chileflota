@@ -3,21 +3,9 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { AlertTriangle, BarChart3, FileText, Home, LogOut, Menu, Settings, Shield, Truck, Users, X } from "lucide-react"
 import { useRole } from "@/app/providers"
-import { Button } from "@/components/ui/button"
-import { 
-  Menu, 
-  X, 
-  LogOut, 
-  Settings,
-  Home,
-  BarChart3,
-  Users,
-  Truck,
-  FileText,
-  AlertTriangle,
-  Shield
-} from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface NavItem {
   label: string
@@ -33,118 +21,31 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
 
-  // Definir navegación según rol
   const navItems: NavItem[] = [
     {
-      label: "Dashboard",
+      label: "Inicio",
       href: role === "admin" ? "/admin" : role === "mandante" ? "/mandante" : role === "transportista" ? "/transportista" : "/conductor",
-      icon: <Home className="w-5 h-5" />,
-      roles: ["admin", "mandante", "transportista", "conductor"]
+      icon: <Home className="h-4 w-4" />,
+      roles: ["admin", "mandante", "transportista", "conductor"],
     },
-    // Admin navigation
-    {
-      label: "Mandantes",
-      href: "/admin/mandantes",
-      icon: <Users className="w-5 h-5" />,
-      roles: ["admin"]
-    },
-    {
-      label: "Transportistas",
-      href: "/admin/transportistas",
-      icon: <Truck className="w-5 h-5" />,
-      roles: ["admin"]
-    },
-    {
-      label: "Conductores",
-      href: "/admin/conductores",
-      icon: <Users className="w-5 h-5" />,
-      roles: ["admin"]
-    },
-    {
-      label: "Vehículos",
-      href: "/admin/vehiculos",
-      icon: <Truck className="w-5 h-5" />,
-      roles: ["admin"]
-    },
-    {
-      label: "Documentos",
-      href: "/admin/documentos",
-      icon: <FileText className="w-5 h-5" />,
-      roles: ["admin"]
-    },
-    {
-      label: "Roles & Permisos",
-      href: "/admin/roles",
-      icon: <Shield className="w-5 h-5" />,
-      roles: ["admin"]
-    },
-    {
-      label: "Reportes",
-      href: "/admin/reportes",
-      icon: <BarChart3 className="w-5 h-5" />,
-      roles: ["admin"]
-    },
-    {
-      label: "Compliance Matrix",
-      href: "/compliance",
-      icon: <Shield className="w-5 h-5" />,
-      roles: ["admin", "mandante", "executive"]
-    },
-    // Mandante navigation
-    {
-      label: "Transportistas",
-      href: "/mandante/transportistas",
-      icon: <Truck className="w-5 h-5" />,
-      roles: ["mandante"]
-    },
-    {
-      label: "Alertas",
-      href: "/mandante/alertas",
-      icon: <AlertTriangle className="w-5 h-5" />,
-      roles: ["mandante"]
-    },
-    {
-      label: "Reportes",
-      href: "/mandante/reportes",
-      icon: <BarChart3 className="w-5 h-5" />,
-      roles: ["mandante"]
-    },
-    // Transportista navigation
-    {
-      label: "Conductores",
-      href: "/transportista/conductores",
-      icon: <Users className="w-5 h-5" />,
-      roles: ["transportista"]
-    },
-    {
-      label: "Vehículos",
-      href: "/transportista/vehiculos",
-      icon: <Truck className="w-5 h-5" />,
-      roles: ["transportista"]
-    },
-    {
-      label: "Subir Documentos",
-      href: "/transportista/upload",
-      icon: <FileText className="w-5 h-5" />,
-      roles: ["transportista"]
-    },
-    // Conductor navigation
-    {
-      label: "Mis Documentos",
-      href: "/conductor/documentos",
-      icon: <FileText className="w-5 h-5" />,
-      roles: ["conductor"]
-    },
-    {
-      label: "Subir Documento",
-      href: "/conductor/upload",
-      icon: <FileText className="w-5 h-5" />,
-      roles: ["conductor"]
-    },
+    { label: "Mandantes", href: "/admin/mandantes", icon: <Users className="h-4 w-4" />, roles: ["admin"] },
+    { label: "Transportistas", href: "/admin/transportistas", icon: <Truck className="h-4 w-4" />, roles: ["admin"] },
+    { label: "Conductores", href: "/admin/conductores", icon: <Users className="h-4 w-4" />, roles: ["admin"] },
+    { label: "Vehículos", href: "/admin/vehiculos", icon: <Truck className="h-4 w-4" />, roles: ["admin"] },
+    { label: "Documentos", href: "/admin/documentos", icon: <FileText className="h-4 w-4" />, roles: ["admin"] },
+    { label: "Roles y permisos", href: "/admin/roles", icon: <Shield className="h-4 w-4" />, roles: ["admin"] },
+    { label: "Reportes", href: "/admin/reportes", icon: <BarChart3 className="h-4 w-4" />, roles: ["admin"] },
+    { label: "Compliance", href: "/compliance", icon: <Shield className="h-4 w-4" />, roles: ["admin", "mandante", "executive"] },
+    { label: "Transportistas", href: "/mandante/transportistas", icon: <Truck className="h-4 w-4" />, roles: ["mandante"] },
+    { label: "Alertas", href: "/mandante/alertas", icon: <AlertTriangle className="h-4 w-4" />, roles: ["mandante"] },
+    { label: "Reportes", href: "/mandante/reportes", icon: <BarChart3 className="h-4 w-4" />, roles: ["mandante"] },
+    { label: "Conductores", href: "/transportista/conductores", icon: <Users className="h-4 w-4" />, roles: ["transportista"] },
+    { label: "Vehículos", href: "/transportista/vehiculos", icon: <Truck className="h-4 w-4" />, roles: ["transportista"] },
+    { label: "Documentos", href: "/transportista/upload", icon: <FileText className="h-4 w-4" />, roles: ["transportista"] },
+    { label: "Mis documentos", href: "/conductor/documentos", icon: <FileText className="h-4 w-4" />, roles: ["conductor"] },
   ]
 
-  const filteredItems = navItems.filter(item => item.roles.includes(role || ""))
-  
+  const filteredItems = navItems.filter((item) => item.roles.includes(role || ""))
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/")
 
   const handleLogout = async () => {
@@ -153,106 +54,64 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-dark text-foreground overflow-hidden">
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-700/50 transform transition-transform duration-300 ease-in-out ${
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      } md:translate-x-0 md:fixed md:inset-y-0 md:left-0 md:z-40`}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center gap-3 p-6 border-b border-slate-700/50">
-            <div className="w-9 h-9 rounded-lg gradient-accent flex items-center justify-center">
-              <FileText className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="font-bold text-lg text-foreground">DocuFleet</div>
-              <div className="text-xs text-accent font-semibold capitalize">{role}</div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
-            {filteredItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                    isActive(item.href)
-                      ? "bg-orange-500/20 text-orange-300 border border-orange-500/30"
-                      : "text-muted-foreground hover:bg-slate-800 border border-transparent"
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </button>
-              </Link>
-            ))}
-          </nav>
-
-          {/* Settings & Logout */}
-          <div className="border-t border-slate-700/50 p-4 space-y-2">
-            <Link href="/settings">
-              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-slate-800 transition-all">
-                <Settings className="w-5 h-5" />
-                <span>Configuración</span>
-              </button>
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Cerrar Sesión</span>
-            </button>
-          </div>
+    <div className="min-h-screen bg-[var(--cf-canvas)] text-[var(--cf-text)] md:flex">
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-56 border-r border-[var(--cf-border)] bg-[var(--cf-sidebar)] transition-transform md:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        <div className="border-b border-[var(--cf-border)] px-5 py-4">
+          <p className="text-base font-semibold tracking-tight">ChileFlota</p>
+          <p className="mt-1 text-xs capitalize text-[var(--cf-text-muted)]">{role || "usuario"}</p>
         </div>
-      </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col md:ml-64">
-        {/* Top bar */}
-        <header className="sticky top-0 z-40 border-b border-slate-700/50 bg-gradient-to-r from-slate-900 to-slate-950 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden p-2 hover:bg-slate-800 rounded-lg transition-colors"
-            >
-              {sidebarOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
+        <nav className="space-y-1 px-3 py-4">
+          {filteredItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setSidebarOpen(false)}
+              className={cn(
+                "flex min-h-10 items-center gap-2 rounded-[5px] px-3 py-2 text-sm font-medium transition-colors",
+                isActive(item.href)
+                  ? "bg-[var(--cf-accent)] text-[var(--cf-text)]"
+                  : "text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]",
               )}
-            </button>
-            <div className="flex-1" />
-            <div className="flex items-center gap-4">
-              <Link href="/settings">
-                <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
-                  <Settings className="w-5 h-5 text-muted-foreground" />
-                </button>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="p-2 hover:bg-red-500/10 rounded-lg transition-colors"
-              >
-                <LogOut className="w-5 h-5 text-red-400" />
-              </button>
-            </div>
-          </div>
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </nav>
+
+        <div className="absolute inset-x-0 bottom-0 border-t border-[var(--cf-border)] p-3">
+          <Link href="/settings" className="flex min-h-10 items-center gap-2 rounded-[5px] px-3 py-2 text-sm text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]">
+            <Settings className="h-4 w-4" />
+            Configuración
+          </Link>
+          <button onClick={handleLogout} className="mt-1 flex min-h-10 w-full items-center gap-2 rounded-[5px] px-3 py-2 text-sm text-[var(--cf-text-muted)] hover:bg-[var(--cf-danger-soft)] hover:text-[var(--cf-danger)]">
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </button>
+        </div>
+      </aside>
+
+      <div className="min-w-0 flex-1 md:ml-56">
+        <header className="flex min-h-14 items-center border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 md:px-6">
+          <button
+            onClick={() => setSidebarOpen((value) => !value)}
+            className="flex h-10 w-10 items-center justify-center rounded-[5px] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] md:hidden"
+            aria-label="Abrir navegación"
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        <main className="min-h-[calc(100vh-56px)] bg-[var(--cf-canvas)]">{children}</main>
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-        />
-      )}
+      {sidebarOpen && <button aria-label="Cerrar navegación" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/50 md:hidden" />}
     </div>
   )
 }

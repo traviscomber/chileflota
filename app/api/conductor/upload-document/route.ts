@@ -53,10 +53,63 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const documentType = formData.get('documentType') as string
+    const rawDocumentDate = String(formData.get('documentDate') || '').trim()
+    const rawDocumentPeriodMonth = String(formData.get('documentPeriodMonth') || '').trim()
+    const rawDocumentPeriodYear = String(formData.get('documentPeriodYear') || '').trim()
+
+    const now = new Date()
+    const chileDateParts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Santiago',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(now)
+    const getChileDatePart = (type: 'year' | 'month' | 'day') =>
+      chileDateParts.find((part) => part.type === type)?.value || ''
+    const currentChileDate = `${getChileDatePart('year')}-${getChileDatePart('month')}-${getChileDatePart('day')}`
+    const documentDate = rawDocumentDate || currentChileDate
+    const documentPeriodMonth = rawDocumentPeriodMonth
+      ? Number(rawDocumentPeriodMonth)
+      : Number(documentDate.slice(5, 7))
+    const documentPeriodYear = rawDocumentPeriodYear
+      ? Number(rawDocumentPeriodYear)
+      : Number(documentDate.slice(0, 4))
 
     if (!file || !documentType) {
       return NextResponse.json(
         { message: 'Missing file or documentType' },
+        { status: 400 }
+      )
+    }
+
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(documentDate) ||
+      !Number.isInteger(documentPeriodMonth) ||
+      documentPeriodMonth < 1 ||
+      documentPeriodMonth > 12 ||
+      !Number.isInteger(documentPeriodYear) ||
+      documentPeriodYear < 2020 ||
+      documentPeriodYear > 2100
+    ) {
+      return NextResponse.json(
+        { message: 'Invalid document period' },
+        { status: 400 }
+      )
+    }
+
+    const selectedDate = new Date(`${documentDate}T00:00:00Z`)
+    if (Number.isNaN(selectedDate.getTime()) || documentDate > currentChileDate) {
+      return NextResponse.json(
+        { message: 'Document date cannot be in the future' },
+        { status: 400 }
+      )
+    }
+
+    const derivedMonth = Number(documentDate.slice(5, 7))
+    const derivedYear = Number(documentDate.slice(0, 4))
+    if (derivedMonth !== documentPeriodMonth || derivedYear !== documentPeriodYear) {
+      return NextResponse.json(
+        { message: 'Document period does not match document date' },
         { status: 400 }
       )
     }
@@ -236,6 +289,10 @@ export async function POST(request: NextRequest) {
       original_filename: file.name,
       file_url: publicUrl,
       validation_status: validationStatus,
+      document_period_month: documentPeriodMonth,
+      document_period_year: documentPeriodYear,
+      document_period_start: `${documentPeriodYear}-${String(documentPeriodMonth).padStart(2, '0')}-01`,
+      document_period_source: 'manual_document_date',
     }
 
     console.log('[v0] Insert payload - conductor.id:', conductor.id, 'conductor.rut:', conductor.rut, 'conductor.nombre_completo:', conductor.nombre_completo)

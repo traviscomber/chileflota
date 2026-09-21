@@ -1,87 +1,67 @@
-import { LogOut, LayoutDashboard, FileText, Clock, Settings, Home } from "lucide-react"
+'use client'
+
+import { FileText, Home, Settings, Clock } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/conductor", label: "Dashboard", icon: Home },
-  { href: "/conductor/documentos", label: "Mis Documentos", icon: FileText },
-  { href: "/conductor/perfil", label: "Mi Perfil", icon: Settings },
-  { href: "/conductor/onboarding", label: "Guía de Inicio", icon: Clock },
+  { href: "/conductor", label: "Inicio", icon: Home },
+  { href: "/conductor/documentos", label: "Documentos", icon: FileText },
+  { href: "/conductor/perfil", label: "Mi perfil", icon: Settings },
+  { href: "/conductor/onboarding", label: "Guía de inicio", icon: Clock },
 ]
 
-export default function ConductorLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function ConductorLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+
   return (
-    <div className="flex h-screen bg-slate-900">
-      {/* Sidebar - Dark theme with brand orange accents */}
-      <aside className="w-64 border-r border-slate-700 bg-slate-950 shadow-lg flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-slate-700">
-          <Link href="/conductor" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center shadow-lg">
-              <FileText className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-white">Labbe</p>
-              <p className="text-xs text-slate-400">Conductor</p>
-            </div>
-          </Link>
+    <div className="min-h-screen bg-[var(--cf-canvas)] text-[var(--cf-text)] md:flex">
+      <aside className="border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)] md:fixed md:inset-y-0 md:left-0 md:w-52 md:border-b-0 md:border-r">
+        <div className="border-b border-[var(--cf-border)] px-4 py-4 md:px-5 md:py-5">
+          <p className="text-base font-semibold tracking-tight text-[var(--cf-text)]">ChileFlota</p>
+          <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Transportes Labbé · Conductor</p>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex gap-1 overflow-x-auto px-3 py-3 md:block md:space-y-1 md:overflow-visible md:py-4">
           {navItems.map((item) => {
             const Icon = item.icon
+            const isActive = pathname === item.href || (item.href !== "/conductor" && pathname.startsWith(`${item.href}/`))
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition-all hover:bg-slate-800 text-slate-300 hover:text-orange-400 hover:bg-slate-800/50 group"
+                className={cn(
+                  "flex min-h-10 shrink-0 items-center gap-2 rounded-[5px] px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-[var(--cf-accent)] text-[var(--cf-text)]"
+                    : "text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
+                )}
               >
-                <Icon className="h-4 w-4 group-hover:text-orange-400" />
-                {item.label}
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
-        {/* Info Card */}
-        <div className="p-4 border-t border-slate-700">
-          <div className="bg-gradient-to-br from-orange-950/40 to-orange-900/20 rounded-lg p-4 border border-orange-900/50">
-            <p className="text-xs font-semibold text-orange-300 mb-2">Soporte</p>
-            <p className="text-xs text-slate-300">soporte@labbe.cl</p>
-            <p className="text-xs text-slate-300 mt-1">+56977764753</p>
-          </div>
+        <div className="hidden border-t border-[var(--cf-border)] p-4 md:absolute md:inset-x-0 md:bottom-0 md:block">
+          <p className="text-xs font-medium text-[var(--cf-text-secondary)]">Soporte</p>
+          <p className="mt-1 text-xs text-[var(--cf-text-muted)]">soporte@labbe.cl</p>
+          <p className="mt-1 text-xs text-[var(--cf-text-muted)]">+56 9 7776 4753</p>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col bg-slate-900">
-        {/* Header */}
-        <header className="bg-slate-950/50 border-b border-slate-700 shadow-sm backdrop-blur-sm">
-          <div className="px-8 py-4 flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Portal de Documentos</h1>
-              <p className="text-sm text-slate-400">Gestiona tu documentación para trabajar con Labbe</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="text-slate-400 hover:text-orange-400 transition-colors">
-                <Settings className="h-5 w-5" />
-              </button>
-              <button className="text-slate-400 hover:text-red-400 transition-colors">
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
+      <div className="min-w-0 flex-1 md:ml-52">
+        <header className="border-b border-[var(--cf-border)] bg-[var(--cf-sidebar)] px-4 py-4 md:px-6">
+          <h1 className="text-xl font-semibold tracking-tight text-[var(--cf-text)]">Portal de Conductores</h1>
+          <p className="mt-1 text-sm text-[var(--cf-text-muted)]">Documentación y cumplimiento</p>
         </header>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto p-8 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800">
+        <main className="min-h-[calc(100vh-73px)] bg-[var(--cf-canvas)] p-4 md:p-6">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

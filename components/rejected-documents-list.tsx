@@ -100,9 +100,9 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   const getDocumentTypeChipClass = (doc: RejectedDocument) => {
     const iconConfig = getDocTypeIcon(doc.docType)
-    return `${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} border shadow-sm backdrop-blur-sm`
+    return `${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} border shadow-none `
   }
-  const metaChipClass = 'whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.14em] border border-slate-600/50 bg-slate-950/40 text-slate-100 shadow-sm backdrop-blur-sm'
+  const metaChipClass = 'whitespace-nowrap flex items-center gap-1.5 rounded-[4px] px-3 py-1 text-[11px] font-semibold tracking-[0.14em] border border-[var(--cf-border)] bg-[var(--cf-canvas)] text-[var(--cf-text)] shadow-none '
 
   const getDocumentPeriod = (doc: RejectedDocument) => {
     return getDocumentPeriodLabel(doc)
@@ -220,11 +220,11 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
   if (allDocs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="rounded-full bg-red-500/10 p-3 mb-4">
-          <XCircle className="h-12 w-12 text-red-500" />
+        <div className="rounded-[4px] bg-[var(--cf-danger-soft)] p-3 mb-4">
+          <XCircle className="h-12 w-12 text-[var(--cf-danger)]" />
         </div>
-        <p className="text-lg font-medium text-slate-300">No hay documentos rechazados</p>
-        <p className="text-sm text-slate-500 mt-2">Los documentos rechazados aparecerán aquí</p>
+        <p className="text-lg font-medium text-[var(--cf-text-secondary)]">No hay documentos rechazados</p>
+        <p className="text-sm text-[var(--cf-text-muted)] mt-2">Los documentos rechazados aparecerán aquí</p>
       </div>
     )
   }
@@ -251,43 +251,43 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       
       {docsToDisplay.length === 0 && hasActiveFilters ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
-          <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
+          <p className="text-[var(--cf-text-muted)]">No hay documentos que coincidan con los filtros seleccionados</p>
         </div>
       ) : (
         <div className="space-y-4">
           {docsToDisplay.map((doc) => (
-          <Card key={doc.id} className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 border-slate-700/50 hover:border-red-500/30 transition-all hover:shadow-lg hover:shadow-red-500/10">
+          <Card key={doc.id} className="bg-none from-transparent80 to-transparent80 border-[var(--cf-border)] hover:border-[var(--cf-danger)]/35 transition-all  hover:shadow-red-500/10">
             <CardContent className="p-6">
               <div className="flex items-start justify-between gap-6">
                 {/* Left section with icon and details */}
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div className="flex-shrink-0">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20">
-                      <FileText className="h-6 w-6 text-red-500" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[6px] bg-[var(--cf-danger-soft)] border border-red-500/20">
+                      <FileText className="h-6 w-6 text-[var(--cf-danger)]" />
                     </div>
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-white truncate text-lg">
+                    <h3 className="font-semibold text-[var(--cf-text)] truncate text-lg">
                       {doc.original_filename || doc.document_name}
                     </h3>
                     
                     <div className="mt-3 space-y-2">
                       {doc.conductores && (
                         <Badge variant="outline" className={metaChipClass}>
-                          <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
+                          <User className="h-4 w-4 flex-shrink-0 text-[var(--cf-text-secondary)]" />
                           <span className="truncate">
                             {doc.conductores.nombres} {doc.conductores.apellido_paterno}
                           </span>
-                          <span className="text-slate-400">({doc.conductores.rut})</span>
+                          <span className="text-[var(--cf-text-muted)]">({doc.conductores.rut})</span>
                         </Badge>
                       )}
                       
                       {doc.transportistas && (
                         <Badge variant="outline" className={metaChipClass}>
-                          <Building2 className="h-4 w-4 flex-shrink-0 text-slate-300" />
+                          <Building2 className="h-4 w-4 flex-shrink-0 text-[var(--cf-text-secondary)]" />
                           <span className="truncate">{(Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || 'N/A'}</span>
-                          <span className="text-slate-400">
+                          <span className="text-[var(--cf-text-muted)]">
                             ({(Array.isArray(doc.transportistas) ? doc.transportistas[0]?.rut : doc.transportistas?.rut) || 'N/A'})
                           </span>
                         </Badge>
@@ -300,16 +300,16 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       </Badge>
 
                       <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <Badge variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-300">
+                        <Badge variant="outline" className="bg-[var(--cf-warning-soft)] border-amber-500/30 text-[var(--cf-warning)]">
                           Periodo: {getDocumentPeriod(doc)}
                         </Badge>
-                        <Badge variant="outline" className="bg-slate-500/10 border-slate-500/30 text-slate-200">
+                        <Badge variant="outline" className="bg-[var(--cf-surface-raised)] border-[var(--cf-border)] text-[var(--cf-text-secondary)]">
                           Fecha: {getRejectionDate(doc)} {getRejectionTime(doc)}
                         </Badge>
                         {doc.docType && (
                           <Badge
                             variant="outline"
-                            className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
+                            className={`whitespace-nowrap flex items-center gap-1.5 rounded-[4px] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
                           >
                             {getDocumentTypeLabel(doc)}
                           </Badge>
@@ -317,11 +317,11 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       </div>
 
                       {doc.rejection_reason && (
-                        <div className="mt-3 flex items-start gap-2 bg-red-500/5 p-3 rounded-md border border-red-500/10">
-                          <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <div className="mt-3 flex items-start gap-2 bg-[var(--cf-danger-soft)]/5 p-3 rounded-md border border-red-500/10">
+                          <AlertTriangle className="h-4 w-4 text-[var(--cf-danger)] mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
-                            <p className="text-xs font-semibold text-red-300">Motivo del rechazo:</p>
-                            <p className="text-xs text-red-200/70 mt-1">{doc.rejection_reason}</p>
+                            <p className="text-xs font-semibold text-[var(--cf-danger)]">Motivo del rechazo:</p>
+                            <p className="text-xs text-[var(--cf-danger)]/70 mt-1">{doc.rejection_reason}</p>
                           </div>
                         </div>
                       )}
@@ -331,13 +331,13 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
                 {/* Right section with status and buttons */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Badge className="bg-red-500/20 text-red-300 border-red-500/30 whitespace-nowrap">
+                  <Badge className="bg-[var(--cf-danger-soft)] text-[var(--cf-danger)] border-[var(--cf-danger)]/35 whitespace-nowrap">
                     ✗ Rechazado
                   </Badge>
                   {doc.docType && (
                     <Badge
                       variant="outline"
-                      className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
+                      className={`whitespace-nowrap flex items-center gap-1.5 rounded-[4px] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
                     >
                       {getDocumentTypeLabel(doc)}
                     </Badge>
@@ -347,7 +347,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       variant="outline"
                       size="sm"
                       onClick={() => setPreviewDoc(doc)}
-                      className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
+                      className="text-xs gap-1 border-blue-400/50 text-[var(--cf-info)] hover:bg-[var(--cf-info-soft)]"
                       title="Ver documento"
                     >
                       <Eye className="h-4 w-4" />
@@ -359,7 +359,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-xs gap-1 border-slate-400/50 text-slate-300 hover:bg-slate-500/20"
+                        className="text-xs gap-1 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]"
                         title="Descargar documento"
                       >
                         <Download className="h-4 w-4" />
@@ -378,7 +378,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       {/* Preview Modal - No se cierra por click fuera, solo por X o Escape */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
         <DialogContent 
-          className="max-w-4xl bg-slate-900 border-slate-700"
+          className="max-w-4xl bg-[var(--cf-surface)] border-[var(--cf-border)]"
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
@@ -394,7 +394,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                 />
               ) : (
                 // Fallback for non-PDF files (images, etc)
-                <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
+                <div className="flex justify-center items-center bg-[var(--cf-surface)] rounded-[6px] p-4 max-h-[60vh] overflow-auto">
                   <img
                     src={previewDoc.file_url}
                     alt="Preview"
@@ -406,7 +406,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
           )}
 
           {!previewDoc?.file_url && (
-            <div className="w-full h-96 bg-slate-800 rounded-lg flex items-center justify-center">
+            <div className="w-full h-96 bg-[var(--cf-surface)] rounded-[6px] flex items-center justify-center">
               <p className="text-muted-foreground">No hay documento disponible para previsualizar</p>
             </div>
           )}

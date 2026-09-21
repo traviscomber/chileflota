@@ -1,161 +1,96 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { ArrowRight, CheckCircle2, Clock, FileText, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle, FileText, Clock, AlertCircle, ArrowRight } from 'lucide-react'
+
+const items = [
+  {
+    icon: FileText,
+    title: 'Sube el documento correcto',
+    text: 'Selecciona el tipo documental y la fecha real del documento. PDF, JPG o PNG hasta 50 MB.',
+  },
+  {
+    icon: Clock,
+    title: 'Revisa el estado',
+    text: 'En revisión significa recibido correctamente. No necesitas volver a cargarlo mientras espera validación.',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Actúa sólo cuando corresponde',
+    text: 'Si está rechazado, vencido o próximo a vencer, revisa el motivo y reemplaza ese documento.',
+  },
+  {
+    icon: HelpCircle,
+    title: 'Consulta períodos anteriores',
+    text: 'Puedes filtrar por mes y año y también cargar documentación histórica. ChileFlota confirmará el período antes de guardar.',
+  },
+]
 
 export default function SubcontractorsOnboardingPage() {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-lg bg-orange-500/20 text-orange-400">
-            <FileText className="h-8 w-8" />
-          </div>
-          <h1 className="text-4xl font-bold text-white mb-4">Bienvenido al Portal</h1>
-          <p className="text-xl text-slate-300">Gestión integral de documentos y certificaciones</p>
-        </div>
+    <main className="min-h-screen bg-[var(--cf-canvas)] px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-3xl space-y-6">
+        <section className="border-b border-[var(--cf-border)] pb-5">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Portal Subcontratistas</p>
+          <h1 className="mt-2 text-[26px] font-semibold tracking-[-0.03em] text-[var(--cf-text)]">Cómo funciona ChileFlota</h1>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--cf-text-secondary)]">
+            Mantén la documentación de tu empresa al día, consulta períodos anteriores y corrige sólo lo que requiere acción.
+          </p>
+        </section>
 
-        {/* Welcome Message */}
-        <Card className="border-slate-700 bg-slate-800/50 mb-8">
-          <CardContent className="pt-6">
-            <p className="text-slate-200 text-lg leading-relaxed">
-              En este portal podrás subir, gestionar y monitorear todos los documentos requeridos por la empresa de transporte. 
-              Asegúrate de mantener tu documentación actualizada para poder operar sin inconvenientes.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Key Features Grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Upload Documents */}
-          <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800 transition-colors">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-orange-400" />
-                    Subir Documentos
-                  </CardTitle>
+        <section className="overflow-hidden rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+          <div className="divide-y divide-[var(--cf-border)]">
+            {items.map(({ icon: Icon, title, text }, index) => (
+              <div key={title} className="flex gap-4 p-4 sm:p-5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] bg-[var(--cf-surface-raised)] text-[var(--cf-text-secondary)]">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--cf-text-muted)]">0{index + 1}</p>
+                  <h2 className="mt-1 text-base font-semibold text-[var(--cf-text)]">{title}</h2>
+                  <p className="mt-1 text-sm leading-6 text-[var(--cf-text-secondary)]">{text}</p>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-slate-300">Sube todos los documentos requeridos de forma fácil y segura:</p>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li className="flex items-center gap-2">
-                  <span className="text-orange-400">•</span>
-                  Formatos: PDF, JPG, PNG
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-orange-400">•</span>
-                  Tamaño máximo: 50 MB por archivo
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-orange-400">•</span>
-                  Procesa automáticamente cada subida
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
+        </section>
 
-          {/* Monitor Status */}
-          <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800 transition-colors">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-400" />
-                Monitorear Estado
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-slate-300">Visualiza el estado de cada documento en tiempo real:</p>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
-                  <span><strong className="text-green-400">Aprobado</strong> = Validado y activo</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-blue-400"></span>
-                  <span><strong className="text-blue-400">Bajo revisión</strong> = Recibido y validando</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-red-400"></span>
-                  <span><strong className="text-red-400">Rechazado</strong> = Requiere acción</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+        <section className="rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4 sm:p-5">
+          <h2 className="text-base font-semibold text-[var(--cf-text)]">Estados que verás</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <State label="Aprobado" detail="Validado y vigente." tone="success" />
+            <State label="En revisión" detail="Recibido; no requiere nueva carga." tone="warning" />
+            <State label="Por vencer" detail="Renueva antes de perder vigencia." tone="expiring" />
+            <State label="Rechazado / vencido" detail="Revisa el motivo y reemplaza." tone="danger" />
+          </div>
+        </section>
 
-          {/* Important Dates */}
-          <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800 transition-colors">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-amber-400" />
-                Fechas de Vencimiento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-slate-300">Cada documento tiene un período de validez:</p>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li className="flex items-center gap-2">
-                  <span className="text-amber-400">•</span>
-                  Recibe recordatorios antes de vencer
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-amber-400">•</span>
-                  Renueva a tiempo para evitar suspensiones
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-amber-400">•</span>
-                  Mantén tu historial actualizado
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          {/* Support */}
-          <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800 transition-colors">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-400" />
-                Soporte y Ayuda
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-slate-300">Si tienes dudas o problemas:</p>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">•</span>
-                  Contacta con tu ejecutiva asignada
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">•</span>
-                  Revisa los motivos de rechazo
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-green-400">•</span>
-                  Responde a las solicitudes de información
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Action Button */}
-        <div className="flex justify-center">
-          <Button
-            onClick={() => router.push('/subcontractors/dashboard')}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 text-lg rounded-lg flex items-center gap-2 transition-all hover:shadow-lg"
-          >
-            Ir al Dashboard
-            <ArrowRight className="h-5 w-5" />
+        <div className="flex flex-col gap-3 border-t border-[var(--cf-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-[var(--cf-text-muted)]">Si necesitas ayuda, contacta a tu ejecutiva asignada.</p>
+          <Button onClick={() => router.push('/subcontractors/dashboard')}>
+            Ir a documentos <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
+    </main>
+  )
+}
+
+function State({ label, detail, tone }: { label: string; detail: string; tone: 'success' | 'warning' | 'expiring' | 'danger' }) {
+  const styles = {
+    success: 'bg-[var(--cf-success-soft)] text-[var(--cf-success)]',
+    warning: 'bg-[var(--cf-warning-soft)] text-[var(--cf-warning)]',
+    expiring: 'bg-[var(--cf-expiring-soft)] text-[var(--cf-expiring)]',
+    danger: 'bg-[var(--cf-danger-soft)] text-[var(--cf-danger)]',
+  }[tone]
+
+  return (
+    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-3">
+      <span className={`inline-flex rounded-[4px] px-2 py-0.5 text-xs font-medium ${styles}`}>{label}</span>
+      <p className="mt-2 text-xs text-[var(--cf-text-muted)]">{detail}</p>
     </div>
   )
 }

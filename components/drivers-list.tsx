@@ -142,15 +142,15 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
   const getDocumentStatusColor = (estado: string) => {
     switch (estado) {
       case 'aprobado':
-        return 'bg-green-600 text-white'
+        return 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
       case 'rechazado':
-        return 'bg-red-600 text-white'
+        return 'bg-[var(--cf-danger-soft)] text-[var(--cf-text)]'
       case 'pendiente':
-        return 'bg-yellow-600 text-white'
+        return 'bg-yellow-600 text-[var(--cf-text)]'
       case 'vencido':
-        return 'bg-orange-600 text-white'
+        return 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
       default:
-        return 'bg-slate-600 text-white'
+        return 'bg-[var(--cf-surface-raised)] text-[var(--cf-text)]'
     }
   }
 
@@ -173,36 +173,36 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
     <div className="w-full space-y-4">
       {/* Header Educativo */}
       <div className="space-y-3 mb-6">
-        <h2 className="text-2xl font-bold text-white">Gestión de Conductores</h2>
-        <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
+        <h2 className="text-2xl font-semibold text-[var(--cf-text)]">Gestión de Conductores</h2>
+        <p className="text-sm text-[var(--cf-text-muted)] max-w-2xl leading-relaxed">
           Monitorea licencias vigentes, estado de cumplimiento y actualización de documentos. Identifica conductores listos para operar o que necesitan atención inmediata.
         </p>
       </div>
 
       {/* Estadísticas Rápidas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-slate-900/50 border-slate-800">
+        <Card className="bg-[var(--cf-surface)]/50 border-[var(--cf-border)]">
           <CardContent className="p-3">
-            <div className="text-2xl font-bold text-white">{drivers.length}</div>
-            <p className="text-xs text-slate-400">Total de Conductores</p>
+            <div className="text-2xl font-semibold text-[var(--cf-text)]">{drivers.length}</div>
+            <p className="text-xs text-[var(--cf-text-muted)]">Total de Conductores</p>
           </CardContent>
         </Card>
-        <Card className="bg-green-900/20 border-green-800">
+        <Card className="bg-[var(--cf-success-soft)] border-green-800">
           <CardContent className="p-3">
-            <div className="text-2xl font-bold text-green-400">{drivers.filter(d => d.is_active).length}</div>
-            <p className="text-xs text-green-300">Activos</p>
+            <div className="text-2xl font-semibold text-[var(--cf-success)]">{drivers.filter(d => d.is_active).length}</div>
+            <p className="text-xs text-[var(--cf-success)]">Activos</p>
           </CardContent>
         </Card>
-        <Card className="bg-red-900/20 border-red-800">
+        <Card className="bg-[var(--cf-danger-soft)] border-red-800">
           <CardContent className="p-3">
-            <div className="text-2xl font-bold text-red-400">{drivers.filter(d => !d.is_active).length}</div>
-            <p className="text-xs text-red-300">Inactivos</p>
+            <div className="text-2xl font-semibold text-[var(--cf-danger)]">{drivers.filter(d => !d.is_active).length}</div>
+            <p className="text-xs text-[var(--cf-danger)]">Inactivos</p>
           </CardContent>
         </Card>
-        <Card className="bg-slate-900/50 border-slate-800">
+        <Card className="bg-[var(--cf-surface)]/50 border-[var(--cf-border)]">
           <CardContent className="p-3">
-            <div className="text-2xl font-bold text-white">{filteredDrivers.length}</div>
-            <p className="text-xs text-slate-400">Resultados de búsqueda</p>
+            <div className="text-2xl font-semibold text-[var(--cf-text)]">{filteredDrivers.length}</div>
+            <p className="text-xs text-[var(--cf-text-muted)]">Resultados de búsqueda</p>
           </CardContent>
         </Card>
       </div>
@@ -210,10 +210,10 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
       {/* Header with search and filters button */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <h3 className="text-lg font-semibold text-white">Buscar Conductores</h3>
+          <h3 className="text-lg font-semibold text-[var(--cf-text)]">Buscar Conductores</h3>
           <div className="flex gap-2">
             <div className="relative flex-1 md:max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cf-text-muted)]" />
               <Input
                 placeholder="Buscar por RUT, nombre, proveedor o patente..."
                 value={searchTerm}
@@ -223,7 +223,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--cf-text-muted)] hover:text-[var(--cf-text-muted)]"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -237,7 +237,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
               <Filter className="h-4 w-4" />
               Filtros
               {(selectedProviders.length > 0 || selectedStatus !== 'all') && (
-                <Badge className="ml-1 bg-orange-500 text-white">{selectedProviders.length + (selectedStatus !== 'all' ? 1 : 0)}</Badge>
+                <Badge className="ml-1 bg-[var(--cf-accent)] text-[var(--cf-text)]">{selectedProviders.length + (selectedStatus !== 'all' ? 1 : 0)}</Badge>
               )}
             </Button>
           </div>
@@ -245,10 +245,10 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
 
         {/* Advanced Filters con Tooltips */}
         {showAdvancedFilters && (
-          <div className="space-y-3 p-4 bg-slate-900 rounded-lg border border-slate-800">
+          <div className="space-y-3 p-4 bg-[var(--cf-surface)] rounded-[6px] border border-[var(--cf-border)]">
             {/* Status Filter */}
             <div>
-              <label className="text-sm font-semibold text-slate-300">Estado</label>
+              <label className="text-sm font-semibold text-[var(--cf-text-secondary)]">Estado</label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {[
                   { value: 'all', label: 'Todos' },
@@ -260,8 +260,8 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
                     onClick={() => setSelectedStatus(status.value as 'all' | 'active' | 'inactive')}
                     className={`px-3 py-1 rounded text-sm transition-colors ${
                       selectedStatus === status.value
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                        ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
+                        : 'bg-[var(--cf-surface)] text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]'
                     }`}
                   >
                     {status.label}
@@ -273,7 +273,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
             {/* Providers Filter */}
             {providers.length > 0 && (
               <div>
-                <label className="text-sm font-semibold text-slate-300">Proveedor/Subcontratista ({selectedProviders.length})</label>
+                <label className="text-sm font-semibold text-[var(--cf-text-secondary)]">Proveedor/Subcontratista ({selectedProviders.length})</label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {providers.filter((p): p is string => Boolean(p)).map((provider) => (
                     <button
@@ -281,8 +281,8 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
                       onClick={() => toggleProvider(provider)}
                       className={`px-3 py-1 rounded text-sm transition-colors ${
                         selectedProviders.includes(provider)
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                          ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
+                          : 'bg-[var(--cf-surface)] text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]'
                       }`}
                     >
                       {provider}
@@ -325,9 +325,9 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
           </div>
         </div>
       ) : (
-        <Card className="border-slate-700">
+        <Card className="border-[var(--cf-border)]">
           <CardContent className="p-8 text-center">
-            <p className="text-slate-400">No se encontraron conductores</p>
+            <p className="text-[var(--cf-text-muted)]">No se encontraron conductores</p>
           </CardContent>
         </Card>
       )}
@@ -335,60 +335,60 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
       {/* Driver Detail Modal */}
       {selectedDriver && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+          <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-6 shadow-none">
             <button
               onClick={() => setSelectedDriver(null)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-white"
+              className="absolute right-4 top-4 text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]"
             >
               <X className="h-5 w-5" />
             </button>
 
             <div className="space-y-4">
               <div>
-                <h3 className="text-2xl font-bold text-white">{selectedDriver.nombre}</h3>
-                <p className="font-mono text-sm text-amber-400">{selectedDriver.rut}</p>
+                <h3 className="text-2xl font-semibold text-[var(--cf-text)]">{selectedDriver.nombre}</h3>
+                <p className="font-mono text-sm text-[var(--cf-warning)]">{selectedDriver.rut}</p>
               </div>
 
-              <div className="space-y-3 border-t border-slate-700 pt-4">
+              <div className="space-y-3 border-t border-[var(--cf-border)] pt-4">
                 {selectedDriver.nombres && (
                   <div>
-                    <p className="text-xs font-semibold uppercase text-slate-400">Nombres</p>
-                    <p className="text-white">{selectedDriver.nombres}</p>
+                    <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">Nombres</p>
+                    <p className="text-[var(--cf-text)]">{selectedDriver.nombres}</p>
                   </div>
                 )}
 
                 {selectedDriver.apellido_paterno && (
                   <div>
-                    <p className="text-xs font-semibold uppercase text-slate-400">Apellido Paterno</p>
-                    <p className="text-white">{selectedDriver.apellido_paterno}</p>
+                    <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">Apellido Paterno</p>
+                    <p className="text-[var(--cf-text)]">{selectedDriver.apellido_paterno}</p>
                   </div>
                 )}
 
                 {selectedDriver.apellido_materno && (
                   <div>
-                    <p className="text-xs font-semibold uppercase text-slate-400">Apellido Materno</p>
-                    <p className="text-white">{selectedDriver.apellido_materno}</p>
+                    <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">Apellido Materno</p>
+                    <p className="text-[var(--cf-text)]">{selectedDriver.apellido_materno}</p>
                   </div>
                 )}
 
                 {selectedDriver.proveedor && (
                   <div>
-                    <p className="text-xs font-semibold uppercase text-slate-400">Proveedor</p>
-                    <p className="text-white">{selectedDriver.proveedor}</p>
+                    <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">Proveedor</p>
+                    <p className="text-[var(--cf-text)]">{selectedDriver.proveedor}</p>
                   </div>
                 )}
 
                 {selectedDriver.rut_proveedor && (
                   <div>
-                    <p className="text-xs font-semibold uppercase text-slate-400">RUT Proveedor</p>
-                    <p className="font-mono text-slate-300">{selectedDriver.rut_proveedor}</p>
+                    <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">RUT Proveedor</p>
+                    <p className="font-mono text-[var(--cf-text-secondary)]">{selectedDriver.rut_proveedor}</p>
                   </div>
                 )}
 
                 {selectedDriver.patente_tracto && (
                   <div>
-                    <p className="text-xs font-semibold uppercase text-slate-400">Patente Tracto</p>
-                    <p className="font-mono text-lg font-bold text-blue-400">
+                    <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">Patente Tracto</p>
+                    <p className="font-mono text-lg font-semibold text-[var(--cf-info)]">
                       {selectedDriver.patente_tracto}
                     </p>
                   </div>
@@ -396,16 +396,16 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
 
                 {selectedDriver.clase_licencia && (
                   <div>
-                    <p className="text-xs font-semibold uppercase text-slate-400">Clase Licencia</p>
-                    <p className="text-white">{selectedDriver.clase_licencia}</p>
+                    <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">Clase Licencia</p>
+                    <p className="text-[var(--cf-text)]">{selectedDriver.clase_licencia}</p>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 border-t border-slate-700 pt-4">
+                <div className="flex items-center gap-2 border-t border-[var(--cf-border)] pt-4">
                   {selectedDriver.is_active ? (
                     <Badge className="bg-emerald-500/20 text-emerald-300">Activo</Badge>
                   ) : (
-                    <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
+                    <Badge className="bg-[var(--cf-danger-soft)] text-[var(--cf-danger)]">Inactivo</Badge>
                   )}
                 </div>
               </div>

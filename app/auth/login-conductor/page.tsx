@@ -9,12 +9,12 @@ const ConductorLoginForm = dynamic(
     loading: () => (
       <div style={{
         minHeight: '100vh',
-        background: '#0f172a',
+        background: 'var(--cf-canvas)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: 'system-ui, sans-serif',
-        color: '#94a3b8',
+        fontFamily: 'var(--font-inter), system-ui, sans-serif',
+        color: 'var(--cf-text-muted)',
         fontSize: '14px',
       }}>
         Cargando...

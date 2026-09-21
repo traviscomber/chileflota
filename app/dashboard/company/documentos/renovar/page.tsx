@@ -122,9 +122,9 @@ export default function RenovarPage() {
   const nextToExpire = renewalDocuments[0]
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-[var(--cf-surface)]">
       <div className="max-w-6xl mx-auto">
-        <div className="border-b border-slate-800 bg-slate-950 sticky top-0 z-40">
+        <div className="border-b border-[var(--cf-border)] bg-[var(--cf-canvas)] sticky top-0 z-40">
           <div className="px-6 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Link href="/dashboard/company/documentos">
@@ -134,11 +134,11 @@ export default function RenovarPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                <h1 className="text-2xl font-semibold text-[var(--cf-text)] flex items-center gap-2">
                   <Calendar className="h-6 w-6 text-yellow-500" />
                   Próximos a Vencer
                 </h1>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-[var(--cf-text-muted)] mt-1">
                   Planificación de renovaciones por mes y año
                 </p>
               </div>
@@ -150,35 +150,35 @@ export default function RenovarPage() {
         </div>
 
         <div className="p-6 space-y-6">
-          <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+          <Card className="overflow-hidden border-[var(--cf-border)]/60 bg-none from-slate-950 via-slate-900 to-slate-800">
             <CardContent className="p-5 md:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
               <div className="space-y-3 max-w-2xl">
                 <div className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-xs font-medium text-yellow-300">
                   Renovaciones por planificar
                 </div>
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-white">Anticípate antes del vencimiento y ordena la agenda</h2>
-                  <p className="text-sm md:text-base text-slate-300 mt-2">
+                  <h2 className="text-2xl md:text-3xl font-semibold text-[var(--cf-text)]">Anticípate antes del vencimiento y ordena la agenda</h2>
+                  <p className="text-sm md:text-base text-[var(--cf-text-secondary)] mt-2">
                     Usa el período seleccionado para priorizar los documentos más cercanos a vencer y distribuir el trabajo con tiempo.
                   </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto lg:min-w-[34rem]">
-                <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-4">
+                <div className="rounded-[8px] border border-yellow-500/20 bg-yellow-500/10 px-4 py-4">
                   <p className="text-[10px] uppercase tracking-[0.25em] text-yellow-300/80">Próximos 30 días</p>
-                  <p className="mt-2 text-3xl font-bold text-yellow-200">{dueSoon}</p>
+                  <p className="mt-2 text-3xl font-semibold text-yellow-200">{dueSoon}</p>
                   <p className="mt-1 text-xs text-yellow-200/70">Lista prioritaria</p>
                 </div>
-                <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
-                  <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">Más cercano</p>
-                  <p className="mt-2 text-3xl font-bold text-white">
+                <div className="rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)]/70 px-4 py-4">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--cf-text-muted)]">Más cercano</p>
+                  <p className="mt-2 text-3xl font-semibold text-[var(--cf-text)]">
                     {nextToExpire?.days_until_expiration != null ? `${nextToExpire.days_until_expiration} días` : 'Sin datos'}
                   </p>
-                  <p className="mt-1 text-xs text-slate-400">Próxima ventana de trabajo</p>
+                  <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Próxima ventana de trabajo</p>
                 </div>
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4">
+                <div className="rounded-[8px] border border-emerald-500/20 bg-emerald-500/10 px-4 py-4">
                   <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Acción</p>
-                  <p className="mt-2 text-3xl font-bold text-emerald-200">Planificar renovaciones</p>
+                  <p className="mt-2 text-3xl font-semibold text-emerald-200">Planificar renovaciones</p>
                   <p className="mt-1 text-xs text-emerald-200/70">Sin perder plazo</p>
                 </div>
               </div>
@@ -187,19 +187,19 @@ export default function RenovarPage() {
 
           <div className="flex flex-wrap gap-2">
             <Link href="/dashboard/company/documentos/vencidos">
-              <Button variant="outline" size="sm" className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10">
+              <Button variant="outline" size="sm" className="gap-2 border-red-500/30 text-[var(--cf-danger)] hover:bg-[var(--cf-danger-soft)]">
                 Ver vencidos
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/dashboard/company/reportes">
-              <Button variant="outline" size="sm" className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800">
+              <Button variant="outline" size="sm" className="gap-2 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface)]">
                 Ver reportes
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/dashboard/company/documentos">
-              <Button variant="outline" size="sm" className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800">
+              <Button variant="outline" size="sm" className="gap-2 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface)]">
                 Volver a documentos
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -212,56 +212,56 @@ export default function RenovarPage() {
             onClear={() => update({ month: ALL_VALUE, year: ALL_VALUE })}
           />
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[var(--cf-surface)] border-[var(--cf-border)]">
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-[var(--cf-text)] flex items-center gap-2">
                   <Clock3 className="h-5 w-5 text-yellow-400" />
                   Renovaciones por período
                 </CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardDescription className="text-[var(--cf-text-muted)]">
                   Mostrando documentos con vencimiento futuro para {filterLabel}
                 </CardDescription>
               </div>
               <div className="text-right">
-                <p className="text-xs uppercase tracking-wide text-slate-500">A renovar pronto</p>
-                <p className="text-2xl font-bold text-yellow-400">{dueSoon}</p>
+                <p className="text-xs uppercase tracking-wide text-[var(--cf-text-muted)]">A renovar pronto</p>
+                <p className="text-2xl font-semibold text-yellow-400">{dueSoon}</p>
               </div>
             </CardHeader>
           </Card>
 
           {isLoading ? (
-            <Card className="bg-slate-800/50 border-slate-700 text-center py-12">
+            <Card className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-center py-12">
               <CardContent>
-                <p className="text-slate-400">Cargando documentos por renovar...</p>
+                <p className="text-[var(--cf-text-muted)]">Cargando documentos por renovar...</p>
               </CardContent>
             </Card>
           ) : error ? (
-            <Card className="bg-slate-800/50 border-slate-700 text-center py-12">
+            <Card className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-center py-12">
               <CardContent>
-                <p className="text-red-300">{error}</p>
+                <p className="text-[var(--cf-danger)]">{error}</p>
               </CardContent>
             </Card>
           ) : renewalDocuments.length === 0 ? (
-            <Card className="bg-slate-800/50 border-slate-700 text-center py-12">
+            <Card className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-center py-12">
               <CardContent>
                 <div className="flex flex-col items-center gap-4">
-                  <Calendar className="h-12 w-12 text-slate-500" />
+                  <Calendar className="h-12 w-12 text-[var(--cf-text-muted)]" />
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Sin documentos por renovar</h3>
-                    <p className="text-slate-400 mt-2">
+                    <h3 className="text-lg font-semibold text-[var(--cf-text)]">Sin documentos por renovar</h3>
+                    <p className="text-[var(--cf-text-muted)] mt-2">
                       No hay documentos futuros para el período seleccionado.
                     </p>
                   </div>
                   <div className="flex flex-wrap justify-center gap-2 pt-2">
                     <Link href="/dashboard/company/documentos/vencidos">
-                      <Button variant="outline" size="sm" className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10">
+                      <Button variant="outline" size="sm" className="gap-2 border-red-500/30 text-[var(--cf-danger)] hover:bg-[var(--cf-danger-soft)]">
                         Ver vencidos
                         <ArrowRight className="h-4 w-4" />
                       </Button>
                     </Link>
                     <Link href="/dashboard/company/reportes">
-                      <Button variant="outline" size="sm" className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800">
+                      <Button variant="outline" size="sm" className="gap-2 border-[var(--cf-border)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface)]">
                         Ver reportes
                         <ArrowRight className="h-4 w-4" />
                       </Button>

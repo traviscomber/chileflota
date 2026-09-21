@@ -50,62 +50,31 @@ export default function ConductorLoginForm() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-    }}>
-      <div style={{ width: '100%', maxWidth: '420px' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 8px 0' }}>
-            Transportes Labbe
-          </h1>
-          <p style={{ fontSize: '15px', color: '#cbd5e1', margin: '0' }}>
-            Portal para Conductores
-          </p>
+    <main className="flex min-h-screen items-center justify-center bg-[var(--cf-canvas)] px-4 py-10">
+      <section className="w-full max-w-[420px]">
+        <div className="mb-8">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">ChileFlota</p>
+          <h1 className="mt-3 text-[26px] font-semibold tracking-[-0.03em] text-[var(--cf-text)]">Portal Conductores</h1>
+          <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">Transportes Labbé</p>
         </div>
 
-        {/* Card */}
-        <div style={{
-          background: 'rgba(30, 41, 59, 0.5)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid #334155',
-          borderRadius: '12px',
-          padding: '32px',
-        }}>
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', margin: '0 0 8px 0' }}>
-              Inicia Sesión
-            </h2>
-            <p style={{ fontSize: '14px', color: '#94a3b8', margin: '0' }}>
-              Ingresa tu RUT y contraseña para acceder a tu portal
-            </p>
+        <div className="rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-6 sm:p-7">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-[var(--cf-text)]">Iniciar sesión</h2>
+            <p className="mt-1 text-sm leading-6 text-[var(--cf-text-secondary)]">Ingresa tu RUT y contraseña para acceder.</p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div style={{
-                background: 'rgba(127, 29, 29, 0.2)',
-                border: '1px solid rgba(220, 38, 38, 0.5)',
-                borderRadius: '8px',
-                padding: '12px',
-                fontSize: '14px',
-                color: '#fca5a5',
-              }}>
+              <div className="rounded-[6px] border border-[var(--cf-danger)]/40 bg-[var(--cf-danger-soft)] px-3 py-2.5 text-sm text-[var(--cf-danger)]">
                 {error}
               </div>
             )}
 
             <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#e2e8f0', marginBottom: '8px' }}>
-                RUT
-              </label>
+              <label htmlFor="conductor-rut" className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">RUT</label>
               <input
+                id="conductor-rut"
                 suppressHydrationWarning
                 type="text"
                 placeholder="12345678-9"
@@ -113,30 +82,16 @@ export default function ConductorLoginForm() {
                 onChange={(e) => setRut(e.target.value)}
                 required
                 autoComplete="username"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: '#0f172a',
-                  border: '1px solid #334155',
-                  borderRadius: '6px',
-                  color: '#e2e8f0',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                }}
+                className="h-11 w-full rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] px-3.5 text-sm text-[var(--cf-text)] outline-none placeholder:text-[var(--cf-text-muted)] focus:border-[var(--cf-focus-ring)] focus:ring-1 focus:ring-[var(--cf-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isLoading}
               />
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px', margin: '6px 0 0 0' }}>
-                Ejemplo: 12345678-9 (sin puntos, solo guion)
-              </p>
+              <p className="mt-1.5 text-xs text-[var(--cf-text-muted)]">Sin puntos, con guion.</p>
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#e2e8f0', marginBottom: '8px' }}>
-                Contraseña
-              </label>
+              <label htmlFor="conductor-password" className="mb-2 block text-sm font-medium text-[var(--cf-text-secondary)]">Contraseña</label>
               <input
+                id="conductor-password"
                 suppressHydrationWarning
                 type="password"
                 placeholder="Ingresa tu contraseña"
@@ -144,87 +99,27 @@ export default function ConductorLoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: '#0f172a',
-                  border: '1px solid #334155',
-                  borderRadius: '6px',
-                  color: '#e2e8f0',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                }}
+                className="h-11 w-full rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] px-3.5 text-sm text-[var(--cf-text)] outline-none placeholder:text-[var(--cf-text-muted)] focus:border-[var(--cf-focus-ring)] focus:ring-1 focus:ring-[var(--cf-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isLoading}
               />
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>
-                Usa la clave entregada por tu ejecutiva.
-              </p>
+              <p className="mt-1.5 text-xs text-[var(--cf-text-muted)]">Usa la clave entregada por tu ejecutiva.</p>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              style={{
-                background: isLoading ? '#1d4ed8' : '#3b82f6',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '12px',
-                fontSize: '15px',
-                fontWeight: '600',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                opacity: isLoading ? 0.7 : 1,
-                transition: 'all 0.2s',
-                fontFamily: 'inherit',
-              }}
+              className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[var(--cf-accent)] px-4 text-sm font-medium text-[var(--cf-text)] transition-colors hover:bg-[var(--cf-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--cf-focus-ring)] focus:ring-offset-2 focus:ring-offset-[var(--cf-surface)] disabled:cursor-not-allowed disabled:bg-[var(--cf-accent-soft)] disabled:text-[var(--cf-text-muted)]"
             >
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {isLoading ? 'Ingresando…' : 'Ingresar'}
             </button>
           </form>
-
-          <div style={{
-            marginTop: '24px',
-            padding: '16px',
-            background: 'rgba(15, 23, 42, 0.8)',
-            borderRadius: '6px',
-            border: '1px solid #334155',
-            fontSize: '13px',
-            color: '#94a3b8',
-            lineHeight: '1.6',
-          }}>
-            <strong style={{ color: '#e2e8f0', display: 'block', marginBottom: '8px' }}>📋 Instrucciones de Login:</strong>
-            <ul style={{ margin: '0', paddingLeft: '16px' }}>
-              <li>
-                <strong style={{ color: '#cbd5e1' }}>RUT:</strong> Sin puntos, solo con guion (ej: 12345678-9)
-              </li>
-              <li style={{ marginTop: '6px' }}>
-                <strong style={{ color: '#cbd5e1' }}>Contraseña:</strong> ingresa la clave entregada por tu ejecutiva.
-              </li>
-            </ul>
-          </div>
-
-          <div style={{
-            marginTop: '16px',
-            padding: '16px',
-            background: 'rgba(15, 23, 42, 0.8)',
-            borderRadius: '6px',
-            border: '1px solid #334155',
-            fontSize: '13px',
-            color: '#94a3b8',
-            lineHeight: '1.6',
-          }}>
-            <strong style={{ color: '#e2e8f0' }}>¿Nuevo conductor?</strong> Contacta a tu ejecutiva de Transportes Labbe para crear tu cuenta.
-          </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '32px' }}>
-          <a href="/login" style={{ color: '#60a5fa', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>
-            Inicia sesión como empresa
-          </a>
+        <div className="mt-5 flex items-center justify-between gap-4 text-xs text-[var(--cf-text-muted)]">
+          <span>¿Nuevo conductor? Contacta a tu ejecutiva.</span>
+          <a href="/login" className="font-medium text-[var(--cf-text-secondary)] hover:text-[var(--cf-text)]">Acceso empresa</a>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }

@@ -1,17 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState } from 'react'
+import { AlertCircle, BookOpen, CheckCircle, FileText, Loader2, Upload } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { Upload, CheckCircle, AlertCircle, Loader2, FileText, ArrowRight, BookOpen, HelpCircle } from 'lucide-react'
-import Link from 'next/link'
 import { DocumentReferenceGallery } from '@/components/documents/document-reference-gallery'
 import { DocumentRequirements } from '@/components/documents/document-requirements'
-import { HelpBox, QuickHelp } from '@/components/ui/help-box'
 
 export default function DocumentValidatorPage() {
   const [activeTab, setActiveTab] = useState('upload')
@@ -22,16 +18,15 @@ export default function DocumentValidatorPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      setUploadedFile(file)
-      setError(null)
-      setResult(null)
-    }
+    if (!file) return
+    setUploadedFile(file)
+    setError(null)
+    setResult(null)
   }
 
   const handleUpload = async () => {
     if (!uploadedFile) {
-      setError('Por favor selecciona un archivo')
+      setError('Selecciona un archivo antes de procesar.')
       return
     }
 
@@ -39,18 +34,9 @@ export default function DocumentValidatorPage() {
     try {
       const formData = new FormData()
       formData.append('file', uploadedFile)
-
-      const response = await fetch('/api/ocr/process', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('Error procesando documento')
-      }
-
-      const data = await response.json()
-      setResult(data)
+      const response = await fetch('/api/ocr/process', { method: 'POST', body: formData })
+      if (!response.ok) throw new Error('Error procesando documento')
+      setResult(await response.json())
       setActiveTab('results')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -60,237 +46,119 @@ export default function DocumentValidatorPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-[#18181B]">Validación Documental con IA</h1>
-        <p className="text-[#71717A]">
-          Carga documentos de transporte para validar automáticamente con IA
-        </p>
-      </div>
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+      <section className="border-b border-[var(--cf-border)] pb-5">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">OCR documental</p>
+        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[var(--cf-text)]">Validación documental</h1>
+        <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">Carga evidencia, procesa el archivo y revisa los datos extraídos.</p>
+      </section>
 
-      {/* Ayuda Educativa Principal */}
-      <HelpBox
-        variant="steps"
-        title="Como subir y validar un documento"
-        description="Sigue estos pasos simples para que el sistema lea tu documento automaticamente:"
-        steps={[
-          {
-            step: 1,
-            title: "Selecciona la pestaña 'Cargar Documento'",
-            description: "Haz clic en la primera pestaña de arriba si no esta seleccionada."
-          },
-          {
-            step: 2,
-            title: "Sube tu archivo",
-            description: "Haz clic en el area gris con lineas punteadas, o arrastra tu documento ahi. Puede ser una foto (JPG, PNG) o un PDF."
-          },
-          {
-            step: 3,
-            title: "Presiona 'Procesar Documento'",
-            description: "El boton azul enviara tu documento a nuestra IA que leera los datos automaticamente."
-          },
-          {
-            step: 4,
-            title: "Revisa los resultados",
-            description: "Veras los datos extraidos en la pestaña 'Resultados'. Verifica que esten correctos."
-          }
-        ]}
-      />
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="upload">Cargar Documento</TabsTrigger>
-          <TabsTrigger value="guia" className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            Galería
-          </TabsTrigger>
-          <TabsTrigger value="requisitos" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Requisitos
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4 rounded-[6px] bg-[var(--cf-surface)] p-1">
+          <TabsTrigger value="upload">Cargar</TabsTrigger>
+          <TabsTrigger value="guia"><BookOpen className="mr-1 h-4 w-4" />Galería</TabsTrigger>
+          <TabsTrigger value="requisitos"><FileText className="mr-1 h-4 w-4" />Requisitos</TabsTrigger>
           <TabsTrigger value="results">Resultados</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upload" className="space-y-6">
-          <Card className="border-[#E4E4E7]">
+        <TabsContent value="upload" className="mt-5">
+          <Card>
             <CardHeader>
-              <CardTitle>Subir Documento</CardTitle>
-              <CardDescription>
-                Archivos aceptados: PDF, JPG, PNG. Tamaño maximo: 10MB.
-              </CardDescription>
+              <CardTitle>Subir documento</CardTitle>
+              <CardDescription>PDF, JPG o PNG. Tamaño máximo: 10 MB.</CardDescription>
             </CardHeader>
-            
-            {/* Ayuda contextual para subir */}
-            <div className="px-6 pb-2">
-              <QuickHelp text="Haz clic en el cuadro gris de abajo para buscar tu archivo, o simplemente arrastralo desde tu computador hacia el cuadro." />
-            </div>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 border-[#E4E4E7]">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 text-[#71717A] mb-2" />
-                    <p className="mb-2 text-sm text-[#71717A]">
-                      <span className="font-semibold">Haz clic aqui para elegir tu archivo</span>
-                    </p>
-                    <p className="text-sm text-[#71717A] mb-1">o arrastra el documento hacia este cuadro</p>
-                    <p className="text-xs text-[#A1A1A1]">Formatos: PDF, JPG, PNG (Tamaño maximo: 10MB)</p>
-                  </div>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    onChange={handleFileChange}
-                    accept=".pdf,.jpg,.jpeg,.png"
-                  />
-                </label>
-              </div>
+              <label className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-[6px] border border-dashed border-[var(--cf-border)] bg-[var(--cf-canvas)] px-6 text-center hover:bg-[var(--cf-surface-raised)]">
+                <Upload className="h-6 w-6 text-[var(--cf-text-muted)]" />
+                <p className="mt-3 text-sm font-medium text-[var(--cf-text)]">Selecciona o arrastra un archivo</p>
+                <p className="mt-1 text-xs text-[var(--cf-text-muted)]">PDF, JPG o PNG · máximo 10 MB</p>
+                <input type="file" className="hidden" onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" />
+              </label>
 
               {uploadedFile && (
-                <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-green-900">{uploadedFile.name}</p>
-                    <p className="text-xs text-green-700">{(uploadedFile.size / 1024).toFixed(2)} KB</p>
+                <div className="flex items-center gap-3 rounded-[6px] border border-[var(--cf-success)]/35 bg-[var(--cf-success-soft)] px-3 py-2.5">
+                  <CheckCircle className="h-4 w-4 text-[var(--cf-success)]" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[var(--cf-text)]">{uploadedFile.name}</p>
+                    <p className="text-xs text-[var(--cf-text-muted)]">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
                   </div>
                 </div>
               )}
 
               {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert className="border-[var(--cf-danger)]/40 bg-[var(--cf-danger-soft)]">
+                  <AlertCircle className="h-4 w-4 text-[var(--cf-danger)]" />
+                  <AlertDescription className="text-[var(--cf-danger)]">{error}</AlertDescription>
                 </Alert>
               )}
 
-              {/* Ayuda antes del boton */}
-              {uploadedFile && (
-                <QuickHelp text="Perfecto, tu archivo esta listo. Ahora presiona el boton azul de abajo para que la IA lea los datos del documento." />
-              )}
-
-              <Button
-                onClick={handleUpload}
-                disabled={!uploadedFile || loading}
-                className="w-full bg-[#0066FF] text-white hover:bg-[#0052CC] h-12 text-base"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Procesando documento... espera un momento
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Procesar Documento con IA
-                  </>
-                )}
+              <Button onClick={handleUpload} disabled={!uploadedFile || loading} className="w-full sm:w-auto">
+                {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Procesando…</> : <><Upload className="h-4 w-4" />Procesar documento</>}
               </Button>
-              
-              {!uploadedFile && (
-                <p className="text-center text-sm text-muted-foreground">
-                  Primero selecciona un archivo arriba para activar este boton
-                </p>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="guia" className="space-y-6">
-          <Card className="border-[#E4E4E7]">
+        <TabsContent value="guia" className="mt-5">
+          <Card>
             <CardHeader>
-              <CardTitle>Galería de Documentos Logísticos</CardTitle>
-              <CardDescription>
-                Ejemplos visuales de los documentos de transporte más comunes. Haz clic en cualquiera para ampliar.
-              </CardDescription>
+              <CardTitle>Galería de referencia</CardTitle>
+              <CardDescription>Ejemplos visuales de documentos de transporte.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <DocumentReferenceGallery />
-            </CardContent>
+            <CardContent><DocumentReferenceGallery /></CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="requisitos" className="space-y-6">
-          <Card className="border-[#E4E4E7]">
+        <TabsContent value="requisitos" className="mt-5">
+          <Card>
             <CardHeader>
-              <CardTitle>Información de Documentos</CardTitle>
-              <CardDescription>
-                Requisitos detallados para cada documento obligatorio en normativas de transporte.
-              </CardDescription>
+              <CardTitle>Requisitos documentales</CardTitle>
+              <CardDescription>Información requerida para cada tipo de documento.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <DocumentRequirements />
-            </CardContent>
+            <CardContent><DocumentRequirements /></CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="results" className="space-y-6">
+        <TabsContent value="results" className="mt-5">
           {result ? (
-            <Card className="border-[#E4E4E7]">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  Documento Validado
+                  <CheckCircle className="h-4 w-4 text-[var(--cf-success)]" />
+                  Resultado de extracción
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4">
+              <CardContent className="space-y-5">
+                <div className="divide-y divide-[var(--cf-border)] border-y border-[var(--cf-border)]">
                   {result.extractedData && Object.entries(result.extractedData).map(([key, value]) => (
-                    <div key={key} className="flex justify-between items-start border-b pb-3">
-                      <span className="text-sm font-medium text-[#71717A] capitalize">
-                        {key.replace(/_/g, ' ')}
-                      </span>
-                      <span className="text-sm text-[#18181B] font-semibold">
-                        {String(value)}
-                      </span>
+                    <div key={key} className="flex items-start justify-between gap-6 py-3">
+                      <span className="text-sm text-[var(--cf-text-muted)]">{key.replace(/_/g, ' ')}</span>
+                      <span className="text-right text-sm font-medium text-[var(--cf-text)]">{String(value)}</span>
                     </div>
                   ))}
                 </div>
 
                 {result.validationStatus && (
-                  <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm text-green-900">
-                      <span className="font-semibold">Estado:</span> {result.validationStatus}
-                    </p>
+                  <div className="rounded-[6px] border border-[var(--cf-success)]/35 bg-[var(--cf-success-soft)] px-3 py-2.5 text-sm text-[var(--cf-success)]">
+                    Estado: {result.validationStatus}
                   </div>
                 )}
 
-                <Button
-                  onClick={() => {
-                    setUploadedFile(null)
-                    setResult(null)
-                    setActiveTab('upload')
-                  }}
-                  className="w-full"
-                  variant="outline"
-                >
-                  Procesar Otro Documento
+                <Button variant="outline" onClick={() => { setUploadedFile(null); setResult(null); setActiveTab('upload') }}>
+                  Procesar otro documento
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-[#E4E4E7]">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <FileText className="w-12 h-12 text-[#A1A1A1] mb-4" />
-                <p className="text-lg font-medium text-[#71717A]">Sin resultados</p>
-                <p className="text-sm text-[#A1A1A1] mt-2">
-                  Carga un documento para ver los resultados aquí
-                </p>
+            <Card>
+              <CardContent className="py-10 text-center">
+                <FileText className="mx-auto h-5 w-5 text-[var(--cf-text-muted)]" />
+                <p className="mt-2 text-sm text-[var(--cf-text-secondary)]">Aún no hay resultados.</p>
               </CardContent>
             </Card>
           )}
         </TabsContent>
       </Tabs>
-
-      <HelpBox
-        variant="tip"
-        title="Consejos para mejores resultados"
-        tips={[
-          "Asegurate de que la foto del documento este bien iluminada y no tenga sombras.",
-          "El documento debe verse completo en la imagen, sin partes cortadas.",
-          "Si el documento tiene varias paginas, sube cada pagina por separado.",
-          "Los formatos aceptados son: PDF, JPG y PNG. El tamaño maximo es 10MB.",
-          "Puedes usar la pestaña 'Galeria' para ver ejemplos de como se ven los documentos chilenos.",
-          "La pestaña 'Requisitos' te explica que informacion debe tener cada tipo de documento."
-        ]}
-      />
     </div>
   )
 }

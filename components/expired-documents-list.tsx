@@ -59,7 +59,7 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
       
       // Show success message
       const msg = document.createElement('div')
-      msg.className = 'fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] flex items-center gap-2'
+      msg.className = 'fixed bottom-4 right-4 bg-[var(--cf-danger-soft)] text-[var(--cf-text)] px-6 py-3 rounded-[6px] shadow-none z-[100] flex items-center gap-2'
       msg.innerHTML = `<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Notificación urgente enviada a ${conductorEmail}`
       document.body.appendChild(msg)
       setTimeout(() => msg.remove(), 4000)
@@ -78,9 +78,9 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
   return (
     <div className="space-y-4">
       {sortedDocs.length === 0 ? (
-        <Card className="bg-slate-800/50 border-slate-700 text-center py-12">
+        <Card className="bg-[var(--cf-surface)] border-[var(--cf-border)] text-center py-12">
           <CardContent>
-            <p className="text-slate-400">No hay documentos vencidos</p>
+            <p className="text-[var(--cf-text-muted)]">No hay documentos vencidos</p>
           </CardContent>
         </Card>
       ) : (
@@ -96,8 +96,8 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
           // Color intensity based on how overdue
           const isVeryCritical = doc.days_overdue > 90
           const isCritical = doc.days_overdue > 30
-          const borderColor = isVeryCritical ? 'border-red-600' : isCritical ? 'border-orange-600' : 'border-red-600/50'
-          const bgColor = isVeryCritical ? 'bg-red-900/20' : isCritical ? 'bg-orange-900/20' : 'bg-red-900/10'
+          const borderColor = isVeryCritical ? 'border-[var(--cf-danger)]/40' : isCritical ? 'border-[var(--cf-expiring)]/40' : 'border-[var(--cf-danger)]/40/50'
+          const bgColor = isVeryCritical ? 'bg-[var(--cf-danger-soft)]' : isCritical ? 'bg-[var(--cf-expiring-soft)]' : 'bg-[var(--cf-danger-soft)]'
 
           return (
             <Card key={doc.id} className={`${bgColor} border-l-4 ${borderColor} hover:border-red-500 transition-colors`}>
@@ -106,11 +106,11 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
                   <div className="flex-1 space-y-3">
                     {/* Document info */}
                     <div>
-                      <p className="font-medium text-white flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-slate-400" />
+                      <p className="font-medium text-[var(--cf-text)] flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-[var(--cf-text-muted)]" />
                         {doc.original_filename || doc.document_type || 'Sin nombre'}
                       </p>
-                      <p className="text-sm text-slate-400 mt-1">
+                      <p className="text-sm text-[var(--cf-text-muted)] mt-1">
                         Tipo: {doc.document_type || 'Desconocido'}
                       </p>
                     </div>
@@ -118,13 +118,13 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
                     {/* Conductor info */}
                     {conductor && (
                       <div className="text-sm">
-                        <p className="text-slate-400">
-                          Conductor: <span className="text-slate-200 font-medium">
+                        <p className="text-[var(--cf-text-muted)]">
+                          Conductor: <span className="text-[var(--cf-text-secondary)] font-medium">
                             {conductor.nombres} {conductor.apellido_paterno}
                           </span>
                         </p>
-                        <p className="text-slate-400">
-                          RUT: <span className="text-slate-200 font-medium">{conductor.rut}</span>
+                        <p className="text-[var(--cf-text-muted)]">
+                          RUT: <span className="text-[var(--cf-text-secondary)] font-medium">{conductor.rut}</span>
                         </p>
                       </div>
                     )}
@@ -133,17 +133,17 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
                     <div className="flex items-center gap-4 pt-2 flex-wrap">
                       <div className={`flex items-center gap-2 px-3 py-1 rounded-md ${
                         isVeryCritical 
-                          ? 'bg-red-600 text-white' 
+                          ? 'bg-[var(--cf-danger-soft)] text-[var(--cf-text)]' 
                           : isCritical 
-                            ? 'bg-orange-600 text-white' 
-                            : 'bg-red-900/50 text-red-200'
+                            ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]' 
+                            : 'bg-[var(--cf-danger-soft)] text-[var(--cf-danger)]'
                       }`}>
                         <Flame className="h-4 w-4" />
                         <span className="text-sm font-bold">
                           {doc.days_overdue} días atrasado
                         </span>
                       </div>
-                      <p className="text-sm text-red-300">
+                      <p className="text-sm text-[var(--cf-danger)]">
                         Vencido desde: <span className="font-medium">{formattedDate}</span>
                       </p>
                     </div>
@@ -162,7 +162,7 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
                     </Button>
                     <Button
                       size="sm"
-                      className="gap-1 bg-red-600 hover:bg-red-700 text-white"
+                      className="gap-1 bg-[var(--cf-danger-soft)] hover:bg-red-700 text-[var(--cf-text)]"
                       onClick={() => handleForceRenewalRequest(conductor?.id || '', conductor?.rut || '')}
                       disabled={loading === conductor?.id}
                     >
@@ -181,12 +181,12 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
       {previewDoc && (
         <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
           <DialogContent 
-            className="bg-slate-900 border-slate-700 max-w-2xl"
+            className="bg-[var(--cf-surface)] border-[var(--cf-border)] max-w-2xl"
             onPointerDownOutside={(e) => e.preventDefault()}
           >
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+              <DialogTitle className="text-[var(--cf-text)] flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-[var(--cf-danger)]" />
                 Vista previa: {previewDoc.original_filename || previewDoc.document_type}
               </DialogTitle>
             </DialogHeader>
@@ -196,25 +196,25 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
                 {previewDoc.file_url.toLowerCase().endsWith('.pdf') ? (
                   <iframe
                     src={previewDoc.file_url}
-                    className="w-full h-96 border border-slate-700 rounded"
+                    className="w-full h-96 border border-[var(--cf-border)] rounded"
                     title="Preview"
                   />
                 ) : previewDoc.file_url.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/i) ? (
                   <img
                     src={previewDoc.file_url}
                     alt="Preview"
-                    className="w-full rounded border border-slate-700"
+                    className="w-full rounded border border-[var(--cf-border)]"
                   />
                 ) : (
-                  <div className="bg-slate-800 p-6 rounded border border-slate-700 text-center">
-                    <p className="text-slate-400">
+                  <div className="bg-[var(--cf-surface)] p-6 rounded border border-[var(--cf-border)] text-center">
+                    <p className="text-[var(--cf-text-muted)]">
                       Tipo de archivo no soportado para vista previa
                     </p>
                       <a
                         href={buildDocumentAccessUrl(previewDoc.file_url, 'preview')}
                         target="_blank"
                         rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline mt-2 block"
+                      className="text-[var(--cf-info)] hover:underline mt-2 block"
                     >
                       Descargar archivo
                     </a>
@@ -222,8 +222,8 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
                 )}
               </div>
             ) : (
-              <div className="bg-slate-800 p-6 rounded border border-slate-700 text-center">
-                <p className="text-slate-400">No hay archivo disponible</p>
+              <div className="bg-[var(--cf-surface)] p-6 rounded border border-[var(--cf-border)] text-center">
+                <p className="text-[var(--cf-text-muted)]">No hay archivo disponible</p>
               </div>
             )}
           </DialogContent>
