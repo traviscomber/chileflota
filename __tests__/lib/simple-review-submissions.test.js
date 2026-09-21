@@ -47,7 +47,8 @@ describe('simple subcontractor review submissions', () => {
     const source = read('components/document-manager-hub.tsx')
     expect(source).not.toContain('Versiones anteriores')
     expect(source).not.toContain('Una versión activa por requisito')
-    expect(source).toContain('Cada carga se revisa como evidencia independiente')
+    expect(source).toContain('Estados de revisión de la cartera documental')
+    expect(source).toContain('En subcontratistas, cada carga conserva su propio estado de revisión')
     expect(source).toContain('La vigencia operacional se calcula por separado en Compliance')
   })
 
