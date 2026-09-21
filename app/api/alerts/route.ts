@@ -3,7 +3,7 @@ import { verifyAuth } from "@/lib/auth-middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { resolveExecutiveCompanyIds } from "@/lib/executive-scope"
-import { isDisplayRelevantAlert, isDocumentUploadAlert } from "@/lib/alerts/relevance"
+import { isDisplayRelevantAlert, isDocumentStatusChangeAlert, isDocumentUploadAlert } from "@/lib/alerts/relevance"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 30
@@ -314,11 +314,55 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const statusChangeAlerts = prefilteredAlerts.filter((alert) => isDocumentStatusChangeAlert(alert))
+    const uploadedStatusIds = Array.from(new Set(
+      statusChangeAlerts
+        .filter((alert) => String(alert.metadata?.document_table || '') === 'uploaded_documents')
+        .map((alert) => String(alert.document_id || alert.metadata?.document_id || ''))
+        .filter(Boolean),
+    ))
+    const subcontractorStatusIds = Array.from(new Set(
+      statusChangeAlerts
+        .filter((alert) => String(alert.metadata?.document_table || '') === 'subcontractor_documents')
+        .map((alert) => String(alert.document_id || alert.metadata?.document_id || ''))
+        .filter(Boolean),
+    ))
+
+    const currentDocumentStatuses = new Map<string, string>()
+    if (uploadedStatusIds.length > 0) {
+      const { data: docs = [] } = await supabase
+        .from('uploaded_documents')
+        .select('id,validation_status,is_current')
+        .in('id', uploadedStatusIds)
+      for (const doc of docs || []) {
+        if (doc.id && doc.is_current === true) currentDocumentStatuses.set(doc.id, String(doc.validation_status || ''))
+      }
+    }
+    if (subcontractorStatusIds.length > 0) {
+      const { data: docs = [] } = await supabase
+        .from('subcontractor_documents')
+        .select('id,status,is_current')
+        .in('id', subcontractorStatusIds)
+      for (const doc of docs || []) {
+        if (doc.id && doc.is_current === true) currentDocumentStatuses.set(doc.id, String(doc.status || ''))
+      }
+    }
+
     const combined = prefilteredAlerts
       .filter((alert) => {
-        if (!isDocumentUploadAlert(alert)) return true
-        const documentId = String(alert.document_id || alert.metadata?.document_id || '')
-        return Boolean(documentId && actionableUploadDocumentIds.has(documentId))
+        if (isDocumentUploadAlert(alert)) {
+          const documentId = String(alert.document_id || alert.metadata?.document_id || '')
+          return Boolean(documentId && actionableUploadDocumentIds.has(documentId))
+        }
+
+        if (isDocumentStatusChangeAlert(alert)) {
+          const documentId = String(alert.document_id || alert.metadata?.document_id || '')
+          const expectedStatus = String(alert.metadata?.status || '')
+          if (!documentId || !expectedStatus) return false
+          return currentDocumentStatuses.get(documentId) === expectedStatus
+        }
+
+        return true
       })
       .filter((alert) => !ejecutiva || alert.ejecutiva_asignada === ejecutiva)
       .filter((alert) => !priorityMode || isOperationalPriorityAlert(alert))
