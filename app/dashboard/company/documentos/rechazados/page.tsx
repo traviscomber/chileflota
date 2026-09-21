@@ -10,8 +10,10 @@ import { ExecutiveCoverageControl } from '@/components/executive-coverage-contro
 
 export default function RechazadosPage() {
   const searchParams = useSearchParams()
-  const requestQuery = searchParams.toString()
-  const requestUrl = `/api/company/documents/rechazados${requestQuery ? `?${requestQuery}` : ''}`
+  const requestParams = new URLSearchParams(searchParams.toString())
+  requestParams.set('compact', '1')
+  const requestQuery = requestParams.toString()
+  const requestUrl = `/api/company/documents/rechazados?${requestQuery}`
   const [allData, setAllData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
