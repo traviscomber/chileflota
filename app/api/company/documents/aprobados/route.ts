@@ -4,7 +4,7 @@ export const revalidate = 0
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
-import { canonicalizeApprovedConductorDocuments, canonicalizeApprovedSubcontractorDocuments } from '@/lib/document-review-canonical'
+import { canonicalizeApprovedConductorDocuments, isClearlyMisclassifiedSubcontractorDocument } from '@/lib/document-review-canonical'
 
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
 
@@ -72,12 +72,15 @@ async function fetchAllApproved(supabase: ReturnType<typeof createAdminClient>, 
   const documents: any[] = []
   const pageSize = 1000
   for (let page = 0; ; page += 1) {
-    const query = table === 'uploaded_documents'
-      ? supabase.from(table).select('id,original_filename,document_type_id,validation_status,file_url,validated_at,ejecutiva,created_at,updated_at,conductor_id,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id').eq('validation_status', 'approved')
-      : supabase.from(table).select('id,file_name,document_type_id,status,file_url,approved_at,reviewed_by_ejecutiva,reviewed_at,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,ai_document_type,ai_extracted_text').eq('status', 'approved')
+    let query: any = table === 'uploaded_documents'
+      ? supabase.from(table).select('id,original_filename,document_type_id,validation_status,file_url,validated_at,ejecutiva,created_at,updated_at,conductor_id,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current').eq('validation_status', 'approved')
+      : supabase.from(table).select('id,file_name,document_type_id,status,file_url,approved_at,reviewed_by_ejecutiva,reviewed_at,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current,ai_document_type,ai_extracted_text').eq('status', 'approved')
+
+    // Driver documents keep their legacy current-version semantics for now.
+    // Subcontractor review trays show every reviewed upload independently.
+    if (table === 'uploaded_documents') query = query.eq('is_current', true)
 
     const { data, error } = await query
-      .eq('is_current', true)
       .order('updated_at', { ascending: false })
       .range(page * pageSize, page * pageSize + pageSize - 1)
 
@@ -136,7 +139,10 @@ export async function GET(request: Request) {
     const subcontractorTypeMap = new Map((subcontractorTypesResult.data || []).filter((type: any) => !deprecatedCodes.has(type.code)).map((type: any) => [type.id, { code: type.code, nombre: type.nombre }]))
 
     const canonicalConductorDocs = canonicalizeApprovedConductorDocuments(conductorDocs)
-    const canonicalSubDocs = canonicalizeApprovedSubcontractorDocuments(subDocs, subcontractorTypeMap)
+    const canonicalSubDocs = subDocs.filter((doc: any) => {
+      const typeCode = subcontractorTypeMap.get(doc.document_type_id)?.code
+      return !isClearlyMisclassifiedSubcontractorDocument(doc, typeCode)
+    })
 
     const conductorIds = [...new Set(canonicalConductorDocs.map((doc: any) => doc.conductor_id).filter(Boolean))]
     const subcontractorIds = [...new Set(canonicalSubDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
@@ -216,7 +222,7 @@ export async function GET(request: Request) {
         document_period_start: doc.document_period_start,
         version_number: doc.version_number,
         supersedes_document_id: doc.supersedes_document_id,
-        is_current: true,
+        is_current: doc.is_current === true,
         subcontractor_id: doc.subcontractor_id,
         subcontractor_rut: doc.subcontractor_rut,
         transportistas: company || null,
@@ -246,7 +252,7 @@ export async function GET(request: Request) {
       allDocs,
       documents: allDocs,
       total: allDocs.length,
-      scope: auth.user.role === 'ejecutiva' ? 'assigned_executive_canonical_current' : 'canonical_current',
+      scope: auth.user.role === 'ejecutiva' ? 'assigned_executive_reviewed_submissions' : 'reviewed_submissions',
       historyEndpoint: '/api/company/documents/history',
       timestamp: new Date().toISOString(),
     })
