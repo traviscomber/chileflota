@@ -164,7 +164,7 @@ export function DriverCard({
       // Show success message
       if (typeof window !== 'undefined') {
         const successMsg = document.createElement('div')
-        successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-in'
+        successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-[var(--cf-text)] px-6 py-3 rounded-[6px] shadow-none z-[100] animate-in'
         successMsg.textContent = `✅ Documento "${uploadFileName}" subido exitosamente`
         document.body.appendChild(successMsg)
         setTimeout(() => {
@@ -188,23 +188,23 @@ export function DriverCard({
   const statusBg = driver.is_active
     ? 'bg-green-950/40 border-green-900/50'
     : 'bg-red-950/40 border-red-900/50'
-  const statusText = driver.is_active ? 'text-green-300' : 'text-red-300'
+  const statusText = driver.is_active ? 'text-[var(--cf-success)]' : 'text-[var(--cf-danger)]'
 
   return (
     <>
-      <Card className={`bg-slate-900/80 backdrop-blur-sm border-slate-700/60 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all ${statusBg}`} key={`card-${driver.id}`}>
+      <Card className={`bg-[var(--cf-surface)]  border-[var(--cf-border)]/60 hover:border-orange-500/50  hover:shadow-orange-500/20 transition-all ${statusBg}`} key={`card-${driver.id}`}>
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Header with RUT and status */}
-            <div className="mb-3 flex items-start justify-between pb-3 border-b border-slate-700/50">
+            <div className="mb-3 flex items-start justify-between pb-3 border-b border-[var(--cf-border)]">
           <div>
-            <p className="text-xs font-semibold uppercase text-slate-500">RUT</p>
-            <p className="font-mono text-lg font-bold text-orange-400">{driver.rut}</p>
+            <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">RUT</p>
+            <p className="font-mono text-lg font-bold text-[var(--cf-expiring)]">{driver.rut}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowEditModal(true)}
-              className="p-2 rounded hover:bg-slate-700/60 transition-colors text-slate-400 hover:text-slate-200"
+              className="p-2 rounded hover:bg-[var(--cf-surface-raised)]/60 transition-colors text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]"
               title="Editar conductor"
             >
               <Edit className="h-4 w-4" />
@@ -218,25 +218,25 @@ export function DriverCard({
             {/* Nombre with number */}
             <div className="flex items-baseline gap-3">
               {driverNumber && (
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-sm font-bold flex-shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-[4px] bg-[var(--cf-accent)] text-[var(--cf-text)] text-sm font-bold flex-shrink-0">
                   {driverNumber}
                 </span>
               )}
-              <p className="font-semibold text-slate-100">{driver.nombre}</p>
+              <p className="font-semibold text-[var(--cf-text)]">{driver.nombre}</p>
             </div>
 
             {/* Proveedor - Razón Social */}
             {(driver.nombre_subcontratista || driver.proveedor) && (
               <div className="text-sm">
-                <p className="text-xs font-medium text-slate-500 uppercase">Subcontratista</p>
-                <p className="text-slate-300">{driver.nombre_subcontratista || driver.proveedor}</p>
+                <p className="text-xs font-medium text-[var(--cf-text-muted)] uppercase">Subcontratista</p>
+                <p className="text-[var(--cf-text-secondary)]">{driver.nombre_subcontratista || driver.proveedor}</p>
               </div>
             )}
 
             {/* Patente Tracto */}
             {driver.patente_tracto && (
               <div className="text-sm">
-                <p className="text-xs font-medium text-slate-500 uppercase">PATENTE TRACTO</p>
+                <p className="text-xs font-medium text-[var(--cf-text-muted)] uppercase">PATENTE TRACTO</p>
                 <p className="font-mono text-cyan-400">{driver.patente_tracto}</p>
               </div>
             )}
@@ -244,29 +244,29 @@ export function DriverCard({
             {/* Clase de Licencia */}
             {driver.clase_licencia && (
               <div className="text-sm">
-                <p className="text-xs font-medium text-slate-500 uppercase">LICENCIA</p>
-                <Badge className="bg-slate-800 text-slate-300 border border-slate-700">{driver.clase_licencia}</Badge>
+                <p className="text-xs font-medium text-[var(--cf-text-muted)] uppercase">LICENCIA</p>
+                <Badge className="bg-[var(--cf-surface)] text-[var(--cf-text-secondary)] border border-[var(--cf-border)]">{driver.clase_licencia}</Badge>
               </div>
             )}
 
             {/* RUT Proveedor */}
             {driver.rut_proveedor && (
-              <div className="border-t border-slate-700 pt-3">
-                <p className="text-xs font-semibold uppercase text-slate-400">RUT Proveedor</p>
-                <p className="font-mono text-sm text-slate-400">{driver.rut_proveedor}</p>
+              <div className="border-t border-[var(--cf-border)] pt-3">
+                <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">RUT Proveedor</p>
+                <p className="font-mono text-sm text-[var(--cf-text-muted)]">{driver.rut_proveedor}</p>
               </div>
             )}
 
             {/* Ejecutiva Asociada */}
             {driver.ejecutivo_nombre && (
-              <div className="border-t border-slate-700 pt-3">
-                <p className="text-xs font-semibold uppercase text-slate-400">Ejecutiva Asignada</p>
+              <div className="border-t border-[var(--cf-border)] pt-3">
+                <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">Ejecutiva Asignada</p>
                 <Badge className="bg-purple-600/40 text-purple-200 border border-purple-500/50">{driver.ejecutivo_nombre}</Badge>
               </div>
             )}
 
             {/* Documentos Subidos - Sección Expandible SIEMPRE VISIBLE */}
-            <div className="border-t border-slate-700/50 pt-3 mt-3">
+            <div className="border-t border-[var(--cf-border)] pt-3 mt-3">
               <div className="flex items-center justify-between mb-3">
                 <div
                   onClick={() => toggleDocuments(driver.id)}
@@ -274,7 +274,7 @@ export function DriverCard({
                 >
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-cyan-400" />
-                    <span className="text-sm font-semibold text-slate-100">
+                    <span className="text-sm font-semibold text-[var(--cf-text)]">
                       Documentos ({documents.length})
                     </span>
                     <button
@@ -293,22 +293,22 @@ export function DriverCard({
                         }
                       }}
                       disabled={isRefreshing}
-                      className="ml-1 p-1 rounded hover:bg-slate-700/60 transition-colors disabled:opacity-50"
+                      className="ml-1 p-1 rounded hover:bg-[var(--cf-surface-raised)]/60 transition-colors disabled:opacity-50"
                       title="Refrescar documentos"
                     >
-                      <RefreshCw className={`h-3 w-3 text-slate-500 hover:text-slate-300 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`h-3 w-3 text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)] ${isRefreshing ? 'animate-spin' : ''}`} />
                     </button>
                     <Link
                       href={`/dashboard/company/documentos/${driver.conductor_id || driver.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="ml-2 p-1 rounded hover:bg-slate-700/60 transition-colors inline-flex items-center gap-1"
+                      className="ml-2 p-1 rounded hover:bg-[var(--cf-surface-raised)]/60 transition-colors inline-flex items-center gap-1"
                       title="Ver todos los documentos"
                     >
-                      <ArrowRight className="h-3 w-3 text-slate-500 hover:text-slate-300" />
+                      <ArrowRight className="h-3 w-3 text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]" />
                     </Link>
                   </div>
                   <ChevronDown 
-                    className={`h-4 w-4 text-slate-500 transition-transform ${
+                    className={`h-4 w-4 text-[var(--cf-text-muted)] transition-transform ${
                       isExpanded ? 'rotate-180' : ''
                     }`}
                   />
@@ -317,7 +317,7 @@ export function DriverCard({
                 {/* Botón de upload para LABBE */}
                 <button
                   onClick={() => setShowUploadModal(true)}
-                  className="ml-2 p-2 rounded bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-1 text-xs text-white"
+                  className="ml-2 p-2 rounded bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-1 text-xs text-[var(--cf-text)]"
                   title="Subir documento"
                 >
                   <Plus className="h-3 w-3" />
@@ -330,8 +330,8 @@ export function DriverCard({
                 <div className="space-y-2">
                   {loading ? (
                     <div className="flex items-center justify-center py-4">
-                      <Loader className="h-4 w-4 animate-spin text-slate-400" />
-                      <span className="ml-2 text-xs text-slate-400">
+                      <Loader className="h-4 w-4 animate-spin text-[var(--cf-text-muted)]" />
+                      <span className="ml-2 text-xs text-[var(--cf-text-muted)]">
                         Cargando...
                       </span>
                     </div>
@@ -339,12 +339,12 @@ export function DriverCard({
                     <>
                       {/* Banner for rejected documents */}
                       {documents.some(d => d.estado === 'rechazado') && (
-                        <div className="rounded bg-red-500/20 border border-red-500/50 p-3 text-xs text-red-300">
+                        <div className="rounded bg-[var(--cf-danger-soft)] border border-[var(--cf-danger)]/35 p-3 text-xs text-[var(--cf-danger)]">
                           <p className="font-semibold flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
                             Documentos Rechazados
                           </p>
-                          <p className="text-xs text-red-300/80 mt-1">
+                          <p className="text-xs text-[var(--cf-danger)]/80 mt-1">
                             Por favor, vuelve a subir los documentos marcados como rechazados
                           </p>
                         </div>
@@ -352,7 +352,7 @@ export function DriverCard({
                       {documents.map((doc) => (
                         <div
                           key={doc.id}
-                          className={`flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs hover:bg-slate-800 transition-colors cursor-pointer ${
+                          className={`flex items-center justify-between rounded bg-[var(--cf-surface)] p-2 text-xs hover:bg-[var(--cf-surface)] transition-colors cursor-pointer ${
                             doc.estado === 'rechazado' ? 'opacity-60' : ''
                           }`}
                           onClick={() => {
@@ -363,26 +363,26 @@ export function DriverCard({
                           }}
                         >
                           <div className="flex flex-1 items-center gap-2 min-w-0">
-                          <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                          <FileText className="h-3 w-3 text-[var(--cf-text-muted)] flex-shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className={`font-medium truncate ${
                               doc.estado === 'rechazado' 
-                                ? 'text-red-400 line-through' 
-                                : 'text-slate-300'
+                                ? 'text-[var(--cf-danger)] line-through' 
+                                : 'text-[var(--cf-text-secondary)]'
                             }`}>
                               {doc.tipo}
                             </p>
                             <p className={`truncate text-xs ${
                               doc.estado === 'rechazado' 
-                                ? 'text-red-500/70 line-through' 
-                                : 'text-slate-500'
+                                ? 'text-[var(--cf-danger)]/70 line-through' 
+                                : 'text-[var(--cf-text-muted)]'
                             }`}>
                               {doc.nombre}
                             </p>
                             <p className={`text-xs ${
                               doc.estado === 'rechazado' 
-                                ? 'text-red-400' 
-                                : 'text-slate-500'
+                                ? 'text-[var(--cf-danger)]' 
+                                : 'text-[var(--cf-text-muted)]'
                             }`}>
                               {new Date(doc.fecha_subida).toLocaleDateString('es-ES')}
                               {doc.uploaded_by && ` por ${doc.uploaded_by}`}
@@ -404,7 +404,7 @@ export function DriverCard({
                             {getDocumentStatusLabel(doc.estado)}
                           </Badge>
                           <button 
-                            className="p-1 hover:bg-slate-700/60 rounded transition-colors"
+                            className="p-1 hover:bg-[var(--cf-surface-raised)]/60 rounded transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               // Refetch documents to get any newly uploaded files
@@ -413,14 +413,14 @@ export function DriverCard({
                               setShowDocumentModal(true)
                             }}
                           >
-                            <Eye className="h-3 w-3 text-slate-500 hover:text-slate-300" />
+                            <Eye className="h-3 w-3 text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]" />
                           </button>
                         </div>
                         </div>
                       ))}
                     </>
                   ) : (
-                    <div className="text-center py-4 text-slate-500">
+                    <div className="text-center py-4 text-[var(--cf-text-muted)]">
                       <p className="text-xs">No hay documentos subidos</p>
                     </div>
                   )}
@@ -434,27 +434,27 @@ export function DriverCard({
       {/* Upload Document Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="relative w-full max-w-md rounded-lg border border-slate-700 bg-slate-900/95 backdrop-blur-sm p-6 shadow-2xl">
+          <div className="relative w-full max-w-md rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)]/95  p-6 shadow-none">
             <button
               onClick={() => setShowUploadModal(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-200 transition-colors"
+              className="absolute right-4 top-4 text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)] transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-4 text-lg font-semibold text-slate-100">Subir Documento</h2>
+            <h2 className="mb-4 text-lg font-semibold text-[var(--cf-text)]">Subir Documento</h2>
 
             {/* Conductor Info */}
-            <div className="mb-4 rounded bg-slate-800/60 border border-slate-700/50 p-3 text-sm">
-              <p className="text-slate-500 text-xs uppercase font-medium">Conductor:</p>
-              <p className="font-semibold text-slate-100">{driver.nombre}</p>
-              <p className="text-xs text-slate-500">{driver.rut}</p>
+            <div className="mb-4 rounded bg-[var(--cf-surface)]/60 border border-[var(--cf-border)] p-3 text-sm">
+              <p className="text-[var(--cf-text-muted)] text-xs uppercase font-medium">Conductor:</p>
+              <p className="font-semibold text-[var(--cf-text)]">{driver.nombre}</p>
+              <p className="text-xs text-[var(--cf-text-muted)]">{driver.rut}</p>
             </div>
 
             <div className="space-y-4">
               {/* Ejecutiva que sube el documento */}
               <div>
-                <label className="text-sm font-semibold text-slate-200">Ejecutiva que sube el documento</label>
+                <label className="text-sm font-semibold text-[var(--cf-text-secondary)]">Ejecutiva que sube el documento</label>
                 <div className="space-y-2 mt-2">
                   {/* Auto-selected option using driver's ejecutivo */}
                   {driver.ejecutivo_nombre && (
@@ -463,11 +463,11 @@ export function DriverCard({
                       onClick={() => setUploadingEjecutiva(driver.ejecutivo_nombre!)}
                       className={`w-full rounded border px-3 py-2 text-sm text-left transition-colors ${
                         uploadingEjecutiva === driver.ejecutivo_nombre
-                          ? 'border-orange-500 bg-orange-500/20 text-orange-200'
-                          : 'border-slate-600 bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                          ? 'border-orange-500 bg-[var(--cf-accent)]/20 text-[var(--cf-expiring)]'
+                          : 'border-[var(--cf-border)] bg-[var(--cf-surface-raised)] text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]'
                       }`}
                     >
-                      ✓ {driver.ejecutivo_nombre} <span className="text-xs text-slate-400">(Asignada)</span>
+                      ✓ {driver.ejecutivo_nombre} <span className="text-xs text-[var(--cf-text-muted)]">(Asignada)</span>
                     </button>
                   )}
                   
@@ -476,7 +476,7 @@ export function DriverCard({
                     value={uploadingEjecutiva}
                     onChange={(e) => setUploadingEjecutiva(e.target.value)}
                     disabled={loadingEjecutivas}
-                    className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full rounded border border-[var(--cf-border)] bg-[var(--cf-surface)] px-3 py-2 text-sm text-[var(--cf-text)] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">
                       {loadingEjecutivas ? 'Cargando ejecutivas...' : 'O selecciona otra ejecutiva'}
@@ -489,18 +489,18 @@ export function DriverCard({
                   </select>
                 </div>
                 {ejecutivas.length === 0 && !loadingEjecutivas && !driver.ejecutivo_nombre && (
-                  <p className="text-xs text-red-400 mt-1">⚠️ No hay ejecutivas disponibles</p>
+                  <p className="text-xs text-[var(--cf-danger)] mt-1">⚠️ No hay ejecutivas disponibles</p>
                 )}
               </div>
 
               {/* Tipo de Documento */}
               <div>
-                <label className="text-sm font-semibold text-slate-200">Tipo de Documento</label>
+                <label className="text-sm font-semibold text-[var(--cf-text-secondary)]">Tipo de Documento</label>
                 <select
                   value={uploadDocTypeId}
                   onChange={(e) => setUploadDocTypeId(e.target.value)}
                   disabled={loadingDocTypes || documentTypes.length === 0}
-                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-2 w-full rounded border border-[var(--cf-border)] bg-[var(--cf-surface)] px-3 py-2 text-sm text-[var(--cf-text)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {loadingDocTypes ? 'Cargando tipos de documento...' : 'Selecciona un tipo de documento'}
@@ -514,35 +514,35 @@ export function DriverCard({
                     ))}
                 </select>
                 {documentTypes.length === 0 && !loadingDocTypes && (
-                  <p className="text-xs text-red-400 mt-1">⚠️ No hay tipos de documento disponibles</p>
+                  <p className="text-xs text-[var(--cf-danger)] mt-1">⚠️ No hay tipos de documento disponibles</p>
                 )}
               </div>
 
               {/* Nombre del archivo */}
               <div>
-                <label className="text-sm font-semibold text-slate-200">Nombre del Archivo</label>
+                <label className="text-sm font-semibold text-[var(--cf-text-secondary)]">Nombre del Archivo</label>
                 <input
                   type="text"
                   value={uploadFileName}
                   onChange={(e) => setUploadFileName(e.target.value)}
                   placeholder="ej: Licencia_2024.pdf"
-                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="mt-2 w-full rounded border border-[var(--cf-border)] bg-[var(--cf-surface)] px-3 py-2 text-sm text-[var(--cf-text)] placeholder-slate-500 focus:border-orange-500 focus:outline-none transition-colors"
                 />
               </div>
 
               {/* File Upload Area */}
               <div 
-                className="rounded border-2 border-dashed border-slate-700 p-4 text-center cursor-pointer hover:border-orange-500/50 hover:bg-slate-800/40 transition-all"
+                className="rounded border-2 border-dashed border-[var(--cf-border)] p-4 text-center cursor-pointer hover:border-orange-500/50 hover:bg-[var(--cf-surface)] transition-all"
                 onDragOver={(e) => {
                   e.preventDefault()
-                  e.currentTarget.classList.add('border-orange-500', 'bg-orange-500/10')
+                  e.currentTarget.classList.add('border-orange-500', 'bg-[var(--cf-accent)]/10')
                 }}
                 onDragLeave={(e) => {
-                  e.currentTarget.classList.remove('border-orange-500', 'bg-orange-500/10')
+                  e.currentTarget.classList.remove('border-orange-500', 'bg-[var(--cf-accent)]/10')
                 }}
                 onDrop={(e) => {
                   e.preventDefault()
-                  e.currentTarget.classList.remove('border-orange-500', 'bg-orange-500/10')
+                  e.currentTarget.classList.remove('border-orange-500', 'bg-[var(--cf-accent)]/10')
                   if (e.dataTransfer.files?.[0]) {
                     const file = e.dataTransfer.files[0]
                     setUploadFileName(file.name)
@@ -554,8 +554,8 @@ export function DriverCard({
                   input?.click()
                 }}
               >
-                <Upload className="mx-auto h-8 w-8 text-slate-500 mb-2" />
-                <p className="text-sm text-slate-400">Arrastra aquí o haz click para seleccionar archivo</p>
+                <Upload className="mx-auto h-8 w-8 text-[var(--cf-text-muted)] mb-2" />
+                <p className="text-sm text-[var(--cf-text-muted)]">Arrastra aquí o haz click para seleccionar archivo</p>
                 <input
                   id={`file-input-${driver.rut}`}
                   type="file"
@@ -572,7 +572,7 @@ export function DriverCard({
 
               {/* Error Alert */}
               {uploadError && (
-                <div className="rounded bg-red-950/40 border border-red-900/50 p-3 text-sm text-red-300 flex gap-2 items-start">
+                <div className="rounded bg-red-950/40 border border-red-900/50 p-3 text-sm text-[var(--cf-danger)] flex gap-2 items-start">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold">Error:</p>
@@ -586,14 +586,14 @@ export function DriverCard({
                 <button
                   onClick={() => setShowUploadModal(false)}
                   disabled={uploading}
-                  className="flex-1 rounded border border-slate-700 bg-slate-800/50 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:border-slate-600 transition-colors disabled:opacity-50"
+                  className="flex-1 rounded border border-[var(--cf-border)] bg-[var(--cf-surface)] py-2 text-sm font-semibold text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface)] hover:border-[var(--cf-border)] transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleUpload}
                   disabled={!uploadFileName.trim() || uploading}
-                  className="flex-1 rounded bg-orange-600 py-2 text-sm font-semibold text-white hover:bg-orange-700 transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-orange-500/20"
+                  className="flex-1 rounded bg-[var(--cf-accent)] py-2 text-sm font-semibold text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)] transition-colors disabled:bg-[var(--cf-surface-raised)] disabled:text-[var(--cf-text-muted)] disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-none hover:shadow-orange-500/20"
                 >
                   {uploading && <Loader className="h-4 w-4 animate-spin" />}
                   {uploading ? 'Subiendo...' : 'Subir Documento'}
@@ -624,7 +624,7 @@ export function DriverCard({
             // Show success message immediately
             if (typeof window !== 'undefined') {
               const msg = document.createElement('div')
-              msg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
+              msg.className = 'fixed bottom-4 right-4 bg-green-600 text-[var(--cf-text)] px-6 py-3 rounded-[6px] shadow-none z-[100]'
               msg.textContent = `✅ Documento actualizado a ${newStatus}`
               document.body.appendChild(msg)
               setTimeout(() => msg.remove(), 3000)
