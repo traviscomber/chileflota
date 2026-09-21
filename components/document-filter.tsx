@@ -83,15 +83,16 @@ export function DocumentFilter({
       {!compact && (
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-[var(--cf-text-muted)]" />
+            <Filter className="h-4 w-4 text-[var(--cf-text-muted)]" aria-hidden="true" />
             <h3 className="text-sm font-medium text-[var(--cf-text)]">Filtrar documentos</h3>
           </div>
           {hasActiveFilters && (
             <button
+              type="button"
               onClick={handleReset}
-              className="flex items-center gap-1 text-xs text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]"
+              className="flex min-h-11 items-center gap-1 rounded-[5px] px-2 text-xs text-[var(--cf-text-muted)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)] sm:min-h-10"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3 w-3" aria-hidden="true" />
               Limpiar
             </button>
           )}
@@ -103,12 +104,13 @@ export function DocumentFilter({
         : "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4"
       }>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cf-text-muted)]" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cf-text-muted)]" aria-hidden="true" />
           <Input
+            aria-label="Buscar documentos"
             placeholder="Buscar empresa, RUT, conductor o archivo"
             value={filters.searchQuery}
             onChange={(e) => handleFilterChange({ searchQuery: e.target.value })}
-            className="h-10 border-[var(--cf-border)] bg-[var(--cf-surface)] pl-9 text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)]"
+            className="h-11 border-[var(--cf-border)] bg-[var(--cf-surface)] pl-9 text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)] sm:h-10"
           />
         </div>
 
@@ -117,7 +119,7 @@ export function DocumentFilter({
             value={filters.companyId || 'all'}
             onValueChange={(value) => handleFilterChange({ companyId: value === 'all' ? undefined : value })}
           >
-            <SelectTrigger className="h-10 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)]">
+            <SelectTrigger aria-label="Filtrar por empresa" className="h-11 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)] sm:h-10">
               <SelectValue placeholder="Empresa" />
             </SelectTrigger>
             <SelectContent className="border-[var(--cf-border)] bg-[var(--cf-surface)]">
@@ -136,7 +138,7 @@ export function DocumentFilter({
             value={filters.executiveId || 'all'}
             onValueChange={(value) => handleFilterChange({ executiveId: value === 'all' ? undefined : value })}
           >
-            <SelectTrigger className="h-10 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)]">
+            <SelectTrigger aria-label="Filtrar por ejecutiva" className="h-11 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)] sm:h-10">
               <SelectValue placeholder="Ejecutiva" />
             </SelectTrigger>
             <SelectContent className="border-[var(--cf-border)] bg-[var(--cf-surface)]">
@@ -154,7 +156,7 @@ export function DocumentFilter({
           value={filters.documentType || 'all'}
           onValueChange={(value) => handleFilterChange({ documentType: value === 'all' ? undefined : value })}
         >
-          <SelectTrigger className="h-10 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)]">
+          <SelectTrigger aria-label="Filtrar por tipo de documento" className="h-11 border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text)] sm:h-10">
             <SelectValue placeholder="Tipo de documento" />
           </SelectTrigger>
           <SelectContent className="border-[var(--cf-border)] bg-[var(--cf-surface)]">
@@ -173,6 +175,7 @@ export function DocumentFilter({
               value={temporalFilters}
               onChange={(value) => handleFilterChange(value)}
               onClear={() => handleFilterChange({ month: ALL_VALUE, year: ALL_VALUE })}
+              compact
             />
             {hasActiveFilters && (
               <Button
@@ -180,10 +183,10 @@ export function DocumentFilter({
                 onClick={handleReset}
                 variant="ghost"
                 size="sm"
-                className="h-10 flex-none px-3 text-[var(--cf-text-muted)] hover:text-[var(--cf-text)]"
+                className="h-11 flex-none px-3 text-[var(--cf-text-muted)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)] sm:h-10"
                 aria-label="Limpiar filtros"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" aria-hidden="true" />
               </Button>
             )}
           </div>
