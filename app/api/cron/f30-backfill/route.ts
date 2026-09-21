@@ -19,9 +19,7 @@ const PRODUCTION_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || 'https://transn3ura
 function isAuthorizedCron(request: NextRequest): boolean {
   const authorization = request.headers.get('authorization')
   const configuredSecret = process.env.CRON_SECRET
-  const hasValidSecret = Boolean(configuredSecret && authorization === `Bearer ${configuredSecret}`)
-  const isVercelCron = request.headers.get('user-agent') === 'vercel-cron/1.0'
-  return hasValidSecret || isVercelCron
+  return Boolean(configuredSecret && authorization === `Bearer ${configuredSecret}`)
 }
 
 async function getF30TypeIds(supabase: ReturnType<typeof createAdminClient>): Promise<string[]> {
@@ -62,11 +60,15 @@ async function persistTerminalOutcome(
 async function processDocument(
   document: { id: string; file_name: string | null },
   supabase: ReturnType<typeof createAdminClient>,
+  cronSecret: string,
 ): Promise<Record<string, unknown>> {
   try {
     const response = await fetch(`${PRODUCTION_ORIGIN}/api/company/documents/${document.id}/reprocess`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cronSecret}`,
+      },
       body: JSON.stringify({ documentId: document.id, source: 'f30_backfill' }),
       cache: 'no-store',
     })
@@ -109,6 +111,11 @@ export async function GET(request: NextRequest) {
 
   if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'CRON_SECRET is required for F30 backfill' }, { status: 503 })
   }
 
   const jobRun = await startSystemJobRun(JOB_NAME)
@@ -210,7 +217,9 @@ export async function GET(request: NextRequest) {
 
     for (let index = 0; index < pending.length; index += CONCURRENCY) {
       const chunk = pending.slice(index, index + CONCURRENCY)
-      const chunkResults = await Promise.all(chunk.map((document) => processDocument(document, supabase)))
+      const chunkResults = await Promise.all(
+        chunk.map((document) => processDocument(document, supabase, cronSecret)),
+      )
       results.push(...chunkResults)
     }
 

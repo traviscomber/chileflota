@@ -8,6 +8,11 @@ import {
 import { extractText } from 'unpdf'
 import { generateAIAnalysisAlerts } from '@/lib/document-alerts-generator'
 import { parseF30Document } from '@/lib/f30-parser'
+import {
+  authenticateReprocessRequest,
+  authorizeReprocessDocument,
+  type ReprocessDocumentTable,
+} from '@/lib/reprocess-authorization'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -60,10 +65,17 @@ export async function POST(
     const requestBody = await request.json().catch(() => ({}))
     const source = typeof requestBody?.source === 'string' ? requestBody.source : null
     const isF30Backfill = source === 'f30_backfill'
+
+    // Authenticate before creating or using the privileged service-role client.
+    const authentication = await authenticateReprocessRequest(request, source)
+    if (!authentication.ok) {
+      return NextResponse.json({ error: authentication.error }, { status: authentication.status })
+    }
+
     const adminClient = createAdminClient()
 
     let doc: any = null
-    let docTable = ''
+    let docTable: ReprocessDocumentTable | null = null
 
     const { data: subDoc } = await adminClient
       .from('subcontractor_documents')
@@ -86,7 +98,22 @@ export async function POST(
       }
     }
 
-    if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+    if (!doc || !docTable) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+
+    // Authorization is evaluated after resolving the document surface but before
+    // storage reads, AI calls, alerts, or any database mutation.
+    const authorization = await authorizeReprocessDocument(
+      authentication.actor,
+      documentId,
+      docTable,
+    )
+    if (!authorization.allowed) {
+      return NextResponse.json(
+        { error: authorization.reason || 'Forbidden' },
+        { status: 403 },
+      )
+    }
+
     if (!doc.file_url) return NextResponse.json({ error: 'Document has no file URL' }, { status: 400 })
 
     const fileResponse = await fetch(doc.file_url)
@@ -241,7 +268,7 @@ export async function POST(
 
     await generateAIAnalysisAlerts({
       documentId,
-      documentTable: docTable as 'subcontractor_documents' | 'uploaded_documents',
+      documentTable: docTable,
       transportistaId,
       conductorId,
       documentType: aiExtraction.documentType || doc.document_type || 'Documento',

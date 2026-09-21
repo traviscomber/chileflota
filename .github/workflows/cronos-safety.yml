@@ -4,18 +4,22 @@ on:
   pull_request:
     paths:
       - 'app/api/cron/cronos-**'
+      - 'app/api/cron/f30-backfill/**'
       - 'app/api/cron/mercado-publico-transportistas/**'
       - 'app/api/cron/prt-import-stream/**'
       - 'app/api/company/alerts/check-expiring-documents/**'
+      - 'app/api/company/documents/**/reprocess/**'
       - 'vercel.json'
       - 'lib/system-job-runs.ts'
       - 'lib/prt-xlsx-stream-reader.ts'
       - 'lib/expiration-cron-auth.ts'
+      - 'lib/reprocess-authorization.ts'
       - 'lib/external-verification/adapters/mercado-publico-supplier.ts'
       - 'lib/external-verification/registry.ts'
       - '__tests__/lib/cronos-wrappers.test.ts'
       - '__tests__/lib/prt-xlsx-stream-reader.test.ts'
       - '__tests__/lib/expiration-cron-auth.test.ts'
+      - '__tests__/lib/reprocess-authorization.test.ts'
       - '__tests__/lib/mercado-publico-supplier.test.ts'
       - '.github/workflows/cronos-safety.yml'
 
@@ -32,4 +36,4 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm jest __tests__/lib/cronos-wrappers.test.ts __tests__/lib/prt-xlsx-stream-reader.test.ts __tests__/lib/expiration-cron-auth.test.ts __tests__/lib/mercado-publico-supplier.test.ts --runInBand
+      - run: pnpm jest __tests__/lib/cronos-wrappers.test.ts __tests__/lib/prt-xlsx-stream-reader.test.ts __tests__/lib/expiration-cron-auth.test.ts __tests__/lib/reprocess-authorization.test.ts __tests__/lib/mercado-publico-supplier.test.ts --runInBand
