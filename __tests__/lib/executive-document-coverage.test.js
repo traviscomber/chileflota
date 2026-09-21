@@ -3,6 +3,7 @@ const path = require('node:path')
 
 const approved = fs.readFileSync(path.join(process.cwd(), 'app/api/company/documents/aprobados/route.ts'), 'utf8')
 const rejected = fs.readFileSync(path.join(process.cwd(), 'app/api/company/documents/rechazados/route.ts'), 'utf8')
+const pending = fs.readFileSync(path.join(process.cwd(), 'app/api/dashboard/pending-documents/route.ts'), 'utf8')
 const approvedPage = fs.readFileSync(path.join(process.cwd(), 'app/dashboard/company/documentos/aprobados/page.tsx'), 'utf8')
 const rejectedPage = fs.readFileSync(path.join(process.cwd(), 'app/dashboard/company/documentos/rechazados/page.tsx'), 'utf8')
 
@@ -22,6 +23,12 @@ describe('executive document coverage', () => {
       expect(source).toMatch(/companyByDirectId\.get\([^)]*transportista_id[^)]*\) \|\| companyByRut\.get/)
     })
   }
+
+  test('pending resolves driver portfolio by canonical company id with RUT fallback', () => {
+    expect(pending).toContain("in('transportista_id', assignedCompanyIds)")
+    expect(pending).toContain('companyByDirectId')
+    expect(pending).toMatch(/companyByDirectId\.get\([^)]*transportista_id[^)]*\) \|\| companyByRut\.get/)
+  })
 
   test('approved and rejected pages preserve scope query and expose coverage selector', () => {
     for (const source of [approvedPage, rejectedPage]) {
