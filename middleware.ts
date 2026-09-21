@@ -2,6 +2,7 @@ import { updateSession } from "@/lib/supabase/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getEmailSessionSecret, verifyEmailSession } from '@/lib/email-session'
+import { isAuthorizedCronRequest } from '@/lib/cron-auth'
 
 const uuidSegment = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
 
@@ -33,6 +34,13 @@ const destructiveApiPatterns = [
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
   const method = request.method.toUpperCase()
+
+  if (path.startsWith('/api/cron/')) {
+    if (!isAuthorizedCronRequest(request.headers)) {
+      return NextResponse.json({ error: 'Unauthorized cron request' }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
 
   // Authentication endpoints must stay reachable even when the browser still
   // carries an older restricted session. Otherwise a stale prevencionista
@@ -138,6 +146,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/cron/sii-transportistas|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }
