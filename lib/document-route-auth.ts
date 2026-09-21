@@ -15,6 +15,8 @@ export const DOCUMENT_READ_ROLES = new Set([
   'prevencionista',
 ])
 
+export const DOCUMENT_DEBUG_ROLES = new Set(['super_admin'])
+
 export const DOCUMENT_WRITE_ROLES = new Set([
   'super_admin',
   'admin',
