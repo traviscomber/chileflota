@@ -82,7 +82,13 @@ export async function PATCH(
       reason: body.reason,
       userId: user.id,
       userEmail: user.email,
-      documentType: body.documentType || 'conductor'  // NEW: Accept document type from frontend
+      documentType: body.documentType || 'conductor',
+      reviewContext: {
+        reviewerRole: user.role,
+        coverageReview: authResult.coverageReview === true,
+        assignedExecutiveId: authResult.assignedExecutiveId || null,
+        assignedExecutiveName: authResult.assignedExecutiveName || null,
+      },
     })
 
     if (!result.success) {
@@ -97,6 +103,8 @@ export async function PATCH(
       status: result.newStatus,
       previous_status: result.previousStatus,
       message: result.message,
+      coverage_review: authResult.coverageReview === true,
+      assigned_executive: authResult.assignedExecutiveName || null,
     })
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
