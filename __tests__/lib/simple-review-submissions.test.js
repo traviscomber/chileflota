@@ -43,4 +43,14 @@ describe('simple subcontractor review submissions', () => {
     expect(source).toContain('Cada carga se revisa como evidencia independiente')
     expect(source).toContain('La vigencia operacional se calcula por separado en Compliance')
   })
+
+  test('subcontractor counters no longer depend on is_current', () => {
+    const page = read('app/dashboard/company/documentos/page.tsx')
+    const stats = read('app/api/company/documents/stats/route.ts')
+
+    expect(page).not.toContain('countActionableSubcontractorPending')
+    expect(page).toContain("countByStatus('subcontractor_documents', 'status', 'approved', false)")
+    expect(page).toContain("countByStatus('subcontractor_documents', 'status', 'pending', false)")
+    expect(stats).toContain("kind === 'conductor'")
+  })
 })
