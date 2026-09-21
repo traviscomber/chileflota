@@ -53,9 +53,18 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const documentType = formData.get('documentType') as string
-    const documentDate = String(formData.get('documentDate') || '').trim()
-    const documentPeriodMonth = Number(formData.get('documentPeriodMonth'))
-    const documentPeriodYear = Number(formData.get('documentPeriodYear'))
+    const rawDocumentDate = String(formData.get('documentDate') || '').trim()
+    const rawDocumentPeriodMonth = String(formData.get('documentPeriodMonth') || '').trim()
+    const rawDocumentPeriodYear = String(formData.get('documentPeriodYear') || '').trim()
+
+    const fallbackDate = new Date()
+    const documentDate = rawDocumentDate || fallbackDate.toISOString().slice(0, 10)
+    const documentPeriodMonth = rawDocumentPeriodMonth
+      ? Number(rawDocumentPeriodMonth)
+      : Number(documentDate.slice(5, 7))
+    const documentPeriodYear = rawDocumentPeriodYear
+      ? Number(rawDocumentPeriodYear)
+      : Number(documentDate.slice(0, 4))
 
     if (!file || !documentType) {
       return NextResponse.json(
