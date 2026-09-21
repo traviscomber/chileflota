@@ -199,7 +199,7 @@ export function DriverCard({
             <div className="mb-3 flex items-start justify-between pb-3 border-b border-[var(--cf-border)]">
           <div>
             <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">RUT</p>
-            <p className="font-mono text-lg font-bold text-[var(--cf-expiring)]">{driver.rut}</p>
+            <p className="font-mono text-lg font-semibold text-[var(--cf-expiring)]">{driver.rut}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -218,7 +218,7 @@ export function DriverCard({
             {/* Nombre with number */}
             <div className="flex items-baseline gap-3">
               {driverNumber && (
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-[4px] bg-[var(--cf-accent)] text-[var(--cf-text)] text-sm font-bold flex-shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-[4px] bg-[var(--cf-accent)] text-[var(--cf-text)] text-sm font-semibold flex-shrink-0">
                   {driverNumber}
                 </span>
               )}
