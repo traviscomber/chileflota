@@ -21,7 +21,13 @@ export interface DocumentStatusChangeRequest {
   reason?: string
   userId?: string
   userEmail?: string
-  documentType?: 'conductor' | 'subcontractor'  // NEW: specify which table to use
+  documentType?: 'conductor' | 'subcontractor'
+  reviewContext?: {
+    reviewerRole?: string
+    coverageReview?: boolean
+    assignedExecutiveId?: string | null
+    assignedExecutiveName?: string | null
+  }
 }
 
 export interface DocumentStatusChangeResult {
@@ -86,7 +92,7 @@ function normalizeStatus(input: string): DocumentStatus | null {
 export async function changeDocumentStatus(
   request: DocumentStatusChangeRequest
 ): Promise<DocumentStatusChangeResult> {
-  const { documentId, newStatus, reason, userId, documentType = 'conductor' } = request
+  const { documentId, newStatus, reason, userId, userEmail, documentType = 'conductor', reviewContext } = request
 
   if (!documentId) {
     return { success: false, documentId, previousStatus: '', newStatus, message: 'Document ID is required', error: 'MISSING_DOCUMENT_ID' }
@@ -195,31 +201,52 @@ export async function changeDocumentStatus(
       console.warn('[v0] Status update verification failed, but update likely succeeded')
     }
 
-    // STEP 6: Create audit log entry
+    // STEP 6: Create durable security audit entry.
+    // audit_log exists in production and stores actor + portfolio owner separately.
     try {
-      const auditLog = {
-        document_id: documentId,
-        previous_status: previousStatus,
-        new_status: newStatus,
-        changed_by: userId || 'system',
-        reason: reason || null,
-        changed_at: new Date().toISOString(),
-        details: {
-          document_type_id: documentBefore.document_type_id,
-          conductor_id: documentBefore.conductor_id,
+      const { error: auditError } = await adminClient
+        .from('audit_log')
+        .insert({
+          user_id: userId || null,
+          action: reviewContext?.coverageReview ? 'document_review_coverage' : 'document_status_change',
+          table_name: tableName,
+          record_id: documentId,
+          old_values: {
+            status: previousStatus,
+          },
+          new_values: {
+            status: newStatus,
+            reviewed_by: userEmail || userId || 'system',
+            reviewer_role: reviewContext?.reviewerRole || null,
+            coverage_review: reviewContext?.coverageReview === true,
+            assigned_executive_id: reviewContext?.assignedExecutiveId || null,
+            assigned_executive_name: reviewContext?.assignedExecutiveName || null,
+            reason: reason || null,
+          },
+          created_at: new Date().toISOString(),
+        })
+
+      if (auditError) {
+        console.error('[v0] Security audit insert failed:', auditError)
+        return {
+          success: false,
+          documentId,
+          previousStatus,
+          newStatus,
+          message: 'El estado cambió, pero no se pudo registrar la auditoría. Requiere revisión administrativa.',
+          error: 'AUDIT_LOG_FAILED',
         }
       }
-
-      // Try to insert audit log, but don't fail if it doesn't exist yet
-      try {
-        await adminClient
-          .from('document_status_audit_log')
-          .insert(auditLog)
-      } catch (insertError) {
-        console.warn('[v0] Audit log insert failed (table may not exist):', insertError)
-      }
     } catch (auditError) {
-      console.warn('[v0] Audit logging failed:', auditError)
+      console.error('[v0] Security audit exception:', auditError)
+      return {
+        success: false,
+        documentId,
+        previousStatus,
+        newStatus,
+        message: 'El estado cambió, pero no se pudo registrar la auditoría. Requiere revisión administrativa.',
+        error: 'AUDIT_LOG_FAILED',
+      }
     }
 
     // STEP 7: Generate status change alerts (non-blocking)
