@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 import { canonicalizeRejectedConductorDocuments, canonicalizeRejectedSubcontractorDocuments } from '@/lib/document-review-canonical'
+import { selectCanonicalF301ByStatus } from '@/lib/f301-canonical'
 import { getExecutiveScope, type ExecutiveScopeMode } from '@/lib/executive-coverage-scope'
 
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
@@ -106,6 +107,28 @@ async function fetchAllApprovedSubcontractorDocuments(supabase: ReturnType<typeo
   return documents
 }
 
+
+async function fetchAllF301SubcontractorDocuments(supabase: ReturnType<typeof createAdminClient>) {
+  const documents: any[] = []
+  const pageSize = 1000
+
+  for (let page = 0; ; page += 1) {
+    const { data, error } = await supabase
+      .from('subcontractor_documents')
+      .select(`id,file_name,document_type_id,status,file_url,rejection_reason,reviewed_at,reviewed_by_ejecutiva,approved_at,created_at,updated_at,uploaded_at,subcontractor_id,subcontractor_rut,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,is_current,ai_document_type,ai_extracted_text,transportistas:subcontractor_id(id,razon_social,rut),document_type:subcontractor_document_types!inner(code)`)
+      .eq('document_type.code', 'F30-1_CLIENTE')
+      .order('uploaded_at', { ascending: false })
+      .range(page * pageSize, page * pageSize + pageSize - 1)
+
+    if (error) throw error
+    if (!data?.length) break
+    documents.push(...data)
+    if (data.length < pageSize) break
+  }
+
+  return documents
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await verifyAuth(request as any)
@@ -170,11 +193,12 @@ export async function GET(request: Request) {
       }
     }
 
-    const [conductorResult, approvedConductorResult, subDocs, approvedSubResult, conductorTypesResult, subcontractorTypesResult, executivesResult] = await Promise.all([
+    const [conductorResult, approvedConductorResult, subDocs, approvedSubResult, f301History, conductorTypesResult, subcontractorTypesResult, executivesResult] = await Promise.all([
       supabase.from('uploaded_documents').select(`id,original_filename,document_type_id,validation_status,file_url,rejection_reason,validated_at,ejecutiva,created_at,updated_at,conductor_id,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,conductores(id,nombres,apellido_paterno,rut,rut_proveedor,transportista_id)`).eq('validation_status', 'rejected').eq('is_current', true).order('updated_at', { ascending: false }),
       fetchAllApprovedConductorDocuments(supabase),
       fetchAllRejectedSubcontractorDocuments(supabase),
       fetchAllApprovedSubcontractorDocuments(supabase),
+      fetchAllF301SubcontractorDocuments(supabase),
       supabase.from('document_types').select('id, code, name'),
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
       supabase.from('executive_staff').select('id, full_name, email, is_active'),
@@ -191,8 +215,21 @@ export async function GET(request: Request) {
     const conductorTypeMap = new Map((conductorTypesResult.data || []).map((type) => [type.id, { code: type.code, nombre: type.name }]))
     const deprecatedCodes = new Set(['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL'])
     const subcontractorTypeMap = new Map((subcontractorTypesResult.data || []).filter((type) => !deprecatedCodes.has(type.code)).map((type) => [type.id, { code: type.code, nombre: type.nombre }]))
+    const f301TypeIds = new Set(
+      (subcontractorTypesResult.data || [])
+        .filter((type: any) => type.code === 'F30-1_CLIENTE')
+        .map((type: any) => type.id),
+    )
+
     const canonicalConductorDocs = canonicalizeRejectedConductorDocuments(conductorDocs, approvedConductorDocs)
-    const canonicalSubDocs = canonicalizeRejectedSubcontractorDocuments(subDocs, approvedSubDocs, subcontractorTypeMap)
+    const canonicalOrdinarySubDocs = canonicalizeRejectedSubcontractorDocuments(
+      subDocs.filter((doc: any) => !f301TypeIds.has(doc.document_type_id)),
+      approvedSubDocs.filter((doc: any) => !f301TypeIds.has(doc.document_type_id)),
+      subcontractorTypeMap,
+    )
+    const { documents: canonicalRejectedF301, diagnostics: f301Diagnostics } =
+      selectCanonicalF301ByStatus(f301History, 'rejected')
+    const canonicalSubDocs = [...canonicalOrdinarySubDocs, ...canonicalRejectedF301]
     const executiveMap = new Map((executivesResult.data || []).map((executive) => [executive.id, executive.full_name]))
 
     const providerRuts = [...new Set(canonicalConductorDocs.map((doc: any) => doc.conductores?.rut_proveedor).filter(Boolean))]
@@ -277,6 +314,7 @@ export async function GET(request: Request) {
           }
         : { mode: 'all', canCover: false, availableExecutives: [] },
       historyEndpoint: '/api/company/documents/history',
+      diagnostics: { f301: f301Diagnostics },
       timestamp: new Date().toISOString(),
     })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
