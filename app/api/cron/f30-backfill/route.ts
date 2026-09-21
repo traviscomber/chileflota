@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveF30BackfillOutcome } from '@/lib/f30-backfill-outcome'
 import { finishSystemJobRun, startSystemJobRun } from '@/lib/system-job-runs'
+import { createDocumentInternalAuthHeaders } from '@/lib/document-route-auth'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -66,7 +67,10 @@ async function processDocument(
   try {
     const response = await fetch(`${PRODUCTION_ORIGIN}/api/company/documents/${document.id}/reprocess`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...createDocumentInternalAuthHeaders(document.id),
+      },
       body: JSON.stringify({ documentId: document.id, source: 'f30_backfill' }),
       cache: 'no-store',
     })
