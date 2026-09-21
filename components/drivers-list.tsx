@@ -142,7 +142,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
   const getDocumentStatusColor = (estado: string) => {
     switch (estado) {
       case 'aprobado':
-        return 'bg-green-600 text-[var(--cf-text)]'
+        return 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
       case 'rechazado':
         return 'bg-[var(--cf-danger-soft)] text-[var(--cf-text)]'
       case 'pendiente':
@@ -173,7 +173,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
     <div className="w-full space-y-4">
       {/* Header Educativo */}
       <div className="space-y-3 mb-6">
-        <h2 className="text-2xl font-bold text-[var(--cf-text)]">Gestión de Conductores</h2>
+        <h2 className="text-2xl font-semibold text-[var(--cf-text)]">Gestión de Conductores</h2>
         <p className="text-sm text-[var(--cf-text-muted)] max-w-2xl leading-relaxed">
           Monitorea licencias vigentes, estado de cumplimiento y actualización de documentos. Identifica conductores listos para operar o que necesitan atención inmediata.
         </p>
@@ -181,27 +181,27 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
 
       {/* Estadísticas Rápidas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-[var(--cf-surface)]/50 border-slate-800">
+        <Card className="bg-[var(--cf-surface)]/50 border-[var(--cf-border)]">
           <CardContent className="p-3">
-            <div className="text-2xl font-bold text-[var(--cf-text)]">{drivers.length}</div>
+            <div className="text-2xl font-semibold text-[var(--cf-text)]">{drivers.length}</div>
             <p className="text-xs text-[var(--cf-text-muted)]">Total de Conductores</p>
           </CardContent>
         </Card>
         <Card className="bg-[var(--cf-success-soft)] border-green-800">
           <CardContent className="p-3">
-            <div className="text-2xl font-bold text-[var(--cf-success)]">{drivers.filter(d => d.is_active).length}</div>
+            <div className="text-2xl font-semibold text-[var(--cf-success)]">{drivers.filter(d => d.is_active).length}</div>
             <p className="text-xs text-[var(--cf-success)]">Activos</p>
           </CardContent>
         </Card>
         <Card className="bg-[var(--cf-danger-soft)] border-red-800">
           <CardContent className="p-3">
-            <div className="text-2xl font-bold text-[var(--cf-danger)]">{drivers.filter(d => !d.is_active).length}</div>
+            <div className="text-2xl font-semibold text-[var(--cf-danger)]">{drivers.filter(d => !d.is_active).length}</div>
             <p className="text-xs text-[var(--cf-danger)]">Inactivos</p>
           </CardContent>
         </Card>
-        <Card className="bg-[var(--cf-surface)]/50 border-slate-800">
+        <Card className="bg-[var(--cf-surface)]/50 border-[var(--cf-border)]">
           <CardContent className="p-3">
-            <div className="text-2xl font-bold text-[var(--cf-text)]">{filteredDrivers.length}</div>
+            <div className="text-2xl font-semibold text-[var(--cf-text)]">{filteredDrivers.length}</div>
             <p className="text-xs text-[var(--cf-text-muted)]">Resultados de búsqueda</p>
           </CardContent>
         </Card>
@@ -245,7 +245,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
 
         {/* Advanced Filters con Tooltips */}
         {showAdvancedFilters && (
-          <div className="space-y-3 p-4 bg-[var(--cf-surface)] rounded-[6px] border border-slate-800">
+          <div className="space-y-3 p-4 bg-[var(--cf-surface)] rounded-[6px] border border-[var(--cf-border)]">
             {/* Status Filter */}
             <div>
               <label className="text-sm font-semibold text-[var(--cf-text-secondary)]">Estado</label>
@@ -345,7 +345,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
 
             <div className="space-y-4">
               <div>
-                <h3 className="text-2xl font-bold text-[var(--cf-text)]">{selectedDriver.nombre}</h3>
+                <h3 className="text-2xl font-semibold text-[var(--cf-text)]">{selectedDriver.nombre}</h3>
                 <p className="font-mono text-sm text-[var(--cf-warning)]">{selectedDriver.rut}</p>
               </div>
 
@@ -388,7 +388,7 @@ export function DriversList({ drivers, highlightedRut }: DriversListProps) {
                 {selectedDriver.patente_tracto && (
                   <div>
                     <p className="text-xs font-semibold uppercase text-[var(--cf-text-muted)]">Patente Tracto</p>
-                    <p className="font-mono text-lg font-bold text-[var(--cf-info)]">
+                    <p className="font-mono text-lg font-semibold text-[var(--cf-info)]">
                       {selectedDriver.patente_tracto}
                     </p>
                   </div>
