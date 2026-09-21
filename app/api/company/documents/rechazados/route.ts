@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 import { canonicalizeRejectedConductorDocuments, canonicalizeRejectedSubcontractorDocuments } from '@/lib/document-review-canonical'
+import { getExecutiveScope, type ExecutiveScopeMode } from '@/lib/executive-coverage-scope'
 
 const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
 
@@ -117,32 +118,66 @@ export async function GET(request: Request) {
 
     const supabase = createAdminClient()
     const focus = getFocus(request)
+    const requestedExecutiveScope = getExecutiveScope(request)
+    let executiveStaffId: string | null = null
     let executiveCompanyIds: Set<string> | null = null
+    let allActiveCompanyIds: Set<string> | null = null
+    let effectiveExecutiveScope: ExecutiveScopeMode = auth.user.role === 'ejecutiva' ? requestedExecutiveScope.mode : 'all'
+    let selectedExecutiveId: string | null = null
 
     if (auth.user.role === 'ejecutiva') {
-      const executiveStaffId = await resolveExecutiveStaffId(supabase, auth.user.email, auth.user.id)
+      executiveStaffId = await resolveExecutiveStaffId(supabase, auth.user.email, auth.user.id)
       if (!executiveStaffId) {
         return NextResponse.json({ error: 'No se pudo resolver la ejecutiva activa' }, { status: 403 })
       }
 
-      const { data: assignedCompanies, error: assignedCompaniesError } = await supabase
-        .from('transportistas')
-        .select('id')
-        .eq('assigned_executive_id', executiveStaffId)
-        .eq('is_active', true)
+      let portfolioExecutiveId = executiveStaffId
 
-      if (assignedCompaniesError) throw assignedCompaniesError
-      executiveCompanyIds = new Set((assignedCompanies || []).map((company: any) => company.id))
+      if (requestedExecutiveScope.mode === 'executive') {
+        const { data: selectedExecutive, error: selectedExecutiveError } = await supabase
+          .from('executive_staff')
+          .select('id')
+          .eq('id', requestedExecutiveScope.executiveId)
+          .eq('is_active', true)
+          .maybeSingle()
+
+        if (selectedExecutiveError) throw selectedExecutiveError
+        if (!selectedExecutive?.id) {
+          return NextResponse.json({ error: 'La ejecutiva seleccionada no está activa' }, { status: 400 })
+        }
+
+        portfolioExecutiveId = selectedExecutive.id
+        selectedExecutiveId = selectedExecutive.id
+      } else if (requestedExecutiveScope.mode === 'all') {
+        const { data: activeCompanies, error: activeCompaniesError } = await supabase
+          .from('transportistas')
+          .select('id')
+          .eq('is_active', true)
+
+        if (activeCompaniesError) throw activeCompaniesError
+        allActiveCompanyIds = new Set((activeCompanies || []).map((company: any) => company.id))
+      }
+
+      if (requestedExecutiveScope.mode !== 'all') {
+        const { data: assignedCompanies, error: assignedCompaniesError } = await supabase
+          .from('transportistas')
+          .select('id')
+          .eq('assigned_executive_id', portfolioExecutiveId)
+          .eq('is_active', true)
+
+        if (assignedCompaniesError) throw assignedCompaniesError
+        executiveCompanyIds = new Set((assignedCompanies || []).map((company: any) => company.id))
+      }
     }
 
     const [conductorResult, approvedConductorResult, subDocs, approvedSubResult, conductorTypesResult, subcontractorTypesResult, executivesResult] = await Promise.all([
-      supabase.from('uploaded_documents').select(`id,original_filename,document_type_id,validation_status,file_url,rejection_reason,validated_at,ejecutiva,created_at,updated_at,conductor_id,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,conductores(id,nombres,apellido_paterno,rut,rut_proveedor)`).eq('validation_status', 'rejected').eq('is_current', true).order('updated_at', { ascending: false }),
+      supabase.from('uploaded_documents').select(`id,original_filename,document_type_id,validation_status,file_url,rejection_reason,validated_at,ejecutiva,created_at,updated_at,conductor_id,document_period_month,document_period_year,document_period_start,version_number,supersedes_document_id,conductores(id,nombres,apellido_paterno,rut,rut_proveedor,transportista_id)`).eq('validation_status', 'rejected').eq('is_current', true).order('updated_at', { ascending: false }),
       fetchAllApprovedConductorDocuments(supabase),
       fetchAllRejectedSubcontractorDocuments(supabase),
       fetchAllApprovedSubcontractorDocuments(supabase),
       supabase.from('document_types').select('id, code, name'),
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
-      supabase.from('executive_staff').select('id, full_name'),
+      supabase.from('executive_staff').select('id, full_name, email, is_active'),
     ])
 
     if (conductorResult.error) throw conductorResult.error
@@ -161,19 +196,23 @@ export async function GET(request: Request) {
     const executiveMap = new Map((executivesResult.data || []).map((executive) => [executive.id, executive.full_name]))
 
     const providerRuts = [...new Set(canonicalConductorDocs.map((doc: any) => doc.conductores?.rut_proveedor).filter(Boolean))]
+    const directCompanyIds = [...new Set(canonicalConductorDocs.map((doc: any) => doc.conductores?.transportista_id).filter(Boolean))]
     const subcontractorIds = [...new Set(canonicalSubDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
-    const [conductorCompaniesResult, subcontractorCompaniesResult] = await Promise.all([
-      providerRuts.length ? supabase.from('transportistas').select('id, rut, razon_social, assigned_executive_id').in('rut', providerRuts) : Promise.resolve({ data: [], error: null }),
+    const [conductorCompaniesResult, directConductorCompaniesResult, subcontractorCompaniesResult] = await Promise.all([
+      providerRuts.length ? supabase.from('transportistas').select('id, rut, razon_social, assigned_executive_id, is_active').in('rut', providerRuts) : Promise.resolve({ data: [], error: null }),
+      directCompanyIds.length ? supabase.from('transportistas').select('id, rut, razon_social, assigned_executive_id, is_active').in('id', directCompanyIds) : Promise.resolve({ data: [], error: null }),
       subcontractorIds.length ? supabase.from('transportistas').select('id, rut, razon_social, assigned_executive_id').in('id', subcontractorIds) : Promise.resolve({ data: [], error: null }),
     ])
     if (conductorCompaniesResult.error) throw conductorCompaniesResult.error
+    if (directConductorCompaniesResult.error) throw directConductorCompaniesResult.error
     if (subcontractorCompaniesResult.error) throw subcontractorCompaniesResult.error
 
     const companyByRut = new Map((conductorCompaniesResult.data || []).map((company: any) => [company.rut, company]))
+    const companyByDirectId = new Map((directConductorCompaniesResult.data || []).map((company: any) => [company.id, company]))
     const companyById = new Map((subcontractorCompaniesResult.data || []).map((company: any) => [company.id, company]))
 
     const normalizedConductor = canonicalConductorDocs.map((doc: any) => {
-      const company: any = companyByRut.get(doc.conductores?.rut_proveedor)
+      const company: any = companyByDirectId.get(doc.conductores?.transportista_id) || companyByRut.get(doc.conductores?.rut_proveedor)
       return {
         id: doc.id, original_filename: doc.original_filename, document_name: doc.original_filename, file_name: doc.original_filename,
         document_type_id: doc.document_type_id, validation_status: doc.validation_status, status: doc.validation_status,
@@ -203,11 +242,12 @@ export async function GET(request: Request) {
       }
     })
 
-    const scopedConductor = executiveCompanyIds
-      ? normalizedConductor.filter((document: any) => document.company_id && executiveCompanyIds!.has(document.company_id))
+    const effectiveCompanyScope = executiveCompanyIds || allActiveCompanyIds
+    const scopedConductor = effectiveCompanyScope
+      ? normalizedConductor.filter((document: any) => document.company_id && effectiveCompanyScope.has(document.company_id))
       : normalizedConductor
-    const scopedSub = executiveCompanyIds
-      ? normalizedSub.filter((document: any) => document.company_id && executiveCompanyIds!.has(document.company_id))
+    const scopedSub = effectiveCompanyScope
+      ? normalizedSub.filter((document: any) => document.company_id && effectiveCompanyScope.has(document.company_id))
       : normalizedSub
 
     const filterByFocus = (document: any) => !focus || (focus.mode === 'conductor' ? document.conductores?.id === focus.id : document.company_id === focus.id)
@@ -215,7 +255,30 @@ export async function GET(request: Request) {
     const filteredSub = scopedSub.filter(filterByFocus)
     const allDocs = [...filteredConductor, ...filteredSub].sort((a, b) => new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime())
 
-    const response = NextResponse.json({ conductorDocs: filteredConductor, subDocs: filteredSub, allDocs, documents: allDocs, total: allDocs.length, scope: auth.user.role === 'ejecutiva' ? 'assigned_executive_canonical_current' : 'canonical_current', historyEndpoint: '/api/company/documents/history', timestamp: new Date().toISOString() })
+    const response = NextResponse.json({
+      conductorDocs: filteredConductor,
+      subDocs: filteredSub,
+      allDocs,
+      documents: allDocs,
+      total: allDocs.length,
+      scope: auth.user.role === 'ejecutiva'
+        ? (effectiveExecutiveScope === 'mine' ? 'assigned_executive_canonical_current' : 'coverage_canonical_current')
+        : 'canonical_current',
+      executiveStaffId,
+      reviewScope: auth.user.role === 'ejecutiva'
+        ? {
+            mode: effectiveExecutiveScope,
+            actorExecutiveStaffId: executiveStaffId,
+            selectedExecutiveId,
+            canCover: true,
+            availableExecutives: (executivesResult.data || [])
+              .filter((item: any) => item.is_active === true)
+              .map((item: any) => ({ id: item.id, nombre: item.full_name, email: item.email })),
+          }
+        : { mode: 'all', canCover: false, availableExecutives: [] },
+      historyEndpoint: '/api/company/documents/history',
+      timestamp: new Date().toISOString(),
+    })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
     return response
   } catch (error) {
