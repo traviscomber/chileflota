@@ -28,14 +28,6 @@ export default function LoginPage() {
         return
       }
 
-      const expiryDate = new Date()
-      expiryDate.setTime(expiryDate.getTime() + 7 * 24 * 60 * 60 * 1000)
-
-      document.cookie = `user_email=${encodeURIComponent(email.toLowerCase())}; path=/; expires=${expiryDate.toUTCString()}`
-      document.cookie = `user_name=${encodeURIComponent(data.user.full_name)}; path=/; expires=${expiryDate.toUTCString()}`
-      document.cookie = `user_role=${encodeURIComponent(data.user.role)}; path=/; expires=${expiryDate.toUTCString()}`
-      document.cookie = `user_organization_id=${encodeURIComponent(data.user.organization_id || '')}; path=/; expires=${expiryDate.toUTCString()}`
-
       setTimeout(() => {
         window.location.href = data.user.role === 'ejecutiva'
           ? '/dashboard/company/documentos/pendientes'
