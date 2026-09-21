@@ -4,6 +4,52 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
+async function resolveExecutiveCompanyIds(
+  supabase: ReturnType<typeof createAdminClient>,
+  email: string,
+  authUserId: string,
+) {
+  const { data: exact } = await supabase
+    .from('executive_staff')
+    .select('id')
+    .ilike('email', email)
+    .eq('is_active', true)
+    .limit(1)
+    .maybeSingle()
+
+  let executiveStaffId = exact?.id as string | undefined
+
+  if (!executiveStaffId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', authUserId)
+      .maybeSingle()
+
+    if (profile?.full_name) {
+      const { data: matches } = await supabase
+        .from('executive_staff')
+        .select('id')
+        .ilike('full_name', profile.full_name)
+        .eq('is_active', true)
+        .limit(2)
+
+      if (matches?.length === 1) executiveStaffId = matches[0].id as string
+    }
+  }
+
+  if (!executiveStaffId) return null
+
+  const { data: companies, error } = await supabase
+    .from('transportistas')
+    .select('id')
+    .eq('assigned_executive_id', executiveStaffId)
+    .eq('is_active', true)
+
+  if (error) throw error
+  return (companies || []).map((company) => company.id).filter(Boolean)
+}
+
 const ALERT_ACTION_ROLES = [
   'super_admin',
   'admin',
@@ -51,7 +97,7 @@ export async function POST(
 
     const { data: existingAlert, error: fetchError } = await supabase
       .from(table)
-      .select('id,status,is_resolved')
+      .select(isLogAlert ? 'id,status,is_resolved,transportista_id' : 'id,status,is_resolved,metadata')
       .eq('id', alertId)
       .maybeSingle()
 
@@ -62,6 +108,23 @@ export async function POST(
 
     if (!existingAlert) {
       return NextResponse.json({ error: 'Alert not found' }, { status: 404 })
+    }
+
+    const existingAlertRow = existingAlert as any
+
+    if (user.role === 'ejecutiva') {
+      const executiveCompanyIds = await resolveExecutiveCompanyIds(supabase, user.email, user.id)
+      if (executiveCompanyIds === null) {
+        return NextResponse.json({ error: 'No se pudo resolver la ejecutiva activa' }, { status: 403 })
+      }
+
+      const transportistaId = isLogAlert
+        ? existingAlertRow.transportista_id
+        : existingAlertRow.metadata?.transportista_id || existingAlertRow.metadata?.subcontractor_id
+
+      if (!transportistaId || !executiveCompanyIds.includes(transportistaId)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     const resolved = action === 'resolve'

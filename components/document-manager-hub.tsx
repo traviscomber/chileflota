@@ -34,6 +34,12 @@ interface DocumentStats {
 interface ModuleStats {
   conductores: DocumentStats
   subcontratistas: DocumentStats
+  lifetime?: {
+    registered?: number
+    processed?: number
+    awaitingProcessing?: number
+    globalProcessed?: number
+  }
   certificaciones: {
     total: number
     vigentes: number
@@ -52,10 +58,50 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   const { onSync } = useDocumentSync()
 
   const refreshStats = async () => {
-    const response = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, { cache: 'no-store' })
-    if (!response.ok) return
-    const data = await response.json()
-    setStats(data.stats)
+    const timestamp = Date.now()
+    const options = { cache: 'no-store' as RequestCache }
+
+    const [statsRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+      fetch(`/api/company/documents/stats?_t=${timestamp}`, options),
+      fetch(`/api/dashboard/pending-documents?_t=${timestamp}`, options),
+      fetch(`/api/company/documents/aprobados?_t=${timestamp}`, options),
+      fetch(`/api/company/documents/rechazados?_t=${timestamp}`, options),
+    ])
+
+    if (!statsRes.ok || !pendingRes.ok || !approvedRes.ok || !rejectedRes.ok) return
+
+    const [statsData, pendingData, approvedData, rejectedData] = await Promise.all([
+      statsRes.json(),
+      pendingRes.json(),
+      approvedRes.json(),
+      rejectedRes.json(),
+    ])
+
+    const raw = statsData.stats || {}
+    const pendingConductor = pendingData.conductorDocs?.length || 0
+    const pendingSubcontractor = pendingData.subDocs?.length || 0
+    const approvedConductor = approvedData.conductorDocs?.length || 0
+    const approvedSubcontractor = approvedData.subDocs?.length || 0
+    const rejectedConductor = rejectedData.conductorDocs?.length || 0
+    const rejectedSubcontractor = rejectedData.subDocs?.length || 0
+
+    setStats({
+      ...raw,
+      conductores: {
+        ...(raw.conductores || {}),
+        pendientes: pendingConductor,
+        aprobados: approvedConductor,
+        rechazados: rejectedConductor,
+        total: pendingConductor + approvedConductor + rejectedConductor,
+      },
+      subcontratistas: {
+        ...(raw.subcontratistas || {}),
+        pendientes: pendingSubcontractor,
+        aprobados: approvedSubcontractor,
+        rechazados: rejectedSubcontractor,
+        total: pendingSubcontractor + approvedSubcontractor + rejectedSubcontractor,
+      },
+    })
   }
 
   const handleManualRefresh = async () => {
@@ -98,8 +144,9 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   const totalAprobados = stats.conductores.aprobados + stats.subcontratistas.aprobados
   const totalRechazados = stats.conductores.rechazados + stats.subcontratistas.rechazados
   const totalActuales = stats.conductores.total + stats.subcontratistas.total
-  const totalGestionados = stats.conductores.processed + stats.subcontratistas.processed
-  const totalVersionesAnteriores = totalGestionados - totalActuales
+  const totalGestionados = stats.lifetime?.processed ?? (stats.conductores.processed + stats.subcontratistas.processed)
+  const totalChileFlota = stats.lifetime?.globalProcessed ?? totalGestionados
+  const totalVersionesAnteriores = Math.max(0, totalGestionados - totalActuales)
 
   const modules = [
     {
@@ -160,14 +207,14 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
             Gestor de Documentos
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">
-            {totalGestionados.toLocaleString('es-CL')} documentos gestionados en total. {totalActuales.toLocaleString('es-CL')} corresponden a la versión actual de cada requisito.
+            {totalGestionados.toLocaleString('es-CL')} documentos procesados en tu cartera. {totalActuales.toLocaleString('es-CL')} corresponden al estado operacional actual.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="h-8 rounded-[5px] border-[#303238] px-2.5 text-xs font-normal text-[#C6C8CC]">
             <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
-            {totalGestionados.toLocaleString('es-CL')} gestionados
+            {totalChileFlota.toLocaleString('es-CL')} procesados ChileFlota
           </Badge>
           <Button
             variant="outline"
@@ -183,7 +230,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       </header>
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-5">
-        <MetricCard label="Gestionados" value={totalGestionados} detail="Todas las cargas y versiones" icon={FileStack} tone="neutral" />
+        <MetricCard label="Procesados cartera" value={totalGestionados} detail={`ChileFlota total: ${totalChileFlota.toLocaleString('es-CL')}`} icon={FileStack} tone="neutral" />
         <MetricCard label="Actuales" value={totalActuales} detail="Una versión activa por requisito" icon={FileText} tone="neutral" />
         <Link href="/dashboard/company/documentos/pendientes" className="contents">
           <MetricCard label="Pendientes" value={totalPendientes} icon={Clock} tone="warning" />
@@ -197,7 +244,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       </div>
 
       <p className="text-xs leading-5 text-[#777C84]">
-        Las {totalVersionesAnteriores.toLocaleString('es-CL')} versiones anteriores se conservan como trazabilidad y no representan documentos faltantes.
+        Los estados Pendientes, Aprobados y Rechazados usan exactamente la misma fuente canónica que sus bandejas. Las {totalVersionesAnteriores.toLocaleString('es-CL')} versiones históricas de la cartera se conservan como trazabilidad.
       </p>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
