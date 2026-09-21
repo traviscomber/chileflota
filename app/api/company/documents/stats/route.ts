@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
     ) => {
       let query: any = supabase.from(table).select('id', { count: 'exact', head: true })
       if (currentOnly) query = query.eq('is_current', true)
+      if (kind === 'conductor') {
+        query = query.not('document_type_id', 'is', null).not('original_filename', 'is', null)
+      }
       if (configure) query = configure(query)
       query = scopeQuery(query, kind)
       if (!query) return 0
@@ -121,11 +124,15 @@ export async function GET(request: NextRequest) {
     let legacyDocumentsQuery: any = supabase
       .from('uploaded_documents')
       .select('original_filename,validation_status,processed_at,ai_processed_at,ai_analyzed_at,vision_processed_at')
+      .not('document_type_id', 'is', null)
+      .not('original_filename', 'is', null)
     legacyDocumentsQuery = scopeQuery(legacyDocumentsQuery, 'conductor')
 
     const globalLegacyDocumentsQuery = supabase
       .from('uploaded_documents')
       .select('original_filename,validation_status,processed_at,ai_processed_at,ai_analyzed_at,vision_processed_at')
+      .not('document_type_id', 'is', null)
+      .not('original_filename', 'is', null)
 
     let transportistasQuery: any = supabase
       .from('transportistas')
