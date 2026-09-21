@@ -423,17 +423,17 @@ export function SubcontractorDetailTabs({
                     {/* Compliance Bar */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-400">Requisitos aprobados</span>
+                        <span className="text-xs text-slate-400">Cobertura de requisitos</span>
                         <span className="text-sm font-bold text-white">
                           {summary.totalRequirements > 0 
-                            ? Math.round((summary.approvedRequirements / summary.totalRequirements) * 100)
+                            ? Math.round((summary.requirementsCovered / summary.totalRequirements) * 100)
                             : 0}%
                         </span>
                       </div>
                       <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
                         <div 
                           className="bg-gradient-to-r from-green-500 to-green-400 h-full rounded-full transition-all"
-                          style={{ width: `${summary.totalRequirements > 0 ? Math.min((summary.approvedRequirements / summary.totalRequirements) * 100, 100) : 0}%` }}
+                          style={{ width: `${summary.totalRequirements > 0 ? Math.min((summary.requirementsCovered / summary.totalRequirements) * 100, 100) : 0}%` }}
                         />
                       </div>
                     </div>
