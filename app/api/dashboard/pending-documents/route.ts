@@ -37,7 +37,7 @@ const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
   'PENSION',
 ])
 
-function getExecutiveScope(request: Request): { mode: ExecutiveScopeMode; executiveId: string | null } {
+export function getExecutiveScope(request: Request): { mode: ExecutiveScopeMode; executiveId: string | null } {
   const url = new URL(request.url)
   const rawMode = url.searchParams.get('scope')
   const executiveId = url.searchParams.get('executive_id')
