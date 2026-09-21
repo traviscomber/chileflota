@@ -53,6 +53,37 @@ function isOperationalQuestion(raw: string) {
   return OPERATIONAL_PREFIXES.some((prefix) => query.startsWith(prefix)) || OPERATIONAL_TERMS.some((term) => query.includes(term))
 }
 
+function normalizeSearchValue(value: string | null | undefined) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+}
+
+function normalizeRut(value: string | null | undefined) {
+  return (value || '').toLowerCase().replace(/[^0-9k]/g, '')
+}
+
+function findExactEntitySuggestion(query: string, items: SearchSuggestion[]) {
+  const normalizedQuery = normalizeSearchValue(query)
+  const normalizedQueryRut = normalizeRut(query)
+
+  return items.find((suggestion) => {
+    if (suggestion.type === 'document') return false
+
+    if (normalizedQueryRut.length >= 7 && normalizeRut(suggestion.secondary) === normalizedQueryRut) {
+      return true
+    }
+
+    return (
+      normalizeSearchValue(suggestion.label) === normalizedQuery ||
+      normalizeSearchValue(suggestion.value) === normalizedQuery
+    )
+  })
+}
+
 function formatFacts(facts?: Record<string, unknown>) {
   if (!facts) return []
   return Object.entries(facts)
@@ -222,6 +253,28 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
 
     if (isOperationalQuestion(query)) {
       await runIntelligenceQuery(query)
+      return
+    }
+
+    let exactEntitySuggestion = findExactEntitySuggestion(query, suggestions)
+
+    if (!exactEntitySuggestion && query.length >= 2) {
+      try {
+        const response = await fetch(`/api/company/search-suggestions?q=${encodeURIComponent(query)}`, {
+          cache: 'no-store',
+        })
+        if (response.ok) {
+          const data = await response.json()
+          const freshSuggestions = Array.isArray(data.suggestions) ? data.suggestions : []
+          exactEntitySuggestion = findExactEntitySuggestion(query, freshSuggestions)
+        }
+      } catch (error) {
+        console.error('Exact entity resolution error:', error)
+      }
+    }
+
+    if (exactEntitySuggestion) {
+      navigateToSuggestion(exactEntitySuggestion)
       return
     }
 
