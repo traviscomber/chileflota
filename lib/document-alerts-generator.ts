@@ -342,26 +342,66 @@ export async function generateExpirationAlerts() {
     const today = new Date()
     const in7days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    // Find documents expiring in the next 7 days
+    // Only canonical, approved, current documents can create operational expiry alerts.
     const { data: expiringDocs } = await supabase
       .from('uploaded_documents')
-      .select('id, conductor_id, document_type_id, expiration_date, document_types(name)')
+      .select('id, conductor_id, transportista_id, document_type_id, expiration_date, document_types(name)')
+      .eq('is_current', true)
+      .eq('validation_status', 'approved')
       .lt('expiration_date', in7days.toISOString())
       .gt('expiration_date', today.toISOString())
       .is('last_expiration_alert_sent', null)
 
     if (!expiringDocs || expiringDocs.length === 0) {
-      console.log('[v0] No expiring documents found')
+      console.log('[v0] No canonical expiring documents found')
       return
     }
 
-    // Build alerts with ejecutiva lookup
-    const alertsToCreate = await Promise.all(
-      expiringDocs.map(async (doc: any) => {
-        const ejecutivaNombre = await lookupEjecutiva({
-          conductorId: doc.conductor_id,
-        })
+    const conductorIds = Array.from(new Set(expiringDocs.map((doc: any) => doc.conductor_id).filter(Boolean)))
+    const conductorCompanyMap = new Map<string, string>()
+    if (conductorIds.length > 0) {
+      const { data: conductores = [] } = await supabase
+        .from('conductores')
+        .select('id, transportista_id')
+        .in('id', conductorIds)
 
+      for (const conductor of conductores || []) {
+        if (conductor.id && conductor.transportista_id) {
+          conductorCompanyMap.set(conductor.id, conductor.transportista_id)
+        }
+      }
+    }
+
+    const candidateCompanyIds = Array.from(new Set(
+      expiringDocs
+        .map((doc: any) => doc.transportista_id || conductorCompanyMap.get(doc.conductor_id))
+        .filter(Boolean),
+    ))
+
+    const activeCompanyIds = new Set<string>()
+    if (candidateCompanyIds.length > 0) {
+      const { data: activeCompanies = [] } = await supabase
+        .from('transportistas')
+        .select('id')
+        .in('id', candidateCompanyIds)
+        .eq('is_active', true)
+
+      for (const company of activeCompanies || []) {
+        if (company.id) activeCompanyIds.add(company.id)
+      }
+    }
+
+    const relevantDocs = expiringDocs.filter((doc: any) => {
+      const transportistaId = doc.transportista_id || conductorCompanyMap.get(doc.conductor_id)
+      return Boolean(transportistaId && activeCompanyIds.has(transportistaId))
+    })
+
+    const alertsToCreate = (await Promise.all(
+      relevantDocs.map(async (doc: any) => {
+        const transportistaId = doc.transportista_id || conductorCompanyMap.get(doc.conductor_id)
+        if (!transportistaId) return null
+
+        const ejecutivaNombre = await lookupEjecutiva({ transportistaId })
         const docName = doc.document_types?.name || 'Documento'
         const expDate = new Date(doc.expiration_date).toLocaleDateString('es-CL')
         const message = `El documento ${docName} vence el ${expDate}`
@@ -378,19 +418,23 @@ export async function generateExpirationAlerts() {
           is_resolved: false,
           status: 'pendiente',
           ejecutiva_nombre: ejecutivaNombre,
+          transportista_id: transportistaId,
           driver_id: doc.conductor_id,
           document_id: doc.id,
           document_type: docName,
-          action_url: `/dashboard/company/documentos`,
+          action_url: '/dashboard/company/documentos/renovar',
           created_at: new Date().toISOString(),
           metadata: {
+            source: 'expiration_cron',
+            canonical_source: 'uploaded_documents.expiration_date',
             document_id: doc.id,
             conductor_id: doc.conductor_id,
+            transportista_id: transportistaId,
             expiration_date: doc.expiration_date,
           },
         }
       })
-    )
+    )).filter(Boolean)
 
     if (alertsToCreate.length > 0) {
       const { error: insertError } = await supabase
@@ -402,7 +446,7 @@ export async function generateExpirationAlerts() {
         await supabase
           .from('uploaded_documents')
           .update({ last_expiration_alert_sent: new Date().toISOString() })
-          .in('id', expiringDocs.map((d: any) => d.id))
+          .in('id', relevantDocs.map((d: any) => d.id))
 
         console.log(`[v0] Created ${alertsToCreate.length} expiration alerts`)
       } else {
