@@ -316,19 +316,19 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   return (
     <div className="space-y-4">
       <div className="mb-6 space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">Gestión de Subcontratistas</h2>
+        <h2 className="text-2xl font-semibold text-foreground">Gestión de Subcontratistas</h2>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">Visualiza, busca y filtra proveedores de transporte, cumplimiento normativo y estado tributario SII.</p>
       </div>
 
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cf-text-muted)]" />
-          <Input placeholder="Buscar por nombre, RUT, región, ejecutiva..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="border-[var(--cf-border)] bg-[var(--cf-surface)] pl-10 text-[var(--cf-text)] placeholder-slate-500" />
+          <Input placeholder="Buscar por nombre, RUT, región, ejecutiva..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="border-[var(--cf-border)] bg-[var(--cf-surface)] pl-10 text-[var(--cf-text)] placeholder:text-[var(--cf-text-muted)]" />
           {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--cf-text-muted)] hover:text-[var(--cf-text-muted)]"><X className="h-4 w-4" /></button>}
         </div>
-        <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} className={`flex items-center gap-2 rounded border px-4 py-2 transition-colors ${showAdvancedFilters ? 'border-orange-500 bg-[var(--cf-accent)] text-[var(--cf-text)]' : 'border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]'}`}>
+        <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} className={`flex items-center gap-2 rounded border px-4 py-2 transition-colors ${showAdvancedFilters ? 'border-[var(--cf-accent)] bg-[var(--cf-accent)] text-[var(--cf-text)]' : 'border-[var(--cf-border)] bg-[var(--cf-surface)] text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]'}`}>
           <Filter className="h-4 w-4" /> Filtros
-          {hasActiveFilters && <Badge className="ml-1 bg-red-500 text-[var(--cf-text)]">{selectedCertifications.length + (showActiveOnly ? 1 : 0)}</Badge>}
+          {hasActiveFilters && <Badge className="ml-1 bg-[var(--cf-danger-soft)] text-[var(--cf-text)]">{selectedCertifications.length + (showActiveOnly ? 1 : 0)}</Badge>}
         </button>
         {hasActiveFilters && <button onClick={clearAllFilters} className="rounded border border-[var(--cf-border)] bg-[var(--cf-surface)] px-3 py-2 text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]" title="Limpiar filtros"><X className="h-4 w-4" /></button>}
       </div>
@@ -336,16 +336,16 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
       <div className="space-y-2">
         <label className="block text-sm font-semibold text-[var(--cf-text-secondary)]">Ejecutivas</label>
         <div className="flex flex-wrap gap-2">
-          {ejecutivas.map(ejecutiva => <button key={ejecutiva} onClick={() => toggleEjecutiva(ejecutiva)} className={`rounded px-3 py-1 text-sm transition-colors ${selectedEjecutivas.includes(ejecutiva) ? 'bg-green-600 text-[var(--cf-text)]' : 'bg-[var(--cf-surface)] text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]'}`}>{ejecutiva}</button>)}
+          {ejecutivas.map(ejecutiva => <button key={ejecutiva} onClick={() => toggleEjecutiva(ejecutiva)} className={`rounded px-3 py-1 text-sm transition-colors ${selectedEjecutivas.includes(ejecutiva) ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]' : 'bg-[var(--cf-surface)] text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]'}`}>{ejecutiva}</button>)}
         </div>
       </div>
 
       {showAdvancedFilters && (
-        <div className="space-y-4 rounded-[6px] border border-slate-800 bg-[var(--cf-surface)] p-4">
+        <div className="space-y-4 rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
           <div>
             <label className="mb-2 block text-sm font-semibold text-[var(--cf-text-secondary)]">Certificaciones ({selectedCertifications.length})</label>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(certifications).map(([key, label]) => <button key={key} onClick={() => toggleCertification(key)} className={`rounded px-3 py-1 text-sm ${selectedCertifications.includes(key) ? 'bg-purple-600 text-[var(--cf-text)]' : 'bg-[var(--cf-surface)] text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]'}`}>{label}</button>)}
+              {Object.entries(certifications).map(([key, label]) => <button key={key} onClick={() => toggleCertification(key)} className={`rounded px-3 py-1 text-sm ${selectedCertifications.includes(key) ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]' : 'bg-[var(--cf-surface)] text-[var(--cf-text-muted)] hover:text-[var(--cf-text-secondary)]'}`}>{label}</button>)}
             </div>
           </div>
           <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" checked={showActiveOnly} onChange={e => setShowActiveOnly(e.target.checked)} className="h-4 w-4 rounded border-[var(--cf-border)] bg-[var(--cf-surface)]" /><span className="text-sm text-[var(--cf-text-secondary)]">Solo activos</span></label>
@@ -375,8 +375,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="mb-1 flex items-baseline gap-3">
-                          <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-[4px] bg-[var(--cf-accent)] text-sm font-bold text-[var(--cf-text)]">{subIdx + 1}</span>
-                          <h3 className="text-lg font-bold text-[var(--cf-text)]">{sub.nombre || sub.razon_social}</h3>
+                          <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-[4px] bg-[var(--cf-accent)] text-sm font-semibold text-[var(--cf-text)]">{subIdx + 1}</span>
+                          <h3 className="text-lg font-semibold text-[var(--cf-text)]">{sub.nombre || sub.razon_social}</h3>
                         </div>
                         {sub.nombre_fantasia && <p className="ml-9 text-sm italic text-[var(--cf-text-muted)]">{sub.nombre_fantasia}</p>}
                       </div>
@@ -393,7 +393,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                       <button onClick={() => { setEditingSubcontractor(sub); setIsEditModalOpen(true) }} className="ml-auto rounded p-2 text-[var(--cf-text-muted)] hover:bg-[var(--cf-surface-raised)]/60 hover:text-[var(--cf-text-secondary)]" title="Editar subcontratista"><Edit className="h-4 w-4" /></button>
                       <button onClick={() => { setAssigningSubcontractor(sub); setIsAssignModalOpen(true) }} className="rounded p-2 text-[var(--cf-text-muted)] hover:bg-[var(--cf-surface-raised)]/60 hover:text-[var(--cf-text-secondary)]" title="Asignar ejecutiva"><UserPlus className="h-4 w-4" /></button>
                       <button onClick={() => { setDetailTabToOpen('documentos'); setSelectedDetailSubcontractor(sub) }} className="rounded border border-blue-500/30 bg-[var(--cf-info-soft)] px-3 py-1 text-xs text-[var(--cf-info)] hover:bg-blue-500/30">Documentos</button>
-                      <button onClick={() => { setDetailTabToOpen('conductores'); setSelectedDetailSubcontractor(sub) }} className="rounded border border-orange-500/30 bg-[var(--cf-accent)]/20 px-3 py-1 text-xs text-[var(--cf-expiring)] hover:bg-[var(--cf-accent)]/30">Ver Conductores</button>
+                      <button onClick={() => { setDetailTabToOpen('conductores'); setSelectedDetailSubcontractor(sub) }} className="rounded border border-[var(--cf-accent)]/30 bg-[var(--cf-accent)]/20 px-3 py-1 text-xs text-[var(--cf-expiring)] hover:bg-[var(--cf-accent)]/30">Ver Conductores</button>
                     </div>
 
                     {siiStatus?.checkedAt && (
