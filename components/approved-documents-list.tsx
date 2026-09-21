@@ -88,7 +88,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       if (event.type === 'document_status_changed') {
         const timer = setTimeout(async () => {
           try {
-            const response = await fetch('/api/company/documents/aprobados')
+            const response = await fetch('/api/company/documents/aprobados?compact=1')
             if (response.ok) {
               const data = await response.json()
               setConductorDocs(data.conductorDocs || [])
