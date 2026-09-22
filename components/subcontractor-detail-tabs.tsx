@@ -57,6 +57,7 @@ export function SubcontractorDetailTabs({
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set(['current']))
   const [siiVerificationStatus, setSiiVerificationStatus] = useState<DocumentSIIStatus | null>(null)
   const [siiLoading, setSiiLoading] = useState(false)
+  const [documentLoadError, setDocumentLoadError] = useState<string | null>(null)
   const [summary, setSummary] = useState({
     totalDocumentsUploaded: 0,
     totalRequirements: 0,
@@ -153,6 +154,7 @@ export function SubcontractorDetailTabs({
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setDocumentLoadError(null)
         // If documentsData is provided as prop, use it (pre-fetched from parent)
         if (documentsData) {
           setDocuments(documentsData.documents || [])
@@ -161,18 +163,20 @@ export function SubcontractorDetailTabs({
         } else {
           // Otherwise fetch from API (fallback)
           const docResponse = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
-          if (docResponse.ok) {
-            const data = await docResponse.json()
-            setDocuments(data.documents || [])
-            setRequirements(data.requirements || [])
-            setSummary(data.summary || summary)
+          if (!docResponse.ok) {
+            throw new Error(`No fue posible cargar la carpeta documental (${docResponse.status})`)
           }
+          const data = await docResponse.json()
+          setDocuments(data.documents || [])
+          setRequirements(data.requirements || [])
+          setSummary(data.summary || summary)
         }
 
         // Conductors are passed as a prop from subcontractors-list, no need to fetch
         // Use the conductoresData that's already been filtered by RUT matching
       } catch (error) {
         console.error('Error fetching data:', error)
+        setDocumentLoadError(error instanceof Error ? error.message : 'No fue posible cargar la carpeta documental')
       } finally {
         setLoading(false)
       }
@@ -227,9 +231,17 @@ export function SubcontractorDetailTabs({
     { name: 'INTERPOLAR', key: 'has_interpolar' },
   ]
 
+  const documentErrorBanner = documentLoadError ? (
+    <div className="mb-4 rounded-[6px] border border-[var(--cf-danger)]/35 bg-[var(--cf-danger-soft)] px-4 py-3 text-sm text-[var(--cf-danger)]" role="alert">
+      La empresa tiene una carpeta documental registrada, pero no pudimos cargarla en este momento. ${documentLoadError}
+    </div>
+  ) : null
+
   return (
     <>
       {/* Overlay */}
+      <>
+      {documentErrorBanner}
       <div className="fixed inset-0 z-40 bg-black/70" onClick={onClose} />
 
       {/* Modal */}
@@ -738,6 +750,9 @@ export function SubcontractorDetailTabs({
             </div>
           </Tabs>
         </Card>
+      </div>
+    </>
+
       </div>
     </>
   )
