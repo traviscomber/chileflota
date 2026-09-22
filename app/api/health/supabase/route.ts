@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
@@ -6,34 +9,31 @@ export async function GET() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    console.log('[v0] Supabase URL:', url?.substring(0, 30) + '...' || 'NOT SET')
-    console.log('[v0] Anon Key set:', !!anonKey)
-
     if (!url || !anonKey) {
       return NextResponse.json(
-        { error: 'Missing Supabase environment variables', url: !!url, key: !!anonKey },
+        { status: 'error', error: 'Missing Supabase environment variables' },
         { status: 500 }
       )
     }
 
     const client = createClient(url, anonKey)
-    
-    // Test connection with a simple query
-    const { data, error } = await client.auth.getSession()
-    
+    const { error } = await client.auth.getSession()
+
     if (error) {
-      console.log('[v0] Auth error:', error)
-      return NextResponse.json({ error: 'Auth error', details: error }, { status: 500 })
+      return NextResponse.json(
+        { status: 'error', error: 'Supabase auth health check failed' },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       status: 'ok',
-      url: url,
-      hasKey: !!anonKey,
-      sessionCheck: 'successful'
+      sessionCheck: 'successful',
     })
-  } catch (error) {
-    console.log('[v0] Test error:', error)
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+  } catch {
+    return NextResponse.json(
+      { status: 'error', error: 'Supabase health check failed' },
+      { status: 500 }
+    )
   }
 }
