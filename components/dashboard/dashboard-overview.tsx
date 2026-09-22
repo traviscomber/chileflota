@@ -410,13 +410,13 @@ export function DashboardOverview() {
               className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left"
             >
               <FileText className="mb-4 h-4 w-4 text-[var(--cf-text-muted)] transition-colors group-hover:text-[var(--cf-text-secondary)]" />
-              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Procesados</p>
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Procesados históricos</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
               <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">
-                Tu cartera · {lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} aún sin procesar
+                Tu cartera · acumulado histórico
               </p>
               <p className="mt-1 text-xs font-medium text-[var(--cf-text-secondary)]">
-                Histórico Labbé: {lifetimeStats.globalProcessed.toLocaleString('es-CL')} documentos procesados
+                {lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} cargados aún sin procesamiento automático · Histórico Labbé: {lifetimeStats.globalProcessed.toLocaleString('es-CL')} procesados
               </p>
             </div>
 
@@ -425,9 +425,9 @@ export function DashboardOverview() {
               className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
               <CheckCircle className="mb-4 h-4 w-4 text-[#67C18D]" />
-              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Aprobados</p>
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Aprobados actuales</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{approvedDocuments.toLocaleString('es-CL')}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Validados en el período actual</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Estado actual de revisión</p>
             </button>
 
             <button
@@ -435,7 +435,7 @@ export function DashboardOverview() {
               className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
               <Clock className="mb-4 h-4 w-4 text-[#D9B65C]" />
-              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Pendientes</p>
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Pendientes de revisión</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{pendingDocuments.toLocaleString('es-CL')}</p>
               <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Esperan revisión humana</p>
             </button>
@@ -445,9 +445,9 @@ export function DashboardOverview() {
               className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
               <AlertTriangle className="mb-4 h-4 w-4 text-[#E17B8C]" />
-              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Rechazados</p>
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Rechazados actuales</p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{rejectedDocuments.toLocaleString('es-CL')}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Requieren corrección o nueva evidencia</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Estado actual de revisión</p>
             </button>
           </div>
 
@@ -455,7 +455,7 @@ export function DashboardOverview() {
             <p className="text-sm text-[var(--cf-text-secondary)]">
               {openRiskItems > 0 ? (
                 <>
-                  <span className="font-medium text-[#E6A35A]">{openRiskItems.toLocaleString('es-CL')} documentos requieren atención</span>
+                  <span className="font-medium text-[#E6A35A]">{openRiskItems.toLocaleString('es-CL')} documentos con revisión pendiente o rechazada</span>
                   <span className="text-[var(--cf-text-muted)]"> · {rejectedDocuments} rechazados · {pendingDocuments} pendientes</span>
                 </>
               ) : (
