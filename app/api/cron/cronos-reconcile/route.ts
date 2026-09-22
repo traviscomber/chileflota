@@ -88,7 +88,6 @@ export async function GET() {
         issues: summary.issues.slice(0, 25),
         recoveryMode: 'recover_stale_system_job_runs',
         recoveredSystemJobRuns: jobRecovery.recoveredCount,
-      recoveredEmptyOcrBatches: ocrBatchRecovery,
         recoveredEmptyOcrBatches: ocrBatchRecovery,
       },
       errorMessage: null,
@@ -99,6 +98,7 @@ export async function GET() {
       ...summary,
       recoveryMode: 'recover_stale_system_job_runs',
       recoveredSystemJobRuns: jobRecovery.recoveredCount,
+      recoveredEmptyOcrBatches: ocrBatchRecovery,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown Cronos reconciliation error'
