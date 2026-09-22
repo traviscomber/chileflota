@@ -2,6 +2,9 @@ import { verifyBackupStatus, formatBackupStatus } from '@/lib/backup-verificatio
 import { NextResponse } from 'next/server';
 import { isMissingSupabaseConfigError } from '@/lib/supabase/error-utils';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * GET /api/backups/verify
  * 

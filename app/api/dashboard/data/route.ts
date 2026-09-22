@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveExecutiveAssignment } from '@/lib/executive-login-resolution'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -74,7 +75,8 @@ export async function GET(request: NextRequest) {
               email: sub?.email || t.email || '',
               telefono: sub?.telefono || t.telefono || '',
               correo: sub?.email || t.correo || '',
-              ejecutivo_nombre: t.ejecutivo_nombre || sub?.ejecutiva || 'Sin asignar',
+              // Assignment ownership is canonical in assigned_executive_id. Never revive a legacy owner from subcontratistas.ejecutiva.
+              ejecutivo_nombre: t.ejecutivo_nombre || 'Sin asignar',
               direccion: sub?.direccion || t.direccion || '',
               comuna: t.comuna || sub?.comuna || '',
             }
@@ -98,16 +100,17 @@ export async function GET(request: NextRequest) {
     }
 
     const activeExecutive = userRole === 'ejecutiva' && Array.isArray(executivesData)
-      ? executivesData.find((e: any) => String(e.email || '').toLowerCase() === String(userEmail || '').toLowerCase())
+      ? resolveExecutiveAssignment(userEmail, userName || '', executivesData)
       : null
 
-    if (userRole === 'ejecutiva' && !activeExecutive?.id) {
+    const activeExecutiveId = activeExecutive?.id
+    if (userRole === 'ejecutiva' && !activeExecutiveId) {
       return NextResponse.json({ error: 'No se pudo resolver la ejecutiva activa' }, { status: 403 })
     }
 
     if (Array.isArray(transportistas)) {
       transportistas = transportistas
-        .filter((t: any) => userRole !== 'ejecutiva' || t.assigned_executive_id === activeExecutive.id)
+        .filter((t: any) => userRole !== 'ejecutiva' || t.assigned_executive_id === activeExecutiveId)
         .map((t: any) => {
           if (t.assigned_executive_id && execMap.has(t.assigned_executive_id)) {
             return { ...t, ejecutivo_nombre: execMap.get(t.assigned_executive_id) }
@@ -164,7 +167,7 @@ export async function GET(request: NextRequest) {
             ...conductor,
             conductor_id: conductor.id,
             nombre: fullName,
-            ejecutivo_nombre: subcontractor?.ejecutivo_nombre || subcontractor?.ejecutiva || 'Sin asignar',
+            ejecutivo_nombre: subcontractor?.ejecutivo_nombre || 'Sin asignar',
             nombre_subcontratista: subcontractor?.razon_social || subcontractor?.nombre_fantasia || conductor.rut_proveedor || 'N/A',
           }
         })

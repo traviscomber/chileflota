@@ -1,4 +1,5 @@
 type ExecutiveStaffRecord = {
+  id?: string | null
   email?: string | null
   full_name?: string | null
   transportista_id?: string | null
