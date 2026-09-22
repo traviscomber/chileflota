@@ -51,7 +51,11 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('transportistas')
-      .update({ assigned_executive_id: ejecutiva_id })
+      .update({
+        assigned_executive_id: ejecutiva_id,
+        ejecutivo_nombre: executive.full_name.split(' ')[0],
+        ejecutivo_asignado: null,
+      })
       .eq('id', transportista_id)
       .select()
       .single()
