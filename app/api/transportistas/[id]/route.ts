@@ -72,7 +72,26 @@ export async function PATCH(
     if (body.nombre_contacto !== undefined) updateData.representante_legal = body.nombre_contacto || null
     if (body.is_active !== undefined) updateData.is_active = body.is_active
     if (body.assigned_executive_id !== undefined) {
-      updateData.assigned_executive_id = body.assigned_executive_id || null
+      const nextExecutiveId = body.assigned_executive_id || null
+      updateData.assigned_executive_id = nextExecutiveId
+      updateData.ejecutivo_asignado = null
+
+      if (nextExecutiveId) {
+        const { data: executive, error: executiveError } = await supabase
+          .from('executive_staff')
+          .select('id, full_name')
+          .eq('id', nextExecutiveId)
+          .eq('is_active', true)
+          .single()
+
+        if (executiveError || !executive) {
+          return NextResponse.json({ error: 'Executive not found' }, { status: 404 })
+        }
+
+        updateData.ejecutivo_nombre = executive.full_name.split(' ')[0]
+      } else {
+        updateData.ejecutivo_nombre = null
+      }
     }
 
     if (!updateData.razon_social) {
