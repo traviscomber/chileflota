@@ -25,6 +25,12 @@ interface AuthUser {
   organization_id?: string
 }
 
+export const CANONICAL_SUPER_ADMIN_EMAIL = 'kcanales@labbe.cl'
+
+export function isCanonicalSuperAdminEmail(email?: string | null): boolean {
+  return String(email || '').trim().toLowerCase() === CANONICAL_SUPER_ADMIN_EMAIL
+}
+
 /**
  * Super-admin privileges must be explicit in the persisted role. Membership
  * in the Labbe email domain is never sufficient to elevate a user.
