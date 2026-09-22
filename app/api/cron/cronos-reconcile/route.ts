@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { finishSystemJobRun, startSystemJobRun } from '@/lib/system-job-runs'
+import { finishSystemJobRun, recoverStaleSystemJobRuns, startSystemJobRun } from '@/lib/system-job-runs'
 import { RECONCILIATION_THRESHOLDS_MINUTES, reconcileClaims, type ReconciliationClaim } from '@/lib/cronos-reconciliation'
 
 export const dynamic = 'force-dynamic'
@@ -15,6 +15,8 @@ export async function GET() {
   const supabase = createAdminClient()
 
   try {
+    const recovery = await recoverStaleSystemJobRuns(RECONCILIATION_THRESHOLDS_MINUTES.system_job_runs, jobRun.id)
+
     const [jobs, prt, compliance, documents, textExtractions, ocrBatches] = await Promise.all([
       supabase.from('system_job_runs').select('id,status,started_at').eq('status', 'running').neq('id', jobRun.id ?? ''),
       supabase.from('prt_import_batches').select('id,status,updated_at').eq('status', 'importing'),
@@ -48,7 +50,8 @@ export async function GET() {
         staleCount: summary.staleCount,
         activeCount: summary.activeCount,
         issues: summary.issues.slice(0, 25),
-        recoveryMode: 'observe_only',
+        recoveryMode: 'recover_stale_system_job_runs',
+        recoveredSystemJobRuns: recovery.recoveredCount,
       },
       errorMessage: null,
     })
@@ -56,7 +59,8 @@ export async function GET() {
     return NextResponse.json({
       status,
       ...summary,
-      recoveryMode: 'observe_only',
+      recoveryMode: 'recover_stale_system_job_runs',
+      recoveredSystemJobRuns: recovery.recoveredCount,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown Cronos reconciliation error'
