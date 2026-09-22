@@ -100,3 +100,52 @@ where started_at >= now() - interval '30 days';
 
 comment on view public.system_job_runs_recent is
   'Hot operational query surface for recent system jobs; full telemetry remains in system_job_runs.';
+
+
+create or replace view public.operational_transportistas as
+select *
+from public.transportistas
+where is_active is true;
+
+create or replace view public.operational_conductores as
+select c.*
+from public.conductores c
+join public.transportistas t on t.id = c.transportista_id
+where c.is_active is true
+  and t.is_active is true;
+
+create or replace view public.operational_vehiculos as
+select
+  v.*,
+  upper(regexp_replace(v.patente, '[^A-Za-z0-9]', '', 'g')) as plate_normalized
+from public.vehiculos v
+join public.transportistas t on t.id = v.transportista_id
+where v.is_active is true
+  and t.is_active is true;
+
+create or replace view public.prt_vehicle_current_operational as
+select
+  ov.id as vehiculo_id,
+  ov.transportista_id,
+  ov.patente,
+  ov.plate_normalized,
+  p.id as prt_record_id,
+  p.batch_id,
+  p.record_type,
+  p.inspection_date,
+  p.expiration_date,
+  p.result_code,
+  p.result_label,
+  p.station_code,
+  p.station_name,
+  p.region_code,
+  p.vehicle_class,
+  p.certificate_number,
+  p.source_period,
+  p.created_at as prt_created_at
+from public.operational_vehiculos ov
+left join public.prt_vehicle_current p
+  on p.plate_normalized = ov.plate_normalized;
+
+comment on view public.prt_vehicle_current_operational is
+  'Operational PRT lookup restricted to active ChileFlota vehicles belonging to active transportistas. Full PRT history remains queryable separately.';
