@@ -416,7 +416,7 @@ export function DashboardOverview() {
                 Tu cartera · {lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} aún sin procesar
               </p>
               <p className="mt-1 text-xs font-medium text-[var(--cf-text-secondary)]">
-                ChileFlota total: {lifetimeStats.globalProcessed.toLocaleString('es-CL')} procesados
+                Histórico Labbé: {lifetimeStats.globalProcessed.toLocaleString('es-CL')} documentos procesados
               </p>
             </div>
 
