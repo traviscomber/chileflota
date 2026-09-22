@@ -7,6 +7,10 @@
   },
   "crons": [
     {
+      "path": "/api/cron/cronos-health-sentinel",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/cronos-expiration-alerts",
       "schedule": "0 6 * * *"
     },
