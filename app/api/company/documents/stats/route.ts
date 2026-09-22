@@ -214,25 +214,6 @@ export async function GET(request: NextRequest) {
     const uniqueLegacyProcessed = uniqueLegacyDocuments.filter(legacyWasProcessed).length
 
     const globalLegacyDocuments = (globalLegacyDocumentsResult.data || []) as LegacyDocumentRow[]
-    const globalLegacyFilenames = Array.from(
-      new Set(globalLegacyDocuments.map((doc) => doc.original_filename).filter((name): name is string => Boolean(name))),
-    )
-
-    let globalCanonicalLegacyFilenameKeys = new Set<string>()
-    if (globalLegacyFilenames.length > 0) {
-      const { data: globalCanonicalMatches, error: globalCanonicalMatchesError } = await supabase
-        .from('subcontractor_documents')
-        .select('file_name')
-        .in('file_name', globalLegacyFilenames)
-
-      if (globalCanonicalMatchesError) throw globalCanonicalMatchesError
-      globalCanonicalLegacyFilenameKeys = new Set(
-        (globalCanonicalMatches || [])
-          .map((row: any) => normalizeFilename(row.file_name))
-          .filter(Boolean),
-      )
-    }
-
     const globalLegacyProcessed = globalLegacyDocuments.filter(legacyWasProcessed).length
 
     const lifetimeRegistered = subcontractorManaged + uniqueLegacyDocuments.length
