@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAuth } from '@/lib/auth-middleware'
+import { resolveExecutiveAssignment } from '@/lib/executive-login-resolution'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
-    const userEmail = request.cookies.get('user_email')?.value
-    const userName = request.cookies.get('user_name')?.value
-    const userRole = request.cookies.get('user_role')?.value
-
-    if (!userEmail) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: authError || 'No autenticado' }, { status: 401 })
     }
+
+    const userEmail = user.email
+    const userName = user.full_name || ''
+    const userRole = user.role
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -30,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     // Start independent reads immediately instead of waiting for transportistas first.
     const executivesPromise = fetch(
-      `${supabaseUrl}/rest/v1/executive_staff?select=id,full_name,email&is_active=eq.true`,
+      `${supabaseUrl}/rest/v1/executive_staff?select=id,full_name,email,transportista_id,is_active&is_active=eq.true`,
       { headers: commonHeaders },
     )
 
@@ -98,7 +101,7 @@ export async function GET(request: NextRequest) {
     }
 
     const activeExecutive = userRole === 'ejecutiva' && Array.isArray(executivesData)
-      ? executivesData.find((e: any) => String(e.email || '').toLowerCase() === String(userEmail || '').toLowerCase())
+      ? resolveExecutiveAssignment(userEmail, userName, executivesData)
       : null
 
     if (userRole === 'ejecutiva' && !activeExecutive?.id) {
@@ -107,7 +110,7 @@ export async function GET(request: NextRequest) {
 
     if (Array.isArray(transportistas)) {
       transportistas = transportistas
-        .filter((t: any) => userRole !== 'ejecutiva' || t.assigned_executive_id === activeExecutive.id)
+        .filter((t: any) => userRole !== 'ejecutiva' || t.assigned_executive_id === activeExecutive?.id)
         .map((t: any) => {
           if (t.assigned_executive_id && execMap.has(t.assigned_executive_id)) {
             return { ...t, ejecutivo_nombre: execMap.get(t.assigned_executive_id) }

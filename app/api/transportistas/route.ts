@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateDefaultPassword } from '@/lib/password-utils'
 import bcrypt from 'bcryptjs'
+import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
+
+const READ_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
+const WRITE_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva'])
 
 export async function GET(request: NextRequest) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!READ_ROLES.has(user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
     const supabase = createAdminClient()
 
     // Get all transportistas with their assigned executives
@@ -65,6 +73,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!WRITE_ROLES.has(user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
     const body = await request.json()
     const { razon_social, rut, region, comuna, telefono, email, nombre_contacto, is_active } = body
 

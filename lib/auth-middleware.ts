@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
+import { getEmailSessionSecret, verifyEmailSession } from "@/lib/email-session"
+import { resolveExecutiveAssignment } from "@/lib/executive-login-resolution"
 
 export type UserRole =
   | 'super_admin'
@@ -18,6 +20,7 @@ export type UserRole =
 interface AuthUser {
   id: string
   email: string
+  full_name?: string
   role: UserRole
   organization_id?: string
 }
@@ -30,37 +33,59 @@ export function isSuperAdmin(_email?: string | null, role?: UserRole | string | 
   return role === 'super_admin'
 }
 
+const SIGNED_SESSION_REQUIRED_ROLES = new Set<UserRole>([
+  'super_admin',
+  'admin',
+  'administrador',
+  'ejecutiva',
+  'prevencionista',
+])
+
+export function requiresSignedSession(role: UserRole | string | null | undefined): boolean {
+  return Boolean(role && SIGNED_SESSION_REQUIRED_ROLES.has(role as UserRole))
+}
+
+async function resolvePersistedProfile(email: string) {
+  const adminClient = createAdminClient()
+  const { data: profile, error } = await adminClient
+    .from('profiles')
+    .select('id,email,full_name,role,is_active')
+    .ilike('email', email)
+    .limit(1)
+    .maybeSingle()
+
+  return { profile, error }
+}
+
+async function resolveCurrentExecutiveOrganization(email: string, fullName: string): Promise<string | null> {
+  const adminClient = createAdminClient()
+  const { data: staff, error } = await adminClient
+    .from('executive_staff')
+    .select('email,full_name,transportista_id,is_active')
+    .eq('is_active', true)
+
+  if (error) {
+    console.error('[v0] verifyAuth: Executive assignment lookup failed:', error.message)
+    return null
+  }
+
+  const executive = resolveExecutiveAssignment(email, fullName, staff ?? [])
+  return executive?.transportista_id ? String(executive.transportista_id) : null
+}
+
 // Middleware para verificar autenticacion
 export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser | null; error?: string }> {
   try {
-    console.log('[v0] verifyAuth: START - Attempting to verify authentication')
+    const signedSession = await verifyEmailSession(
+      request.cookies.get('app_session')?.value,
+      getEmailSessionSecret(),
+    )
 
-    const userEmail = request.cookies.get('user_email')?.value
-    const userRole = request.cookies.get('user_role')?.value
-    const userOrgId = request.cookies.get('user_organization_id')?.value
-
-    console.log('[v0] verifyAuth: Cookie check:', {
-      hasEmail: !!userEmail,
-      hasRole: !!userRole,
-      hasOrgId: !!userOrgId,
-      email: userEmail,
-    })
-
-    if (userEmail && userRole) {
-      console.log('[v0] verifyAuth: Found simple login cookies for:', userEmail)
-
-      // The database profile is authoritative for permissions. This makes role
-      // changes effective even when a browser still carries an old role cookie.
-      const adminClient = createAdminClient()
-      const { data: profile, error: profileError } = await adminClient
-        .from('profiles')
-        .select('id,email,role,is_active')
-        .ilike('email', userEmail)
-        .limit(1)
-        .maybeSingle()
+    if (signedSession) {
+      const { profile, error: profileError } = await resolvePersistedProfile(signedSession.email)
 
       if (profileError) {
-        console.error('[v0] verifyAuth: Profile lookup failed:', profileError.message)
+        console.error('[v0] verifyAuth: Signed-session profile lookup failed:', profileError.message)
         return { user: null, error: 'No se pudo verificar el rol del usuario' }
       }
 
@@ -68,13 +93,57 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
         return { user: null, error: 'Usuario desactivado' }
       }
 
-      // Preserve legacy cookie-only users for non-privileged roles, but never
-      // grant super_admin from a cookie without a persisted profile.
-      if (!profile && userRole === 'super_admin') {
-        return { user: null, error: 'Perfil requerido para privilegios administrativos' }
+      if (requiresSignedSession(signedSession.role) && !profile) {
+        return { user: null, error: 'Perfil requerido para acceso privilegiado' }
       }
 
-      const effectiveRole = (profile?.role || userRole) as UserRole
+      const effectiveRole = (profile?.role || signedSession.role) as UserRole
+      let effectiveOrganizationId = signedSession.organizationId || undefined
+
+      if (effectiveRole === 'ejecutiva') {
+        const currentOrganizationId = await resolveCurrentExecutiveOrganization(
+          signedSession.email,
+          profile?.full_name || signedSession.fullName || '',
+        )
+        if (!currentOrganizationId) {
+          return { user: null, error: 'La ejecutiva no tiene una empresa activa asignada' }
+        }
+        effectiveOrganizationId = currentOrganizationId
+      }
+
+      const authUser: AuthUser = {
+        id: profile?.id || signedSession.email,
+        email: signedSession.email,
+        full_name: profile?.full_name || signedSession.fullName || undefined,
+        role: effectiveRole,
+        organization_id: effectiveOrganizationId,
+      }
+
+      return { user: authUser }
+    }
+
+    const userEmail = request.cookies.get('user_email')?.value
+    const userRole = request.cookies.get('user_role')?.value
+    const userOrgId = request.cookies.get('user_organization_id')?.value
+
+    if (userEmail && userRole) {
+      const { profile, error: profileError } = await resolvePersistedProfile(userEmail)
+
+      if (profileError) {
+        console.error('[v0] verifyAuth: Legacy profile lookup failed:', profileError.message)
+        return { user: null, error: 'No se pudo verificar el rol del usuario' }
+      }
+
+      if (profile?.is_active === false) {
+        return { user: null, error: 'Usuario desactivado' }
+      }
+
+      const persistedRole = profile?.role as UserRole | undefined
+      if (requiresSignedSession(userRole) || requiresSignedSession(persistedRole)) {
+        return { user: null, error: 'Sesión firmada requerida' }
+      }
+
+      const effectiveRole = (persistedRole || userRole) as UserRole
       const authUser: AuthUser = {
         id: profile?.id || userEmail,
         email: userEmail,
@@ -82,19 +151,9 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
         organization_id: userOrgId,
       }
 
-      console.log('[v0] verifyAuth: SUCCESS - Simple login user authenticated:', {
-        id: authUser.id,
-        email: authUser.email,
-        role: authUser.role,
-        is_super_admin: isSuperAdmin(authUser.email, authUser.role),
-        role_source: profile ? 'profiles' : 'cookie_fallback',
-        org_id: authUser.organization_id,
-      })
-
       return { user: authUser }
     }
 
-    console.log('[v0] verifyAuth: FAIL - No authentication cookies found')
     return { user: null, error: 'Unauthorized' }
   } catch (error) {
     console.error('[v0] verifyAuth EXCEPTION:', error instanceof Error ? error.message : String(error))
