@@ -9,6 +9,11 @@ const rejectedPage = fs.readFileSync(path.join(process.cwd(), 'app/dashboard/com
 const executiveScope = fs.readFileSync(path.join(process.cwd(), 'lib/executive-scope.ts'), 'utf8')
 const dashboardData = fs.readFileSync(path.join(process.cwd(), 'app/api/dashboard/data/route.ts'), 'utf8')
 const subcontractorTabs = fs.readFileSync(path.join(process.cwd(), 'components/subcontractor-detail-tabs.tsx'), 'utf8')
+const assignSimple = fs.readFileSync(path.join(process.cwd(), 'app/api/transportistas/assign-ejecutiva-simple/route.ts'), 'utf8')
+const assignExecutive = fs.readFileSync(path.join(process.cwd(), 'app/api/transportistas/assign-executive/route.ts'), 'utf8')
+const transportistaRoute = fs.readFileSync(path.join(process.cwd(), 'app/api/transportistas/[id]/route.ts'), 'utf8')
+const autoAssign = fs.readFileSync(path.join(process.cwd(), 'app/api/admin/auto-assign-transportistas/route.ts'), 'utf8')
+const reconcileScript = fs.readFileSync(path.join(process.cwd(), 'scripts/028_reconcile_transportista_executive_mirror.sql'), 'utf8')
 
 describe('executive document coverage', () => {
   for (const [name, source] of [['approved', approved], ['rejected', rejected]]) {
@@ -56,5 +61,18 @@ describe('executive document coverage', () => {
     expect(subcontractorTabs).toContain('documentLoadError')
     expect(subcontractorTabs).toContain('No fue posible cargar la carpeta documental')
     expect(subcontractorTabs).toContain('role="alert"')
+  })
+  test('assignment writes keep legacy mirrors aligned with canonical ownership', () => {
+    for (const source of [assignSimple, assignExecutive, transportistaRoute, autoAssign]) {
+      expect(source).toContain('assigned_executive_id')
+      expect(source).toContain('ejecutivo_nombre')
+      expect(source).toContain('ejecutivo_asignado')
+    }
+  })
+
+  test('reconciliation script never derives ownership from legacy fields', () => {
+    expect(reconcileScript).toContain('assigned_executive_id = es.id')
+    expect(reconcileScript).toContain('ejecutivo_asignado = null')
+    expect(reconcileScript).not.toContain('set assigned_executive_id')
   })
 })
