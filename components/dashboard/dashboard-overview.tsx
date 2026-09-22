@@ -410,10 +410,13 @@ export function DashboardOverview() {
               className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left"
             >
               <FileText className="mb-4 h-4 w-4 text-[var(--cf-text-muted)] transition-colors group-hover:text-[var(--cf-text-secondary)]" />
-              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Total de documentos procesados</p>
-              <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{lifetimeStats.globalProcessed.toLocaleString('es-CL')}</p>
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Procesados</p>
+              <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
               <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">
-                Histórico total de Transportes Labbé
+                Tu cartera · {lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} aún sin procesar
+              </p>
+              <p className="mt-1 text-xs font-medium text-[var(--cf-text-secondary)]">
+                Histórico Labbé: {lifetimeStats.globalProcessed.toLocaleString('es-CL')} documentos procesados
               </p>
             </div>
 
