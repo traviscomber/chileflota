@@ -214,14 +214,35 @@ export async function GET(request: NextRequest) {
     const uniqueLegacyProcessed = uniqueLegacyDocuments.filter(legacyWasProcessed).length
 
     const globalLegacyDocuments = (globalLegacyDocumentsResult.data || []) as LegacyDocumentRow[]
-    const globalLegacyProcessed = globalLegacyDocuments.filter(legacyWasProcessed).length
+    const globalLegacyFilenames = Array.from(
+      new Set(globalLegacyDocuments.map((doc) => doc.original_filename).filter((name): name is string => Boolean(name))),
+    )
+
+    let globalCanonicalLegacyFilenameKeys = new Set<string>()
+    if (globalLegacyFilenames.length > 0) {
+      const { data: globalCanonicalMatches, error: globalCanonicalMatchesError } = await supabase
+        .from('subcontractor_documents')
+        .select('file_name')
+        .in('file_name', globalLegacyFilenames)
+
+      if (globalCanonicalMatchesError) throw globalCanonicalMatchesError
+      globalCanonicalLegacyFilenameKeys = new Set(
+        (globalCanonicalMatches || [])
+          .map((row: any) => normalizeFilename(row.file_name))
+          .filter(Boolean),
+      )
+    }
+
+    const globalUniqueLegacyDocuments = globalLegacyDocuments.filter((doc) => {
+      const key = normalizeFilename(doc.original_filename)
+      return !key || !globalCanonicalLegacyFilenameKeys.has(key)
+    })
+    const globalUniqueLegacyProcessed = globalUniqueLegacyDocuments.filter(legacyWasProcessed).length
 
     const lifetimeRegistered = subcontractorManaged + uniqueLegacyDocuments.length
     const lifetimeProcessed = canonicalProcessed + uniqueLegacyProcessed
     const lifetimeAwaitingProcessing = Math.max(lifetimeRegistered - lifetimeProcessed, 0)
-    // Global history counts each canonical document row independently.
-    // Never deduplicate distinct documents by filename or extracted content.
-    const globalLifetimeProcessed = globalCanonicalProcessed + globalLegacyProcessed
+    const globalLifetimeProcessed = globalCanonicalProcessed + globalUniqueLegacyProcessed
 
     const certificationFlags = (transportistasResult.data || []) as TransportistaCertificationFlags[]
     const totalCertifications = certificationFlags.reduce((total, transportista) => {
