@@ -268,28 +268,6 @@ export async function GET(request: NextRequest) {
   ]
 
   if (alertEvents.length > 0) {
-    const summary = classification.conditions.map((item) => item.message).join(' ') ||
-      'El sistema volvió a estado saludable.'
-
-    await supabase.from('alerts_log').insert({
-      alert_type: 'system_health',
-      title: classification.severity === 'ok'
-        ? 'ChileFlota recuperado'
-        : `ChileFlota Health Sentinel: ${classification.severity}`,
-      description: summary,
-      message: summary,
-      priority: classification.severity === 'critical' ? 'critical'
-        : classification.severity === 'high' ? 'high'
-        : classification.severity === 'warning' ? 'medium'
-        : 'low',
-      entity_type: 'system',
-      entity_name: 'ChileFlota',
-      is_read: false,
-      is_resolved: classification.severity === 'ok',
-      status: classification.severity === 'ok' ? 'resolved' : 'active',
-      metadata: { alertEvents, snapshot, backgroundProcessingPaused: shouldPause },
-    })
-
     try {
       await postWebhook({
         system: 'ChileFlota',
