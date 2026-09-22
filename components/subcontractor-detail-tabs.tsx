@@ -231,17 +231,9 @@ export function SubcontractorDetailTabs({
     { name: 'INTERPOLAR', key: 'has_interpolar' },
   ]
 
-  const documentErrorBanner = documentLoadError ? (
-    <div className="mb-4 rounded-[6px] border border-[var(--cf-danger)]/35 bg-[var(--cf-danger-soft)] px-4 py-3 text-sm text-[var(--cf-danger)]" role="alert">
-      La empresa tiene una carpeta documental registrada, pero no pudimos cargarla en este momento. ${documentLoadError}
-    </div>
-  ) : null
-
   return (
     <>
       {/* Overlay */}
-      <>
-      {documentErrorBanner}
       <div className="fixed inset-0 z-40 bg-black/70" onClick={onClose} />
 
       {/* Modal */}
@@ -318,6 +310,15 @@ export function SubcontractorDetailTabs({
               <X className="w-6 h-6" />
             </button>
           </CardHeader>
+
+          {documentLoadError && (
+            <div
+              className="mx-6 mt-4 rounded-[6px] border border-[var(--cf-danger)]/35 bg-[var(--cf-danger-soft)] px-4 py-3 text-sm text-[var(--cf-danger)]"
+              role="alert"
+            >
+              La empresa tiene una carpeta documental registrada, pero no pudimos cargarla en este momento. {documentLoadError}
+            </div>
+          )}
 
           {/* Tabs */}
           <Tabs value={selectedTab} onValueChange={(value: any) => setSelectedTab(value)} className="flex-1 overflow-hidden flex flex-col">
@@ -750,9 +751,6 @@ export function SubcontractorDetailTabs({
             </div>
           </Tabs>
         </Card>
-      </div>
-    </>
-
       </div>
     </>
   )
