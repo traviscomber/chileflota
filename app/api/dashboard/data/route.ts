@@ -103,13 +103,14 @@ export async function GET(request: NextRequest) {
       ? resolveExecutiveAssignment(userEmail, userName || '', executivesData)
       : null
 
-    if (userRole === 'ejecutiva' && !activeExecutive?.id) {
+    const activeExecutiveId = activeExecutive?.id
+    if (userRole === 'ejecutiva' && !activeExecutiveId) {
       return NextResponse.json({ error: 'No se pudo resolver la ejecutiva activa' }, { status: 403 })
     }
 
     if (Array.isArray(transportistas)) {
       transportistas = transportistas
-        .filter((t: any) => userRole !== 'ejecutiva' || t.assigned_executive_id === activeExecutive.id)
+        .filter((t: any) => userRole !== 'ejecutiva' || t.assigned_executive_id === activeExecutiveId)
         .map((t: any) => {
           if (t.assigned_executive_id && execMap.has(t.assigned_executive_id)) {
             return { ...t, ejecutivo_nombre: execMap.get(t.assigned_executive_id) }
