@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     const assignments: any[] = []
     const errors: string[] = []
-    const updatesByExecutive = new Map<string, string[]>()
+    const updatesByExecutive = new Map<string, { ids: string[]; firstName: string }>()
 
     for (const csvRow of csvData) {
       const transportista = transportistaByRut.get(csvRow.rut)
@@ -92,8 +92,10 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      if (!updatesByExecutive.has(executive.id)) updatesByExecutive.set(executive.id, [])
-      updatesByExecutive.get(executive.id)!.push(transportista.id)
+      if (!updatesByExecutive.has(executive.id)) {
+        updatesByExecutive.set(executive.id, { ids: [], firstName: executive.full_name.split(' ')[0] })
+      }
+      updatesByExecutive.get(executive.id)!.ids.push(transportista.id)
       assignments.push({
         rut: csvRow.rut,
         razon_social: transportista.razon_social,
@@ -102,11 +104,15 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    for (const [execId, transportistaIds] of updatesByExecutive.entries()) {
+    for (const [execId, assignment] of updatesByExecutive.entries()) {
       const { error: updateError } = await supabase
         .from('transportistas')
-        .update({ assigned_executive_id: execId })
-        .in('id', transportistaIds)
+        .update({
+          assigned_executive_id: execId,
+          ejecutivo_nombre: assignment.firstName,
+          ejecutivo_asignado: null,
+        })
+        .in('id', assignment.ids)
 
       if (updateError) {
         return NextResponse.json({ error: `Update failed: ${updateError.message}` }, { status: 500 })
@@ -119,7 +125,7 @@ export async function POST(request: NextRequest) {
     if (notInCsv.length > 0) {
       const loadCounts = new Map<string, number>()
       executives.forEach(e => loadCounts.set(e.id, 0))
-      for (const [execId, ids] of updatesByExecutive.entries()) loadCounts.set(execId, ids.length)
+      for (const [execId, assignment] of updatesByExecutive.entries()) loadCounts.set(execId, assignment.ids.length)
 
       for (const t of notInCsv) {
         let minExec = executives[0]
@@ -134,7 +140,11 @@ export async function POST(request: NextRequest) {
 
         const { error: updateError } = await supabase
           .from('transportistas')
-          .update({ assigned_executive_id: minExec.id })
+          .update({
+            assigned_executive_id: minExec.id,
+            ejecutivo_nombre: minExec.full_name.split(' ')[0],
+            ejecutivo_asignado: null,
+          })
           .eq('id', t.id)
 
         if (!updateError) {
