@@ -1,6 +1,7 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { GET as runDocumentOcr } from '@/app/api/cron/document-ocr/route'
 import { finishSystemJobRun, startSystemJobRun } from '@/lib/system-job-runs'
+import { shouldRunBackgroundWork } from '@/lib/runtime-circuit-breaker'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -10,6 +11,11 @@ export const runtime = 'nodejs'
 const JOB_NAME = 'document_ocr'
 
 export async function GET(request: NextRequest) {
+  const safety = await shouldRunBackgroundWork()
+  if (!safety.allowed) {
+    return NextResponse.json({ status: 'skipped', reason: 'health_circuit_breaker', detail: safety.reason })
+  }
+
   const jobRun = await startSystemJobRun(JOB_NAME)
 
   try {
