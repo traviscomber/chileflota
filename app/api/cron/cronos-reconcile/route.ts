@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { finishSystemJobRun, startSystemJobRun } from '@/lib/system-job-runs'
+import { finishSystemJobRun, recoverStaleSystemJobRuns, startSystemJobRun } from '@/lib/system-job-runs'
 import { RECONCILIATION_THRESHOLDS_MINUTES, reconcileClaims, type ReconciliationClaim } from '@/lib/cronos-reconciliation'
 
 export const dynamic = 'force-dynamic'
@@ -10,11 +10,49 @@ export const runtime = 'nodejs'
 
 const JOB_NAME = 'cronos_reconciliation'
 
+async function recoverStaleEmptyOcrBatches(
+  supabase: ReturnType<typeof createAdminClient>,
+  staleAfterMinutes: number,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - staleAfterMinutes * 60_000).toISOString()
+  const completedAt = new Date().toISOString()
+
+  const { data, error } = await supabase
+    .from('ocr_processing_batches')
+    .update({
+      status: 'failed',
+      completed_at: completedAt,
+      updated_at: completedAt,
+      error_message: `Recovered by Cronos: empty OCR batch remained processing beyond ${staleAfterMinutes} minutes.`,
+      metadata: {
+        recovered_by: 'cronos',
+        recovery_reason: 'stale_empty_batch',
+        recovered_at: completedAt,
+        stale_after_minutes: staleAfterMinutes,
+      },
+    })
+    .eq('status', 'processing')
+    .eq('total_documents', 0)
+    .lt('updated_at', cutoff)
+    .select('id')
+
+  if (error) {
+    throw new Error(`Failed to recover stale empty OCR batches: ${error.message}`)
+  }
+
+  return data?.length ?? 0
+}
+
 export async function GET() {
   const jobRun = await startSystemJobRun(JOB_NAME)
   const supabase = createAdminClient()
 
   try {
+    const [jobRecovery, ocrBatchRecovery] = await Promise.all([
+      recoverStaleSystemJobRuns(RECONCILIATION_THRESHOLDS_MINUTES.system_job_runs, jobRun.id),
+      recoverStaleEmptyOcrBatches(supabase, RECONCILIATION_THRESHOLDS_MINUTES.ocr_processing_batches),
+    ])
+
     const [jobs, prt, compliance, documents, textExtractions, ocrBatches] = await Promise.all([
       supabase.from('system_job_runs').select('id,status,started_at').eq('status', 'running').neq('id', jobRun.id ?? ''),
       supabase.from('prt_import_batches').select('id,status,updated_at').eq('status', 'importing'),
@@ -48,7 +86,9 @@ export async function GET() {
         staleCount: summary.staleCount,
         activeCount: summary.activeCount,
         issues: summary.issues.slice(0, 25),
-        recoveryMode: 'observe_only',
+        recoveryMode: 'recover_stale_system_job_runs',
+        recoveredSystemJobRuns: jobRecovery.recoveredCount,
+        recoveredEmptyOcrBatches: ocrBatchRecovery,
       },
       errorMessage: null,
     })
@@ -56,7 +96,9 @@ export async function GET() {
     return NextResponse.json({
       status,
       ...summary,
-      recoveryMode: 'observe_only',
+      recoveryMode: 'recover_stale_system_job_runs',
+      recoveredSystemJobRuns: jobRecovery.recoveredCount,
+      recoveredEmptyOcrBatches: ocrBatchRecovery,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown Cronos reconciliation error'

@@ -77,3 +77,65 @@ export async function finishSystemJobRun(
     console.error(`[system-job-runs] Failed to finish ${handle.jobName}:`, error)
   }
 }
+
+
+export type RecoverStaleSystemJobRunsResult = {
+  recoveredCount: number
+  recoveredIds: string[]
+}
+
+export async function recoverStaleSystemJobRuns(
+  staleAfterMinutes = 30,
+  excludeId?: string | null,
+): Promise<RecoverStaleSystemJobRunsResult> {
+  const cutoff = new Date(Date.now() - staleAfterMinutes * 60_000).toISOString()
+  const supabase = createAdminClient()
+
+  let query = supabase
+    .from('system_job_runs')
+    .select('id')
+    .eq('status', 'running')
+    .lt('started_at', cutoff)
+
+  if (excludeId) {
+    query = query.neq('id', excludeId)
+  }
+
+  const { data: staleRows, error: selectError } = await query
+
+  if (selectError) {
+    throw new Error(`Failed to inspect stale system_job_runs: ${selectError.message}`)
+  }
+
+  const recoveredIds = (staleRows ?? []).map((row) => String(row.id))
+  if (recoveredIds.length === 0) {
+    return { recoveredCount: 0, recoveredIds: [] }
+  }
+
+  const completedAt = new Date().toISOString()
+  const { error: updateError } = await supabase
+    .from('system_job_runs')
+    .update({
+      status: 'failed',
+      completed_at: completedAt,
+      failed_count: 1,
+      error_message: `Recovered by Cronos: stale running job exceeded ${staleAfterMinutes} minute reconciliation threshold.`,
+      result: {
+        recovered_by: 'cronos',
+        recovery_reason: 'stale_running_timeout',
+        recovered_at: completedAt,
+        stale_after_minutes: staleAfterMinutes,
+      },
+    })
+    .in('id', recoveredIds)
+    .eq('status', 'running')
+
+  if (updateError) {
+    throw new Error(`Failed to recover stale system_job_runs: ${updateError.message}`)
+  }
+
+  return {
+    recoveredCount: recoveredIds.length,
+    recoveredIds,
+  }
+}
