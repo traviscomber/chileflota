@@ -7,6 +7,8 @@ const pending = fs.readFileSync(path.join(process.cwd(), 'app/api/dashboard/pend
 const approvedPage = fs.readFileSync(path.join(process.cwd(), 'app/dashboard/company/documentos/aprobados/page.tsx'), 'utf8')
 const rejectedPage = fs.readFileSync(path.join(process.cwd(), 'app/dashboard/company/documentos/rechazados/page.tsx'), 'utf8')
 const executiveScope = fs.readFileSync(path.join(process.cwd(), 'lib/executive-scope.ts'), 'utf8')
+const dashboardData = fs.readFileSync(path.join(process.cwd(), 'app/api/dashboard/data/route.ts'), 'utf8')
+const subcontractorTabs = fs.readFileSync(path.join(process.cwd(), 'components/subcontractor-detail-tabs.tsx'), 'utf8')
 
 describe('executive document coverage', () => {
   for (const [name, source] of [['approved', approved], ['rejected', rejected]]) {
@@ -43,5 +45,16 @@ describe('executive document coverage', () => {
     expect(executiveScope).toContain("in('transportista_id', companyIds)")
     expect(executiveScope).toContain("in('rut_proveedor', companyRuts)")
     expect(executiveScope).toContain('new Set([')
+  })
+  test('dashboard never revives legacy executive ownership from subcontratistas', () => {
+    expect(dashboardData).not.toContain('sub?.ejecutiva')
+    expect(dashboardData).not.toContain('subcontractor?.ejecutiva')
+    expect(dashboardData).toContain('assigned_executive_id')
+  })
+
+  test('subcontractor document failures are visible instead of silently rendering an empty folder', () => {
+    expect(subcontractorTabs).toContain('documentLoadError')
+    expect(subcontractorTabs).toContain('No fue posible cargar la carpeta documental')
+    expect(subcontractorTabs).toContain('role="alert"')
   })
 })
