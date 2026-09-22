@@ -416,7 +416,7 @@ export function DashboardOverview() {
                 Tu cartera · acumulado histórico
               </p>
               <p className="mt-1 text-xs font-medium text-[var(--cf-text-secondary)]">
-                {lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} cargados aún sin procesamiento automático · Histórico Labbé: {lifetimeStats.globalProcessed.toLocaleString('es-CL')} procesados
+                Histórico Labbé: {lifetimeStats.globalProcessed.toLocaleString('es-CL')} documentos procesados
               </p>
             </div>
 
