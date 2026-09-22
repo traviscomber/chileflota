@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveExecutiveAssignment } from '@/lib/executive-login-resolution'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -99,7 +100,7 @@ export async function GET(request: NextRequest) {
     }
 
     const activeExecutive = userRole === 'ejecutiva' && Array.isArray(executivesData)
-      ? executivesData.find((e: any) => String(e.email || '').toLowerCase() === String(userEmail || '').toLowerCase())
+      ? resolveExecutiveAssignment(userEmail, userName || '', executivesData)
       : null
 
     if (userRole === 'ejecutiva' && !activeExecutive?.id) {
