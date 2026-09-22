@@ -51,6 +51,10 @@ describe('executive document coverage', () => {
     expect(executiveScope).toContain("in('rut_proveedor', companyRuts)")
     expect(executiveScope).toContain('new Set([')
   })
+  test('dashboard resolves executive aliases by canonical login identity', () => {
+    expect(dashboardData).toContain("resolveExecutiveAssignment(userEmail, userName || '', executivesData)")
+  })
+
   test('dashboard never revives legacy executive ownership from subcontratistas', () => {
     expect(dashboardData).not.toContain('sub?.ejecutiva')
     expect(dashboardData).not.toContain('subcontractor?.ejecutiva')
