@@ -20,6 +20,7 @@ export type UserRole =
 interface AuthUser {
   id: string
   email: string
+  full_name?: string
   role: UserRole
   organization_id?: string
 }
@@ -113,6 +114,7 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
       const authUser: AuthUser = {
         id: profile?.id || signedSession.email,
         email: signedSession.email,
+        full_name: profile?.full_name || signedSession.fullName || undefined,
         role: effectiveRole,
         organization_id: effectiveOrganizationId,
       }
