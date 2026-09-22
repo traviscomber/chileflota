@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveF30BackfillOutcome } from '@/lib/f30-backfill-outcome'
 import { finishSystemJobRun, startSystemJobRun } from '@/lib/system-job-runs'
+import { shouldRunBackgroundWork } from '@/lib/runtime-circuit-breaker'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -109,6 +110,11 @@ export async function GET(request: NextRequest) {
 
   if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const safety = await shouldRunBackgroundWork()
+  if (!safety.allowed) {
+    return NextResponse.json({ status: 'skipped', reason: 'health_circuit_breaker', detail: safety.reason })
   }
 
   const jobRun = await startSystemJobRun(JOB_NAME)
