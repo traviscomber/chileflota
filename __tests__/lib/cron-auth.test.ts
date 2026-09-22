@@ -22,3 +22,5 @@ describe('cron authorization policy', () => {
     expect(isAuthorizedCronRequest(headers('Bearer secret'), 'secret')).toBe(true)
   })
 })
+
+// Exact preview redeploy marker: CRON_SECRET is required in all environments.
