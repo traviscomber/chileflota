@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { GeistSans } from "geist/font/sans"
 import { Suspense } from "react"
 import "./globals.css"
 import { RoleProvider } from "./providers"
@@ -15,11 +15,6 @@ const siteUrl = "https://chileflota.app"
 const canonicalDescription =
   "ChileFlota es una plataforma de compliance operacional para flotas, transportistas y contratistas que conecta documentación, vigencias, evidencia y alertas para priorizar decisiones operativas."
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-inter",
-})
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -81,7 +76,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark bg-background">
-      <body data-cf-product className={`font-sans ${inter.variable} antialiased text-foreground`}>
+      <body data-cf-product className={`font-sans ${GeistSans.variable} antialiased text-foreground`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
