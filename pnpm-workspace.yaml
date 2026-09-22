@@ -1,0 +1,6 @@
+ignoredBuiltDependencies:
+  - "@sentry/cli"
+  - bcrypt
+  - canvas
+  - core-js
+  - unrs-resolver
