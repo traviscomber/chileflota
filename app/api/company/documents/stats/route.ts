@@ -233,16 +233,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const globalUniqueLegacyDocuments = globalLegacyDocuments.filter((doc) => {
-      const key = normalizeFilename(doc.original_filename)
-      return !key || !globalCanonicalLegacyFilenameKeys.has(key)
-    })
-    const globalUniqueLegacyProcessed = globalUniqueLegacyDocuments.filter(legacyWasProcessed).length
+    const globalLegacyProcessed = globalLegacyDocuments.filter(legacyWasProcessed).length
 
     const lifetimeRegistered = subcontractorManaged + uniqueLegacyDocuments.length
     const lifetimeProcessed = canonicalProcessed + uniqueLegacyProcessed
     const lifetimeAwaitingProcessing = Math.max(lifetimeRegistered - lifetimeProcessed, 0)
-    const globalLifetimeProcessed = globalCanonicalProcessed + globalUniqueLegacyProcessed
+    // Global history counts each canonical document row independently.
+    // Never deduplicate distinct documents by filename or extracted content.
+    const globalLifetimeProcessed = globalCanonicalProcessed + globalLegacyProcessed
 
     const certificationFlags = (transportistasResult.data || []) as TransportistaCertificationFlags[]
     const totalCertifications = certificationFlags.reduce((total, transportista) => {
