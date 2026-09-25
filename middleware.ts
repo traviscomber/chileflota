@@ -47,7 +47,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Cron handlers enforce their own CRON_SECRET. Skip per-request session\n  // verification for scheduled background work.\n  if (path.startsWith('/api/cron/')) {\n    return NextResponse.next()\n  }\n\n  const appSession = await verifyEmailSession(
+  // Cron handlers enforce their own CRON_SECRET. Skip per-request session
+  // verification for scheduled background work.
+  if (path.startsWith('/api/cron/')) {
+    return NextResponse.next()
+  }
+
+  const appSession = await verifyEmailSession(
     request.cookies.get('app_session')?.value,
     getEmailSessionSecret(),
   )
