@@ -1,4 +1,6 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "fluid": true,
   "installCommand": "pnpm install --no-frozen-lockfile",
   "functions": {
     "api/pdf-ocr.py": {
