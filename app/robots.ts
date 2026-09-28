@@ -19,7 +19,7 @@ export default function robots(): MetadataRoute.Robots {
         "/conductor-credentials/",
       ],
     },
-    sitemap: "https://chileflota.app/sitemap.xml",
-    host: "https://chileflota.app",
+    sitemap: "https://www.chileflota.app/sitemap.xml",
+    host: "https://www.chileflota.app",
   }
 }
