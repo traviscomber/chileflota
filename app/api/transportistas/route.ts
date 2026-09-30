@@ -3,6 +3,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { generateDefaultPassword } from '@/lib/password-utils'
 import bcrypt from 'bcryptjs'
 
+function normalizeRut(value: string): string {
+  const compact = value.trim().toUpperCase().replace(/[^0-9K]/g, '')
+  if (compact.length < 2) return compact
+  return `${compact.slice(0, -1)}-${compact.slice(-1)}`
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
@@ -77,13 +83,20 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient()
+    const normalizedRut = normalizeRut(rut)
 
-    // Check if RUT already exists
-    const { data: existing, error: checkError } = await supabase
+    if (!normalizedRut || !/^\\d{6,9}-[0-9K]$/.test(normalizedRut)) {
+      return NextResponse.json({ error: 'RUT inválido' }, { status: 400 })
+    }
+
+    // Compare canonical normalized RUTs so formatting/case cannot create duplicates.
+    const { data: rutRows, error: checkError } = await supabase
       .from('transportistas')
-      .select('id')
-      .eq('rut', rut)
-      .single()
+      .select('id,rut')
+
+    if (checkError) throw checkError
+
+    const existing = (rutRows ?? []).find((row) => normalizeRut(String(row.rut ?? '')) === normalizedRut)
 
     if (existing) {
       return NextResponse.json(
@@ -144,7 +157,7 @@ export async function POST(request: NextRequest) {
       .from('transportistas')
       .insert({
         razon_social,
-        rut,
+        rut: normalizedRut,
         region: region || null,
         comuna: comuna || null,
         telefono: telefono || null,
@@ -160,7 +173,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate password using standard formula
-    const password = generateDefaultPassword(rut)
+    const password = generateDefaultPassword(normalizedRut)
 
     // CRITICAL: Create auth record automatically for new transportista
     // Without this, the new user cannot login
@@ -172,7 +185,7 @@ export async function POST(request: NextRequest) {
         .from('transportista_auth')
         .insert({
           transportista_id: newTransportista.id,
-          rut: rut,
+          rut: normalizedRut,
           password_hash: passwordHash,
           is_active: true,
           created_at: new Date().toISOString(),
@@ -190,7 +203,7 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      console.log(`[v0] Auth record created for RUT ${rut}`)
+      console.log(`[v0] Auth record created for RUT ${normalizedRut}`)
     }
 
     return NextResponse.json({
