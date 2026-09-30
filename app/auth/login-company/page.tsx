@@ -9,28 +9,25 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 
 export default function CompanyLoginPage() {
-  const [rut, setRut] = useState('78.376.780-5')
+  const [rut, setRut] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [rutError, setRutError] = useState('')
   const router = useRouter()
 
-  // Formatear RUT
   const formatRUT = (value: string) => {
-    const cleaned = value.replace(/[^0-9kK]/g, '')
-    if (cleaned.length <= 8) {
-      return cleaned
-    }
-    return cleaned.slice(0, 8) + '-' + cleaned.slice(8, 9)
+    const cleaned = value.replace(/[^0-9kK]/g, '').toUpperCase()
+    if (cleaned.length < 2) return cleaned
+    return `${cleaned.slice(0, -1)}-${cleaned.slice(-1)}`
   }
 
-  // Validar RUT
   const validateRUT = (value: string) => {
     if (!value) {
       setRutError('El RUT es requerido')
       return false
     }
-    const rutRegex = /^\d{1,8}-[0-9kK]$/
+    const rutRegex = /^\d{1,8}-[0-9K]$/
     if (!rutRegex.test(value)) {
       setRutError('RUT inválido (formato: 12345678-9)')
       return false
@@ -41,45 +38,26 @@ export default function CompanyLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    console.log('[v0] Login attempt with RUT:', rut)
-
-    const rutValid = validateRUT(rut)
-
-    if (!rutValid) {
-      return
-    }
+    if (!validateRUT(rut) || !password) return
 
     setIsLoading(true)
     setError(null)
 
     try {
-      // Use RUT as both username and password
-      console.log('[v0] Sending login request with RUT')
       const response = await fetch('/api/auth/login-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rut, password: rut }),
+        body: JSON.stringify({ rut, password }),
       })
 
-      let data
-      try {
-        data = await response.json()
-      } catch (parseErr) {
-        throw new Error('Respuesta inválida del servidor')
-      }
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(data?.error || 'No fue posible iniciar sesión')
 
-      if (!response.ok) {
-        const errorMsg = data?.error || `Error HTTP ${response.status}`
-        throw new Error(errorMsg)
-      }
-
-      console.log('[v0] Login successful')
       router.push('/dashboard/company')
+      router.refresh()
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al iniciar sesión'
-      console.error('[v0] Login error:', errorMessage)
-      setError(errorMessage)
+      setError(err instanceof Error ? err.message : 'Error desconocido al iniciar sesión')
+    } finally {
       setIsLoading(false)
     }
   }
@@ -87,36 +65,30 @@ export default function CompanyLoginPage() {
   return (
     <div className="min-h-screen bg-gradient-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Transportes Labbe</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-2">ChileFlota</h1>
           <p className="text-muted-foreground">Portal de Empresas Transportistas</p>
         </div>
 
-        {/* Login Card */}
         <Card className="border-border bg-card/50 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-foreground">Inicia Sesión</CardTitle>
-            <CardDescription>Ingresa tu RUT para acceder</CardDescription>
+            <CardDescription>Ingresa el RUT y contraseña de tu empresa</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Error Alert */}
             {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/50 rounded-lg text-destructive text-sm font-medium">
                 {error}
               </div>
             )}
 
-            {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* RUT Field */}
               <div className="space-y-2">
-                <Label htmlFor="rut" className="text-foreground">
-                  Tu RUT
-                </Label>
+                <Label htmlFor="rut">RUT empresa</Label>
                 <Input
                   id="rut"
                   type="text"
+                  autoComplete="username"
                   placeholder="12345678-9"
                   value={rut}
                   onChange={(e) => {
@@ -125,49 +97,40 @@ export default function CompanyLoginPage() {
                     if (formatted) validateRUT(formatted)
                   }}
                   onBlur={() => validateRUT(rut)}
-                  className={`bg-input border-border text-foreground placeholder:text-muted-foreground ${
-                    rutError ? 'border-destructive' : ''
-                  }`}
+                  className={rutError ? 'border-destructive' : ''}
                 />
-                {rutError && (
-                  <p className="mt-1 text-xs text-destructive font-medium">{rutError}</p>
-                )}
+                {rutError && <p className="text-xs text-destructive font-medium">{rutError}</p>}
               </div>
 
-              {/* Submit Button */}
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Ingresa tu contraseña"
+                />
+              </div>
+
               <Button
                 type="submit"
-                disabled={isLoading || !rut || !!rutError}
+                disabled={isLoading || !rut || !password || !!rutError}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-10 mt-6"
               >
-                {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Iniciando sesión...
-                  </span>
-                ) : (
-                  'Iniciar Sesión'
-                )}
+                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </Button>
             </form>
 
-            {/* Footer Links */}
             <div className="space-y-2 text-center text-sm pt-2">
               <p className="text-muted-foreground">
                 ¿Eres usuario individual?{' '}
-                <Link
-                  href="/auth/login"
-                  className="text-primary hover:text-primary/80 font-semibold transition-colors"
-                >
+                <Link href="/auth/login" className="text-primary hover:text-primary/80 font-semibold transition-colors">
                   Login aquí
                 </Link>
               </p>
-              <p className="text-xs text-muted-foreground">
-                Si olvidas tu contraseña,{' '}
-                <span className="text-primary font-semibold">
-                  contacta a soporte
-                </span>
-              </p>
+              <p className="text-xs text-muted-foreground">Si olvidaste tu contraseña, contacta a soporte.</p>
             </div>
           </CardContent>
         </Card>
