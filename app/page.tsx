@@ -127,66 +127,123 @@ function HeroWorkflowVisual() {
 }
 
 function AIProcessingVisual() {
+  const extractedFields = [
+    ["Tipo documental", "Detectado"],
+    ["Periodo", "Extraído"],
+    ["RUT empresa", "Coincide"],
+    ["Advertencias", "Para revisión"],
+  ]
+
   return (
     <div className="relative overflow-hidden border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
-      <div className="absolute inset-0 bg-grid opacity-25" aria-hidden="true" />
+      <div className="absolute inset-0 bg-grid opacity-20" aria-hidden="true" />
+
       <div className="relative z-10 p-5 sm:p-6">
         <div className="flex items-center justify-between border-b border-[var(--cf-border)] pb-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Ejemplo de análisis</p>
-            <p className="mt-2 text-sm font-semibold">Documento laboral · periodo detectado</p>
-          </div>
-          <span className="flex items-center gap-2 text-xs text-[var(--cf-text-secondary)]">
-            <span className="h-2 w-2 rounded-full bg-[var(--cf-accent)]" />
-            IA asistiendo
-          </span>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">
+            Flujo de revisión asistida
+          </p>
+          <span className="font-mono text-[10px] text-[var(--cf-accent)]">03 ETAPAS</span>
         </div>
 
-        <div className="grid gap-4 py-5 md:grid-cols-[1fr_0.9fr]">
-          <div className="border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
-            <div className="flex items-center justify-between">
-              <FileText className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
-              <span className="font-mono text-[10px] text-[var(--cf-text-muted)]">PDF</span>
+        <div className="relative mt-6">
+          <span
+            className="absolute bottom-14 left-[19px] top-10 w-px bg-[var(--cf-border)] sm:left-[21px]"
+            aria-hidden="true"
+          />
+
+          <div className="relative grid gap-4 pl-14">
+            <span className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--cf-accent)] bg-[var(--cf-canvas)] font-mono text-xs text-[var(--cf-text)]">
+              01
+            </span>
+            <div>
+              <p className="text-sm font-semibold">Documento recibido</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">
+                El subcontratista carga la evidencia original.
+              </p>
             </div>
-            <div className="mt-8 space-y-3">
-              <div className="h-2 w-4/5 bg-[var(--cf-border)]" />
-              <div className="h-2 w-3/5 bg-[var(--cf-border)]" />
-              <div className="h-2 w-11/12 bg-[var(--cf-border)]" />
-              <div className="h-2 w-2/3 bg-[var(--cf-border)]" />
-            </div>
-            <div className="mt-8 grid gap-2 sm:grid-cols-2">
-              <div className="border border-[var(--cf-border)] p-3">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">RUT</p>
-                <p className="mt-2 text-xs font-semibold">Detectado</p>
-              </div>
-              <div className="border border-[var(--cf-border)] p-3">
-                <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Periodo</p>
-                <p className="mt-2 text-xs font-semibold">Coincide</p>
+            <div className="grid gap-4 border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4 sm:grid-cols-[54px_1fr] sm:items-center">
+              <span className="flex h-12 w-12 items-center justify-center border border-[var(--cf-border)] bg-[var(--cf-accent-soft)]">
+                <FileText className="h-6 w-6 text-[var(--cf-accent)]" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Documento laboral</p>
+                <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+                  Archivo original · periodo y metadatos por detectar
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            {[
-              ["Tipo documental", "Detectado", "IA"],
-              ["Periodo", "Extraído", "IA"],
-              ["RUT empresa", "Coincide", "REGLA"],
-              ["Advertencias", "Para revisión", "IA"],
-            ].map(([label, value, status]) => (
-              <div key={label} className="grid grid-cols-[1fr_auto] items-center gap-3 border border-[var(--cf-border)] bg-[var(--cf-surface)] p-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">{label}</p>
-                  <p className="mt-1 text-xs font-semibold">{value}</p>
+          <div className="relative mt-6 grid gap-4 pl-14">
+            <span className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--cf-accent)] bg-[var(--cf-canvas)] font-mono text-xs text-[var(--cf-text)]">
+              02
+            </span>
+            <div>
+              <p className="text-sm font-semibold">ChileFlota + IA</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">
+                Lee, clasifica y estructura información para revisión.
+              </p>
+            </div>
+            <div className="border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+              <div className="flex items-center justify-between border-b border-[var(--cf-border)] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <ScanLine className="h-4 w-4 text-[var(--cf-accent)]" aria-hidden="true" />
+                  <span className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">
+                    Datos estructurados
+                  </span>
                 </div>
-                <span className="font-mono text-[10px] text-[var(--cf-accent)]">{status}</span>
+                <span className="font-mono text-[10px] text-[var(--cf-accent)]">IA ASISTE</span>
               </div>
-            ))}
+              <div className="divide-y divide-[var(--cf-border)]">
+                {extractedFields.map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-[1fr_auto] items-center gap-4 px-4 py-3">
+                    <span className="text-xs text-[var(--cf-text-secondary)]">{label}</span>
+                    <span className="text-xs font-medium">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="relative mt-6 grid gap-4 pl-14">
+            <span className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--cf-accent)] bg-[var(--cf-canvas)] font-mono text-xs text-[var(--cf-text)]">
+              03
+            </span>
+            <div>
+              <p className="text-sm font-semibold">Validación ejecutiva</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--cf-text-muted)]">
+                La ejecutiva compara el análisis con la evidencia y toma la decisión.
+              </p>
+            </div>
+            <div className="grid gap-4 border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4 sm:grid-cols-[44px_1fr_auto] sm:items-center">
+              <span className="flex h-10 w-10 items-center justify-center border border-[var(--cf-border)] bg-[var(--cf-canvas)]">
+                <UserCheck className="h-5 w-5 text-[var(--cf-accent)]" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Listo para revisión</p>
+                <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+                  Evidencia original + datos estructurados + advertencias
+                </p>
+              </div>
+              <span className="inline-flex min-h-10 items-center justify-center bg-[var(--cf-accent)] px-4 text-xs font-medium">
+                Revisar
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-[var(--cf-border)] pt-4">
-          <p className="text-xs text-[var(--cf-text-muted)]">La IA prepara evidencia y contexto.</p>
-          <p className="text-xs font-semibold">La ejecutiva decide.</p>
+        <div className="mt-6 grid gap-0 border-t border-[var(--cf-border)] pt-5 sm:grid-cols-2">
+          <div className="pr-0 sm:pr-5">
+            <p className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">IA</p>
+            <p className="mt-2 text-xs leading-5 text-[var(--cf-text-secondary)]">
+              Prepara evidencia y contexto.
+            </p>
+          </div>
+          <div className="mt-4 border-l-2 border-[var(--cf-accent)] pl-4 sm:mt-0 sm:pl-5">
+            <p className="text-[10px] uppercase tracking-[0.13em] text-[var(--cf-text-muted)]">Control humano</p>
+            <p className="mt-2 text-xs font-semibold leading-5">La ejecutiva decide.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -378,8 +435,9 @@ export default async function LandingPage() {
               </div>
 
               <h1 className="mt-6 max-w-[620px] text-[clamp(3rem,4.8vw,4rem)] font-semibold leading-[0.98] tracking-[-0.045em]">
-                El subcontratista carga. La ejecutiva valida.{" "}
-                <span className="text-[var(--cf-accent)]">La operación sigue.</span>
+                <span className="block">El subcontratista carga.</span>
+                <span className="block">La ejecutiva valida.</span>
+                <span className="block text-[var(--cf-accent)]">La operación sigue.</span>
               </h1>
 
               <p className="mt-7 max-w-[560px] text-base leading-7 text-[var(--cf-text-secondary)] sm:text-lg">
@@ -417,11 +475,11 @@ export default async function LandingPage() {
           <div className="flex gap-4 p-5 sm:p-6">
             <FileText className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
             <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Documentos procesados</p>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Documentos registrados</p>
               <p className="mt-2 text-3xl font-semibold tracking-[-0.04em]">
                 {processedDocumentCount !== null ? formatNumber.format(processedDocumentCount) : "Operación activa"}
               </p>
-              <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">Actividad agregada del sistema</p>
+              <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">Evidencia documental registrada</p>
             </div>
           </div>
 
@@ -429,7 +487,7 @@ export default async function LandingPage() {
             <Building2 className="mt-1 h-5 w-5 shrink-0 text-[var(--cf-accent)]" aria-hidden="true" />
             <div>
               <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Implementación activa</p>
-              <p className="mt-2 text-lg font-semibold">Transportes Labbe</p>
+              <p className="mt-2 text-lg font-semibold">Transportes Labbé</p>
               <p className="mt-1 text-xs text-[var(--cf-text-secondary)]">Operación productiva</p>
             </div>
           </div>
@@ -525,16 +583,6 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-px bg-[var(--cf-border)] sm:grid-cols-2">
-            <div className="bg-[var(--cf-surface)] p-5">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">IA como apoyo</p>
-              <p className="mt-2 text-base font-semibold">Clasifica, extrae, alerta y propone contexto.</p>
-            </div>
-            <div className="bg-[var(--cf-surface)] p-5 sm:border-l-2 sm:border-l-[var(--cf-accent)]">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Control humano</p>
-              <p className="mt-2 text-base font-semibold">La aprobación o rechazo sigue siendo decisión de la ejecutiva.</p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -568,7 +616,7 @@ export default async function LandingPage() {
               Implementación activa. Evidencia real.
             </h2>
             <p className="mt-5 max-w-md text-sm leading-6 text-[var(--cf-text-secondary)]">
-              ChileFlota ya opera en producción para el control y revisión documental de Transportes Labbe.
+              ChileFlota ya opera en producción para el control y revisión documental de Transportes Labbé.
             </p>
           </div>
 
@@ -576,14 +624,14 @@ export default async function LandingPage() {
             <div className="relative min-h-[320px] overflow-hidden bg-[var(--cf-canvas)] sm:min-h-[400px]">
               <img
                 src={LABBE_OPERATION_IMAGE}
-                alt="Operación de transporte de Transportes Labbe."
+                alt="Operación de transporte de Transportes Labbé."
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover grayscale-[28%] contrast-[1.04]"
               />
               <div className="absolute inset-0 bg-[rgba(23,23,25,0.18)]" aria-hidden="true" />
               <div className="absolute inset-x-0 bottom-0 bg-[rgba(23,23,25,0.9)] p-5 sm:p-6">
                 <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Operación real</p>
-                <p className="mt-2 text-lg font-semibold">Transportes Labbe</p>
+                <p className="mt-2 text-lg font-semibold">Transportes Labbé</p>
                 <p className="mt-2 max-w-lg text-sm leading-6 text-[var(--cf-text-secondary)]">
                   La plataforma se construye sobre una operación de transporte existente, no sobre un caso ficticio.
                 </p>
@@ -594,7 +642,7 @@ export default async function LandingPage() {
               <div className="relative min-h-[210px] overflow-hidden bg-[var(--cf-canvas)]">
                 <img
                   src={LABBE_FLEET_IMAGE}
-                  alt="Flota y operación logística de Transportes Labbe."
+                  alt="Flota y operación logística de Transportes Labbé."
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover grayscale-[35%] contrast-[1.05]"
                 />
@@ -652,7 +700,7 @@ export default async function LandingPage() {
             <span>ChileFlota · Compliance operacional</span>
           </div>
           <span>Control documental para flotas</span>
-          <span>Implementación activa: Transportes Labbe</span>
+          <span>Implementación activa: Transportes Labbé</span>
         </div>
       </footer>
     </main>
