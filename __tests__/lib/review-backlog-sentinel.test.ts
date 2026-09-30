@@ -47,6 +47,10 @@ describe('review backlog sentinel', () => {
       expect.objectContaining({ type: 'inactive_executive', companyId: 'c1' }),
       expect.objectContaining({ type: 'missing_executive', companyId: 'c2' }),
     ]))
+    expect(result.attentionQueue).toEqual(expect.arrayContaining([
+      expect.objectContaining({ companyId: 'c1', reasons: expect.arrayContaining(['ownership_invalid']) }),
+      expect.objectContaining({ companyId: 'c2', reasons: expect.arrayContaining(['ownership_invalid']) }),
+    ]))
   })
 
   it('builds SLA buckets and executive workload metrics', () => {
@@ -73,5 +77,37 @@ describe('review backlog sentinel', () => {
       docsOver7Days: 2,
       docsOver30Days: 1,
     }))
+  })
+
+  it('prioritizes old high-volume backlog deterministically', () => {
+    const docs = [
+      ...Array.from({ length: 17 }, (_, i) => ({
+        id: `old-${i}`,
+        subcontractorId: 'c-old',
+        pendingSince: '2026-08-06T12:00:00.000Z',
+      })),
+      { id: 'older-1', subcontractorId: 'c-older', pendingSince: '2026-07-15T12:00:00.000Z' },
+    ]
+
+    const result = buildReviewBacklogSnapshot(
+      docs,
+      [
+        { id: 'c-old', razonSocial: 'High Volume', rut: '1-9', assignedExecutiveId: 'e1', isActive: true },
+        { id: 'c-older', razonSocial: 'Very Old', rut: '2-7', assignedExecutiveId: 'e1', isActive: true },
+      ],
+      [{ id: 'e1', fullName: 'Ejecutiva', email: 'exec@example.com', isActive: true }],
+      now,
+    )
+
+    expect(result.attentionQueue[0]).toEqual(expect.objectContaining({
+      companyId: 'c-old',
+      priority: 'critical',
+      reasons: expect.arrayContaining(['stale_30d', 'high_volume_10plus']),
+    }))
+    expect(result.attentionQueue[1]).toEqual(expect.objectContaining({
+      companyId: 'c-older',
+      reasons: expect.arrayContaining(['stale_60d']),
+    }))
+    expect(result.attentionSummary.critical).toBeGreaterThanOrEqual(1)
   })
 })

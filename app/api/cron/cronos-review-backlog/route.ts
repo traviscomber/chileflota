@@ -145,6 +145,8 @@ export async function GET(request: NextRequest) {
           ownershipAnomalyCount: backlog.ownershipAnomalies.length,
           backlogAnomalyCount: backlog.backlogAnomalies.length,
           executiveSummary: backlog.executiveSummary,
+          attentionSummary: backlog.attentionSummary,
+          attentionQueue: backlog.attentionQueue,
         },
         dataQuality: {
           companiesScanned: dataQuality.companiesScanned,
