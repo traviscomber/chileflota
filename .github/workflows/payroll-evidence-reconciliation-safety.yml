@@ -1,0 +1,25 @@
+name: Payroll Evidence Reconciliation Safety
+
+on:
+  pull_request:
+    paths:
+      - 'lib/payroll-evidence-reconciliation.ts'
+      - 'lib/payroll-evidence-authorization.ts'
+      - 'app/api/company/payroll-evidence-reconciliation/**'
+      - '__tests__/payroll-evidence-reconciliation.test.ts'
+      - '.github/workflows/payroll-evidence-reconciliation-safety.yml'
+
+jobs:
+  payroll-evidence-reconciliation-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/payroll-evidence-reconciliation.test.ts --runInBand
