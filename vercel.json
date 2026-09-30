@@ -17,6 +17,10 @@
       "schedule": "0 6 * * *"
     },
     {
+      "path": "/api/cron/cronos-review-backlog",
+      "schedule": "10 6 * * *"
+    },
+    {
       "path": "/api/cron/cronos-sii-transportistas",
       "schedule": "5 * * * *"
     },
