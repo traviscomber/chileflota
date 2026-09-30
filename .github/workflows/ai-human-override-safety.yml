@@ -1,0 +1,26 @@
+name: AI Human Override Safety
+
+on:
+  pull_request:
+    paths:
+      - 'lib/ai-human-override-lineage.ts'
+      - '__tests__/ai-human-override-lineage.test.ts'
+      - 'migrations/027_document_ai_field_overrides.sql'
+      - '.github/workflows/ai-human-override-safety.yml'
+  workflow_dispatch:
+
+jobs:
+  ai-human-override-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/ai-human-override-lineage.test.ts --runInBand
