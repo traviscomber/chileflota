@@ -38,10 +38,74 @@ type BacklogAnomaly = {
   pendingCount: number
 }
 
+type AttentionReason =
+  | 'ownership_invalid'
+  | 'stale_60d'
+  | 'stale_30d'
+  | 'high_volume_10plus'
+  | 'high_volume_5plus'
+
+type AttentionItem = {
+  companyId: string
+  companyName: string | null
+  rut: string | null
+  executiveId: string | null
+  executiveName: string | null
+  pendingCount: number
+  maxAgeDays: number
+  priorityScore: number
+  priority: 'critical' | 'high' | 'watch'
+  reasons: AttentionReason[]
+}
+
 function ageDays(iso: string, nowMs: number): number {
   const timestamp = Date.parse(iso)
   if (!Number.isFinite(timestamp)) return 0
   return Math.max(0, Math.floor((nowMs - timestamp) / 86_400_000))
+}
+
+function buildAttentionItem(
+  company: TransportistaRecord,
+  executive: ExecutiveRecord | undefined,
+  aggregate: { pendingCount: number; maxAgeDays: number },
+): AttentionItem | null {
+  const ownershipInvalid =
+    !company.assignedExecutiveId ||
+    !executive ||
+    executive.isActive !== true
+
+  if (aggregate.maxAgeDays < 30 && !ownershipInvalid) return null
+
+  const reasons: AttentionReason[] = []
+  if (ownershipInvalid) reasons.push('ownership_invalid')
+  if (aggregate.maxAgeDays >= 60) reasons.push('stale_60d')
+  else if (aggregate.maxAgeDays >= 30) reasons.push('stale_30d')
+
+  if (aggregate.pendingCount >= 10) reasons.push('high_volume_10plus')
+  else if (aggregate.pendingCount >= 5) reasons.push('high_volume_5plus')
+
+  const ageScore = Math.min(65, aggregate.maxAgeDays)
+  const volumeScore = Math.min(25, aggregate.pendingCount * 2)
+  const ownershipScore = ownershipInvalid ? 15 : 0
+  const priorityScore = Math.min(100, ageScore + volumeScore + ownershipScore)
+
+  const priority: AttentionItem['priority'] =
+    priorityScore >= 70 ? 'critical' :
+    priorityScore >= 50 ? 'high' :
+    'watch'
+
+  return {
+    companyId: company.id,
+    companyName: company.razonSocial,
+    rut: company.rut,
+    executiveId: company.assignedExecutiveId,
+    executiveName: executive?.fullName ?? null,
+    pendingCount: aggregate.pendingCount,
+    maxAgeDays: aggregate.maxAgeDays,
+    priorityScore,
+    priority,
+    reasons,
+  }
 }
 
 export function buildReviewBacklogSnapshot(
@@ -77,6 +141,7 @@ export function buildReviewBacklogSnapshot(
 
   const ownershipAnomalies: OwnershipAnomaly[] = []
   const backlogAnomalies: BacklogAnomaly[] = []
+  const attentionQueue: AttentionItem[] = []
   const executiveSummary = new Map<string, {
     executiveId: string | null
     executiveName: string
@@ -164,6 +229,9 @@ export function buildReviewBacklogSnapshot(
       })
     }
 
+    const attentionItem = buildAttentionItem(company, executive, aggregate)
+    if (attentionItem) attentionQueue.push(attentionItem)
+
     const summaryKey = executiveId ?? 'unassigned'
     const summary = executiveSummary.get(summaryKey) ?? {
       executiveId,
@@ -200,6 +268,12 @@ export function buildReviewBacklogSnapshot(
     over30Days: ages.filter((age) => age > 30).length,
   }
 
+  const sortedAttentionQueue = attentionQueue.sort((a, b) =>
+    b.priorityScore - a.priorityScore ||
+    b.maxAgeDays - a.maxAgeDays ||
+    b.pendingCount - a.pendingCount
+  )
+
   return {
     totalPending: documents.length,
     maxAgeDays,
@@ -209,5 +283,11 @@ export function buildReviewBacklogSnapshot(
       .sort((a, b) => b.pendingDocs - a.pendingDocs),
     ownershipAnomalies: ownershipAnomalies.sort((a, b) => b.maxAgeDays - a.maxAgeDays),
     backlogAnomalies: backlogAnomalies.sort((a, b) => b.maxAgeDays - a.maxAgeDays),
+    attentionSummary: {
+      critical: sortedAttentionQueue.filter((item) => item.priority === 'critical').length,
+      high: sortedAttentionQueue.filter((item) => item.priority === 'high').length,
+      watch: sortedAttentionQueue.filter((item) => item.priority === 'watch').length,
+    },
+    attentionQueue: sortedAttentionQueue.slice(0, 50),
   }
 }
