@@ -157,8 +157,6 @@ export async function GET(request: Request) {
       }
     }
 
-    const assignedCompanyIdList = executiveCompanyIds ? Array.from(executiveCompanyIds) : []
-
     const conductorPromise = executiveCompanyIds && executiveConductorIds.length === 0
       ? Promise.resolve([] as any[])
       : fetchAllPages<any>((from, to) => {
@@ -196,37 +194,36 @@ export async function GET(request: Request) {
           return query
         })
 
-    const subPromise = executiveCompanyIds && assignedCompanyIdList.length === 0
-      ? Promise.resolve([] as any[])
-      : fetchAllPages<any>((from, to) => {
-          let query: any = supabase
-            .from('subcontractor_documents')
-            .select(`
-              id,
-              file_name,
-              document_type_id,
-              status,
-              file_url,
-              created_at,
-              updated_at,
-              uploaded_at,
-              subcontractor_id,
-              subcontractor_rut,
-              reviewed_by_ejecutiva,
-              uploaded_by_ejecutiva,
-              document_period_month,
-              document_period_year,
-              document_period_start,
-              version_number,
-              is_current
-            `)
-            .eq('status', 'pending')
-            .order('created_at', { ascending: false })
-            .range(from, to)
-
-          if (executiveCompanyIds) query = query.in('subcontractor_id', assignedCompanyIdList)
-          return query
-        })
+    // Do not pre-filter pending subcontractor uploads by subcontractor_id.
+    // Legacy/imported rows can carry an old/non-canonical company id while still
+    // having the correct subcontractor RUT. We resolve each row to the canonical
+    // transportista below and apply executive scope only after that resolution.
+    const subPromise = fetchAllPages<any>((from, to) =>
+      supabase
+        .from('subcontractor_documents')
+        .select(`
+          id,
+          file_name,
+          document_type_id,
+          status,
+          file_url,
+          created_at,
+          updated_at,
+          uploaded_at,
+          subcontractor_id,
+          subcontractor_rut,
+          reviewed_by_ejecutiva,
+          uploaded_by_ejecutiva,
+          document_period_month,
+          document_period_year,
+          document_period_start,
+          version_number,
+          is_current
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .range(from, to)
+    )
 
     const [
       conductorDocs,
@@ -268,38 +265,38 @@ export async function GET(request: Request) {
 
     const providerRuts = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.rut_proveedor).filter(Boolean))]
     const directCompanyIds = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.transportista_id).filter(Boolean))]
-    const subIds = [...new Set(subDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
-    const subRuts = [...new Set(subDocs.map((doc: any) => doc.subcontractor_rut).filter(Boolean))]
-
-    const [providerCompaniesResult, directCompaniesResult, subCompaniesByIdResult, subCompaniesByRutResult] = await Promise.all([
+    const [providerCompaniesResult, directCompaniesResult, canonicalCompaniesResult] = await Promise.all([
       providerRuts.length > 0
         ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('rut', providerRuts)
         : Promise.resolve({ data: [], error: null }),
       directCompanyIds.length > 0
         ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('id', directCompanyIds)
         : Promise.resolve({ data: [], error: null }),
-      subIds.length > 0
-        ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('id', subIds)
-        : Promise.resolve({ data: [], error: null }),
-      subRuts.length > 0
-        ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('rut', subRuts)
-        : Promise.resolve({ data: [], error: null }),
+      admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').eq('is_active', true),
     ])
 
     if (providerCompaniesResult.error) throw providerCompaniesResult.error
     if (directCompaniesResult.error) throw directCompaniesResult.error
-    if (subCompaniesByIdResult.error) throw subCompaniesByIdResult.error
-    if (subCompaniesByRutResult.error) throw subCompaniesByRutResult.error
+    if (canonicalCompaniesResult.error) throw canonicalCompaniesResult.error
 
-    const companyByRut = new Map([
-      ...(providerCompaniesResult.data || []).map((item: any) => [item.rut, item] as const),
-      ...(subCompaniesByRutResult.data || []).map((item: any) => [item.rut, item] as const),
-    ])
+    const normalizeRut = (value: unknown) =>
+      String(value || '').replace(/[^0-9kK]/g, '').toLowerCase()
+
+    const canonicalCompanies = canonicalCompaniesResult.data || []
+    const companyByRut = new Map(
+      canonicalCompanies
+        .filter((item: any) => item.rut)
+        .map((item: any) => [normalizeRut(item.rut), item] as const),
+    )
+    for (const item of providerCompaniesResult.data || []) {
+      if (item.rut) companyByRut.set(normalizeRut(item.rut), item)
+    }
+
     const companyByDirectId = new Map((directCompaniesResult.data || []).map((item: any) => [item.id, item]))
-    const companyById = new Map((subCompaniesByIdResult.data || []).map((item: any) => [item.id, item]))
+    const companyById = new Map(canonicalCompanies.map((item: any) => [item.id, item]))
 
     const normalizedConductorDocs = conductorDocs.map((doc: any) => {
-      const company = companyByDirectId.get(doc.conductores?.transportista_id) || companyByRut.get(doc.conductores?.rut_proveedor)
+      const company = companyByDirectId.get(doc.conductores?.transportista_id) || companyByRut.get(normalizeRut(doc.conductores?.rut_proveedor))
       return {
         id: doc.id,
         original_filename: doc.original_filename,
@@ -330,7 +327,7 @@ export async function GET(request: Request) {
     })
 
     const normalizedSubDocs = subDocs.map((doc: any) => {
-      const company = companyById.get(doc.subcontractor_id) || companyByRut.get(doc.subcontractor_rut)
+      const company = companyById.get(doc.subcontractor_id) || companyByRut.get(normalizeRut(doc.subcontractor_rut))
       return {
         id: doc.id,
         file_name: doc.file_name,
