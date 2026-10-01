@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const admin = createAdminClient()
     const [{ data: staff, error: staffError }, { data: companies, error: companiesError }] = await Promise.all([
       admin.from('executive_staff').select('id, full_name, email, is_active').eq('is_active', true),
-      admin.from('transportistas').select('id, rut, razon_social, assigned_executive_id').eq('is_active', true),
+      admin.from('transportistas').select('id, rut, razon_social, assigned_executive_id, is_active'),
     ])
 
     if (staffError) throw staffError
@@ -58,6 +58,8 @@ export async function POST(request: NextRequest) {
 
     const missingRuts: string[] = []
     const updatesByExecutive = new Map<CanonicalExecutiveName, string[]>()
+    const canonicalReactivationRuts = new Set(['773254141', '780991933'])
+    const reactivated: string[] = []
     const unchanged: string[] = []
 
     for (const assignment of CANONICAL_EXECUTIVE_ASSIGNMENTS) {
@@ -68,7 +70,10 @@ export async function POST(request: NextRequest) {
       }
 
       const executiveId = executiveIds.get(assignment.executive)!
-      if (company.assigned_executive_id === executiveId) {
+      const shouldReactivate =
+        canonicalReactivationRuts.has(normalizeRut(assignment.rut)) && company.is_active === false
+
+      if (company.assigned_executive_id === executiveId && !shouldReactivate) {
         unchanged.push(assignment.rut)
         continue
       }
@@ -76,6 +81,7 @@ export async function POST(request: NextRequest) {
       const ids = updatesByExecutive.get(assignment.executive) || []
       ids.push(company.id)
       updatesByExecutive.set(assignment.executive, ids)
+      if (shouldReactivate) reactivated.push(assignment.rut)
     }
 
     const updated: Array<{ executive: CanonicalExecutiveName; count: number }> = []
@@ -88,6 +94,7 @@ export async function POST(request: NextRequest) {
           assigned_executive_id: executiveId,
           ejecutivo_nombre: executive,
           ejecutivo_asignado: null,
+          is_active: true,
         })
         .in('id', companyIds)
 
@@ -102,6 +109,8 @@ export async function POST(request: NextRequest) {
       updated,
       updatedTotal: updated.reduce((sum, item) => sum + item.count, 0),
       unchanged: unchanged.length,
+      reactivated,
+      reactivatedTotal: reactivated.length,
       missingRuts,
     })
   } catch (error) {
