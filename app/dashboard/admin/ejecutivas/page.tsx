@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Trash2, Edit2, Loader } from 'lucide-react'
+import { Plus, Trash2, Edit2, Loader, RefreshCw } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface Executive {
@@ -26,6 +26,7 @@ export default function ExecutivesAdminPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [modal, setModal] = useState<CreateEditModal>({ open: false, mode: 'create' })
   const [formLoading, setFormLoading] = useState(false)
+  const [syncingCanonical, setSyncingCanonical] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -128,6 +129,33 @@ export default function ExecutivesAdminPage() {
     }
   }
 
+  const handleCanonicalSync = async () => {
+    setSyncingCanonical(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const response = await fetch('/api/admin/sync-canonical-executives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error sincronizando asignaciones canónicas')
+      }
+
+      const missing = Array.isArray(data.missingRuts) ? data.missingRuts.length : 0
+      setSuccess(
+        `Asignaciones canónicas sincronizadas: ${data.updatedTotal} actualizadas, ${data.unchanged} ya correctas${missing ? `, ${missing} RUT no encontrados` : ''}.`
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error sincronizando asignaciones canónicas')
+    } finally {
+      setSyncingCanonical(false)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta ejecutiva?')) return
 
@@ -170,13 +198,24 @@ export default function ExecutivesAdminPage() {
           <h1 className="text-3xl font-bold">Gestión de Ejecutivas</h1>
           <p className="text-slate-400 mt-1">Administra los usuarios ejecutivas de Transportes Labbé</p>
         </div>
-        <Button
-          onClick={handleOpenCreate}
-          className="bg-primary hover:bg-primary/90 gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Ejecutiva
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleCanonicalSync}
+            disabled={syncingCanonical}
+            className="gap-2"
+          >
+            {syncingCanonical ? <Loader className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Sincronizar canónico
+          </Button>
+          <Button
+            onClick={handleOpenCreate}
+            className="bg-primary hover:bg-primary/90 gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Ejecutiva
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
