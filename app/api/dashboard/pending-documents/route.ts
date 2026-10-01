@@ -157,8 +157,6 @@ export async function GET(request: Request) {
       }
     }
 
-    const assignedCompanyIdList = executiveCompanyIds ? Array.from(executiveCompanyIds) : []
-
     const conductorPromise = executiveCompanyIds && executiveConductorIds.length === 0
       ? Promise.resolve([] as any[])
       : fetchAllPages<any>((from, to) => {
@@ -267,9 +265,6 @@ export async function GET(request: Request) {
 
     const providerRuts = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.rut_proveedor).filter(Boolean))]
     const directCompanyIds = [...new Set(conductorDocs.map((doc: any) => doc.conductores?.transportista_id).filter(Boolean))]
-    const subIds = [...new Set(subDocs.map((doc: any) => doc.subcontractor_id).filter(Boolean))]
-    const subRuts = [...new Set(subDocs.map((doc: any) => doc.subcontractor_rut).filter(Boolean))]
-
     const [providerCompaniesResult, directCompaniesResult, canonicalCompaniesResult] = await Promise.all([
       providerRuts.length > 0
         ? admin.from('transportistas').select('id, rut, razon_social, nombre_fantasia, assigned_executive_id').in('rut', providerRuts)
