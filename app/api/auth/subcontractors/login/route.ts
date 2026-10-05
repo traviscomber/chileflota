@@ -8,8 +8,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'transportista-secret-key'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const rut = body.rut?.trim()
+    const rawRut = body.rut?.trim()
     const password = body.password?.trim()
+
+    const normalizeRut = (value?: string) => {
+      if (!value) return ''
+      const compact = value.replace(/\./g, '').replace(/\s+/g, '').toUpperCase()
+      if (compact.includes('-')) return compact
+      if (compact.length < 2) return compact
+      return `${compact.slice(0, -1)}-${compact.slice(-1)}`
+    }
+
+    const rut = normalizeRut(rawRut)
 
     console.log('[v0] Login attempt - RUT:', rut, 'Password length:', password?.length)
 
@@ -22,12 +32,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Search for the RUT in transportista_auth - exact match
+    // Search using canonical Chilean RUT formatting while preserving stored credentials.
     console.log('[v0] Searching for RUT:', rut)
     const { data: authRecord, error: findError } = await supabase
       .from('transportista_auth')
       .select('id, rut, password_hash, is_active, transportista_id')
-      .eq('rut', rut)
+      .ilike('rut', rut)
       .maybeSingle() // Returns null instead of error if not found
 
     if (findError) {
