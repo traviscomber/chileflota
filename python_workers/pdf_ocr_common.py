@@ -214,6 +214,19 @@ def openai_vision(png_bytes: bytes, target_type: str, vehicle_related: bool, ret
             result = json.loads(response.read())
     except HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
+        normalized = body.lower()
+        if exc.code == 429 and (
+            "credit_balance_exhausted" in normalized
+            or "insufficient_quota" in normalized
+            or "no credits remaining" in normalized
+        ):
+            raise ApiError(
+                "OpenAI Vision quota unavailable",
+                503,
+                retryable=False,
+            ) from exc
+        if exc.code == 429:
+            raise ApiError("OpenAI Vision rate limited", 503, retryable=True) from exc
         raise ApiError(f"OpenAI Vision returned {exc.code}: {body[:400]}", 502, retryable=exc.code >= 500) from exc
     except URLError as exc:
         raise ApiError(f"OpenAI Vision request failed: {exc}", 502, retryable=True) from exc

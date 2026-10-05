@@ -154,10 +154,27 @@ export async function GET(request: NextRequest) {
 
   const succeeded = results.filter((result) => result.ok === true).length
   const failed = results.length - succeeded
-  const httpStatus = failed === 0 ? 200 : succeeded > 0 ? 207 : 500
-  const runStatus = failed === 0 ? 'completed' : succeeded > 0 ? 'partial' : 'failed'
+  const dependencyUnavailable = failed > 0 && results
+    .filter((result) => result.ok !== true)
+    .every((result) => Number(result.httpStatus) === 503)
+
+  const httpStatus = dependencyUnavailable
+    ? 200
+    : failed === 0
+      ? 200
+      : succeeded > 0
+        ? 207
+        : 500
+  const runStatus = dependencyUnavailable
+    ? 'skipped'
+    : failed === 0
+      ? 'completed'
+      : succeeded > 0
+        ? 'partial'
+        : 'failed'
   const responseBody = {
     status: runStatus,
+    reason: dependencyUnavailable ? 'ocr_dependency_unavailable' : undefined,
     claimed: documents.length,
     recovered: Number(recovered ?? 0),
     succeeded,
@@ -175,7 +192,11 @@ export async function GET(request: NextRequest) {
       claimed: documents.length,
       recovered: Number(recovered ?? 0),
     },
-    errorMessage: failed > 0 ? `${failed} PDF OCR document(s) failed` : null,
+    errorMessage: dependencyUnavailable
+      ? 'PDF OCR dependency unavailable; documents were released for a later retry'
+      : failed > 0
+        ? `${failed} PDF OCR document(s) failed`
+        : null,
   })
 
   return NextResponse.json(responseBody, { status: httpStatus })

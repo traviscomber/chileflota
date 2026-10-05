@@ -8,48 +8,10 @@ import {
 import { extractText } from 'unpdf'
 import { generateAIAnalysisAlerts } from '@/lib/document-alerts-generator'
 import { parseF30Document } from '@/lib/f30-parser'
+import { classifyAIAvailabilityError } from '@/lib/ai-dependency-availability'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
-
-function classifyAnalysisAvailabilityError(error: unknown): {
-  unavailable: boolean
-  reason?: string
-  retryable?: boolean
-} {
-  const candidate = error as any
-  const message = error instanceof Error ? error.message : String(error ?? '')
-  const code = String(candidate?.code ?? candidate?.error?.code ?? '')
-  const status = Number(candidate?.status ?? candidate?.statusCode ?? 0)
-
-  if (
-    status === 429 ||
-    code === 'credit_balance_exhausted' ||
-    code === 'insufficient_quota' ||
-    /no credits remaining|insufficient quota|credit balance exhausted/i.test(message)
-  ) {
-    return { unavailable: true, reason: 'ai_quota_unavailable', retryable: false }
-  }
-
-  if (
-    status === 429 ||
-    code === 'rate_limit_exceeded' ||
-    /rate limit|too many requests/i.test(message)
-  ) {
-    return { unavailable: true, reason: 'ai_rate_limited', retryable: true }
-  }
-
-  if (
-    status === 503 ||
-    status === 502 ||
-    status === 504 ||
-    /service unavailable|temporarily unavailable|gateway timeout/i.test(message)
-  ) {
-    return { unavailable: true, reason: 'ai_service_unavailable', retryable: true }
-  }
-
-  return { unavailable: false }
-}
 
 export async function POST(
   request: NextRequest,
@@ -268,7 +230,7 @@ export async function POST(
           : 'Analisis completado y guardado',
     })
   } catch (error) {
-    const availability = classifyAnalysisAvailabilityError(error)
+    const availability = classifyAIAvailabilityError(error)
     if (availability.unavailable) {
       console.warn('[v0] Reprocess degraded: analysis unavailable', {
         documentId: params.id,

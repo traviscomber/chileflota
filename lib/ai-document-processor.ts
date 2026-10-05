@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import { z } from 'zod'
+import { classifyAIAvailabilityError } from '@/lib/ai-dependency-availability'
 
 const DocumentExtractionSchema = z.object({
   documentType: z.string(),
@@ -105,6 +106,8 @@ export async function extractDocumentFromText(text: string, expectedType = 'docu
       return await extractFromTextChat(text, expectedType)
     } catch (error) {
       lastError = error
+      const availability = classifyAIAvailabilityError(error)
+      if (availability.unavailable && availability.retryable === false) throw error
       console.warn(`[v0] Structured chat extraction attempt ${attempt} failed`, error)
     }
   }
@@ -158,6 +161,8 @@ export async function extractDocumentFromPdfBuffer(
       }
     } catch (error) {
       lastError = error
+      const availability = classifyAIAvailabilityError(error)
+      if (availability.unavailable && availability.retryable === false) throw error
       console.warn(`[v0] PDF OCR attempt ${attempt} failed`, error)
     }
   }

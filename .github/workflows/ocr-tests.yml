@@ -9,10 +9,16 @@ on:
       - 'app/api/company/documents/**/reprocess/**'
       - 'app/api/admin/ocr-review/**'
       - 'lib/ai-document-processor.ts'
+      - 'lib/ai-dependency-availability.ts'
+      - 'python_workers/**'
+      - 'api/pdf-ocr.py'
+      - 'requirements.txt'
+      - '.python-version'
       - 'lib/f30-backfill-outcome.ts'
       - 'lib/fleet/**'
       - '__tests__/lib/plate-extractor.test.ts'
       - '__tests__/lib/ai-document-processor-inputs.test.ts'
+      - '__tests__/lib/ai-dependency-availability.test.ts'
       - '__tests__/lib/f30-backfill-outcome.test.ts'
       - '.github/workflows/ocr-tests.yml'
   push:
@@ -24,10 +30,16 @@ on:
       - 'app/api/company/documents/**/reprocess/**'
       - 'app/api/admin/ocr-review/**'
       - 'lib/ai-document-processor.ts'
+      - 'lib/ai-dependency-availability.ts'
+      - 'python_workers/**'
+      - 'api/pdf-ocr.py'
+      - 'requirements.txt'
+      - '.python-version'
       - 'lib/f30-backfill-outcome.ts'
       - 'lib/fleet/**'
       - '__tests__/lib/plate-extractor.test.ts'
       - '__tests__/lib/ai-document-processor-inputs.test.ts'
+      - '__tests__/lib/ai-dependency-availability.test.ts'
       - '__tests__/lib/f30-backfill-outcome.test.ts'
       - '.github/workflows/ocr-tests.yml'
 
@@ -39,10 +51,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.28.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm jest __tests__/lib/plate-extractor.test.ts __tests__/lib/ai-document-processor-inputs.test.ts __tests__/lib/f30-backfill-outcome.test.ts --runInBand
+      - run: pnpm jest __tests__/lib/plate-extractor.test.ts __tests__/lib/ai-document-processor-inputs.test.ts __tests__/lib/ai-dependency-availability.test.ts __tests__/lib/f30-backfill-outcome.test.ts --runInBand
