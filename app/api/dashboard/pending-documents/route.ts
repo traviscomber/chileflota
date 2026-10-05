@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
 import { getExecutiveScope, type ExecutiveScopeMode } from '@/lib/executive-coverage-scope'
+import { resolveExecutiveAssignment } from '@/lib/executive-login-resolution'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -25,33 +26,30 @@ function getFocus(request: Request): Focus | null {
   return { mode, id }
 }
 
-async function resolveExecutiveStaffId(admin: ReturnType<typeof createAdminClient>, email: string, authUserId: string) {
-  const { data: exact } = await admin
-    .from('executive_staff')
-    .select('id')
-    .ilike('email', email)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
+async function resolveExecutiveStaffId(admin: ReturnType<typeof createAdminClient>, email: string) {
+  const [profileResult, staffResult] = await Promise.all([
+    admin
+      .from('profiles')
+      .select('full_name')
+      .ilike('email', email)
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from('executive_staff')
+      .select('id, email, full_name, is_active')
+      .eq('is_active', true),
+  ])
 
-  if (exact?.id) return exact.id as string
+  if (profileResult.error) throw profileResult.error
+  if (staffResult.error) throw staffResult.error
 
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('full_name')
-    .eq('id', authUserId)
-    .maybeSingle()
+  const resolved = resolveExecutiveAssignment(
+    email,
+    profileResult.data?.full_name || '',
+    staffResult.data || [],
+  )
 
-  if (!profile?.full_name) return null
-
-  const { data: matches } = await admin
-    .from('executive_staff')
-    .select('id')
-    .ilike('full_name', profile.full_name)
-    .eq('is_active', true)
-    .limit(2)
-
-  return matches?.length === 1 ? matches[0].id as string : null
+  return resolved?.id || null
 }
 
 async function fetchAllPages<T>(buildPage: (from: number, to: number) => any): Promise<T[]> {
@@ -93,7 +91,7 @@ export async function GET(request: Request) {
     let selectedExecutiveId: string | null = null
 
     if (auth.user.role === 'ejecutiva') {
-      executiveStaffId = await resolveExecutiveStaffId(admin, auth.user.email, auth.user.id)
+      executiveStaffId = await resolveExecutiveStaffId(admin, auth.user.email)
       if (!executiveStaffId) {
         return NextResponse.json({ error: 'No se pudo resolver la ejecutiva activa', success: false }, { status: 403 })
       }
