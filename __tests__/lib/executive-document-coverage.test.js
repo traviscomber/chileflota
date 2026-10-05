@@ -55,6 +55,19 @@ describe('executive document coverage', () => {
     expect(dashboardData).toContain("resolveExecutiveAssignment(userEmail, userName || '', executivesData)")
   })
 
+  test('pending inbox resolves executive aliases with the same canonical identity resolver', () => {
+    expect(pending).toContain("resolveExecutiveAssignment")
+    expect(pending).toContain("ilike('email', email)")
+  })
+
+  test('legacy executive pages route into the canonical review workspace', () => {
+    const legacyLogin = fs.readFileSync(path.join(process.cwd(), 'app/executive/login/page.tsx'), 'utf8')
+    const legacyDashboard = fs.readFileSync(path.join(process.cwd(), 'app/executive/dashboard/page.tsx'), 'utf8')
+
+    expect(legacyLogin).toContain("redirect('/login')")
+    expect(legacyDashboard).toContain("redirect('/dashboard/company/documentos/pendientes')")
+  })
+
   test('dashboard never revives legacy executive ownership from subcontratistas', () => {
     expect(dashboardData).not.toContain('sub?.ejecutiva')
     expect(dashboardData).not.toContain('subcontractor?.ejecutiva')
