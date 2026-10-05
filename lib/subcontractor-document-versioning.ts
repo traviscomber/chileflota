@@ -8,6 +8,7 @@ export const MULTI_INSTANCE_DOCUMENT_CODES = new Set([
   'FOTO_PATENTES',
   'PENSION',
   'F30-1_CLIENTE',
+  'CERT_TASAS_MUTUAL',
 ])
 
 export function isMultiInstanceDocumentCode(code: string | null | undefined): boolean {
