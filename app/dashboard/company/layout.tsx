@@ -12,7 +12,7 @@ import {
   LogOut,
   Zap,
   Users2,
-  Activity,
+  Bell,
   TrendingUp,
   Settings,
   Shield,
@@ -22,15 +22,15 @@ import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { CompanyHeader } from '@/components/layout/company-header'
 
 const navItems = [
-  { href: '/dashboard/company', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/company', label: 'Inicio', icon: LayoutDashboard },
   { href: '/dashboard/company/equipo', label: 'Gestión de Equipo', icon: Users2 },
   { href: '/dashboard/company/subcontratistas', label: 'Subcontratistas', icon: Zap },
   { href: '/dashboard/company/conductores', label: 'Conductores', icon: Users },
   { href: '/dashboard/company/documentos', label: 'Documentos', icon: FileText },
+  { href: '/dashboard/company/alertas', label: 'Alertas', icon: Bell },
   { href: '/dashboard/company/analytics/conductores', label: 'Analytics', icon: TrendingUp },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
   { href: '/dashboard/company/compliance', label: 'Compliance Matrix', icon: Shield },
-  { href: '/dashboard/company/metrics', label: 'Impacto Operacional', icon: Activity },
 ]
 
 const accountItems = [
